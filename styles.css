@@ -93,10 +93,9 @@ h5 { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em; marg
   position: fixed;
   top: 0; left: 0; right: 0;
   z-index: 100;
-  display: grid;
-  grid-template-columns: auto 1fr auto;
+  display: flex;
   align-items: center;
-  gap: 2rem;
+  gap: 1.4rem;
   padding: 0.9rem 2.5rem;
   background: rgba(255,255,255,0.85);
   backdrop-filter: blur(18px);
@@ -104,6 +103,10 @@ h5 { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em; marg
   border-bottom: 1px solid transparent;
   transition: border-color .3s ease, padding .3s ease, background .3s ease;
 }
+.header .logo { flex: 0 0 auto; }
+.header .nav { flex: 1 1 auto; }
+.header .city-picker { flex: 0 0 auto; margin-left: auto; }
+.header .cta-group { flex: 0 0 auto; }
 .header.scrolled {
   border-bottom-color: var(--line);
   padding: 0.6rem 2.5rem;
@@ -137,9 +140,9 @@ h5 { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em; marg
 /* =========== HERO =========== */
 .hero {
   position: relative;
-  min-height: 100vh;
-  padding: 9rem 2.5rem 4rem;
-  overflow: hidden;
+  min-height: clamp(720px, 100vh, 1000px);
+  padding: 9rem 2.5rem 5rem;
+  overflow: visible;
   display: flex;
   align-items: center;
   background: linear-gradient(180deg, #fafafa 0%, #ffffff 100%);
@@ -191,9 +194,9 @@ h5 { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em; marg
 
 .hero-barrel {
   position: absolute;
-  right: 2%;
-  top: 18%;
-  width: clamp(340px, 42vw, 620px);
+  right: -2%;
+  top: 6%;
+  width: clamp(520px, 62vw, 980px);
   z-index: 2;
   pointer-events: none;
   will-change: transform;
@@ -582,7 +585,7 @@ h5 { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em; marg
 /* =========== RESPONSIVE =========== */
 @media (max-width: 1100px) {
   .nav { display: none; }
-  .header { grid-template-columns: auto 1fr auto; padding: 0.8rem 1.5rem; }
+  .header { padding: 0.8rem 1.5rem; gap: 0.8rem; }
   .stations { grid-template-columns: 1fr; gap: 3rem; padding: 5rem 1.5rem; }
   .station-list { grid-template-columns: 1fr; }
   .promo-grid { grid-template-columns: repeat(2, 1fr); }
@@ -591,6 +594,8 @@ h5 { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em; marg
 @media (max-width: 760px) {
   .header { padding: 0.7rem 1rem; }
   .cta-group { display: none; }
+  .city-picker { padding: 0.5rem 0.7rem; font-size: 0.82rem; }
+  .city-picker .city-name { max-width: 110px; overflow: hidden; text-overflow: ellipsis; }
   .burger { display: flex; }
   .mobile-cta { display: flex; }
   body { padding-bottom: 70px; }
@@ -618,6 +623,175 @@ h5 { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em; marg
   .footer-grid { grid-template-columns: 1fr; gap: 2rem; }
   .scroll-hint { display: none; }
 }
+
+/* =========== PRICE-LIST CTA =========== */
+.price-cta {
+  padding: 5rem 2.5rem;
+  background: var(--white);
+}
+.price-cta-card {
+  max-width: 1180px;
+  margin: 0 auto;
+  background: linear-gradient(135deg, #fffaea 0%, #ffffff 60%);
+  border: 1px solid var(--line);
+  border-radius: 28px;
+  padding: 3rem clamp(1.5rem, 4vw, 4rem);
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2.5rem;
+  align-items: center;
+  box-shadow: var(--shadow);
+  position: relative;
+  overflow: hidden;
+}
+.price-cta-card::before {
+  content: '';
+  position: absolute;
+  top: -60px; right: -60px;
+  width: 220px; height: 220px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--yellow) 0%, transparent 70%);
+  opacity: 0.45;
+  pointer-events: none;
+}
+.price-cta-text { max-width: 640px; position: relative; z-index: 1; }
+.price-cta-text h2 { font-size: clamp(1.6rem, 2.4vw, 2.4rem); margin-bottom: 0.8rem; }
+.price-cta-text p { color: var(--muted); font-size: 1.05rem; }
+.price-cta-actions { display: flex; flex-direction: column; gap: 0.8rem; position: relative; z-index: 1; }
+.price-cta-actions .btn { justify-content: center; }
+@media (max-width: 900px) {
+  .price-cta-card { grid-template-columns: 1fr; padding: 2.2rem 1.5rem; }
+  .price-cta-actions { flex-direction: column; }
+}
+
+/* =========== CITY PICKER (header) =========== */
+.city-picker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1rem;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 500;
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 100px;
+  color: var(--ink);
+  cursor: pointer;
+  transition: border-color .25s, background .25s, transform .15s;
+  white-space: nowrap;
+}
+.city-picker:hover { border-color: var(--green); background: var(--bg-soft); }
+.city-picker:active { transform: scale(0.97); }
+.city-picker svg:first-child { color: var(--green); flex: 0 0 auto; }
+.city-picker .city-name { font-weight: 600; }
+
+.link-btn {
+  background: none; border: none; padding: 0;
+  color: var(--green); cursor: pointer; font: inherit;
+  text-decoration: underline; text-underline-offset: 3px;
+}
+.link-btn:hover { color: var(--yellow); }
+.city-line { margin-top: 0.5rem; font-size: 0.85rem; }
+
+/* =========== CITY MODAL =========== */
+.city-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+.city-modal.is-open { display: flex; animation: fadeIn .25s ease; }
+.city-modal-backdrop {
+  position: absolute; inset: 0;
+  background: rgba(13,13,13,0.55);
+  backdrop-filter: blur(6px);
+}
+.city-modal-window {
+  position: relative;
+  width: 100%;
+  max-width: 560px;
+  max-height: 85vh;
+  background: #fff;
+  border-radius: 24px;
+  padding: 2rem;
+  box-shadow: var(--shadow-lg);
+  display: flex; flex-direction: column;
+  animation: popUp .35s cubic-bezier(.2,.8,.3,1);
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes popUp {
+  from { opacity: 0; transform: translateY(20px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.city-modal-close {
+  position: absolute;
+  top: 1rem; right: 1rem;
+  width: 36px; height: 36px;
+  border: none; background: var(--bg-soft);
+  border-radius: 50%;
+  font-size: 1.4rem; line-height: 1;
+  cursor: pointer; color: var(--ink);
+  transition: background .2s, transform .15s;
+}
+.city-modal-close:hover { background: var(--ink); color: #fff; }
+.city-modal-window h3 { font-size: 1.4rem; margin-bottom: 0.4rem; padding-right: 2rem; }
+.city-modal-sub { color: var(--muted); font-size: 0.95rem; margin-bottom: 1.2rem; }
+.city-search {
+  width: 100%;
+  padding: 0.85rem 1.1rem;
+  font: inherit;
+  background: var(--bg-soft);
+  border: 1.5px solid transparent;
+  border-radius: 12px;
+  margin-bottom: 1rem;
+  transition: border-color .2s, background .2s;
+}
+.city-search:focus { outline: none; border-color: var(--green); background: #fff; }
+.city-list {
+  flex: 1;
+  overflow-y: auto;
+  margin: 0 -0.5rem;
+  padding: 0 0.5rem;
+}
+.city-option {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.8rem 0.9rem;
+  background: transparent;
+  border: 1.5px solid transparent;
+  border-radius: 12px;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background .15s, border-color .15s;
+}
+.city-option:hover { background: var(--bg-soft); }
+.city-option.is-active { border-color: var(--green); background: #f0faf3; }
+.city-option strong { font-weight: 600; font-size: 0.98rem; display: block; }
+.city-option .city-addr { font-size: 0.82rem; color: var(--muted); margin-top: 2px; }
+.city-option .city-phone {
+  font-size: 0.88rem; font-weight: 600; color: var(--green); white-space: nowrap;
+}
+.city-empty { text-align: center; color: var(--muted); padding: 2rem 1rem; font-size: 0.95rem; }
+
+/* =========== SCROLLBAR =========== */
+html { scrollbar-color: var(--green) transparent; scrollbar-width: thin; }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--green), var(--green-dark));
+  border-radius: 100px;
+  border: 2px solid var(--white);
+}
+::-webkit-scrollbar-thumb:hover { background: var(--green-dark); }
+.city-list::-webkit-scrollbar-thumb { border-color: #fff; }
 
 /* Reveal-on-scroll baseline */
 .reveal { opacity: 0; transform: translateY(30px); transition: opacity .8s ease, transform .8s ease; }
