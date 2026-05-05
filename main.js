@@ -108,4 +108,122 @@
       if (cta) cta.style.display = cta.style.display === 'flex' ? '' : 'flex';
     });
   }
+
+  /* ---------- City picker ---------- */
+  const CITIES = [
+    { city: 'Санкт-Петербург',  address: '23 станции по городу',                              phone: '+7 (812) 603-44-80' },
+    { city: 'Янино',            address: 'Шоссейная ул., 36',                                  phone: '+7 (812) 987-77-27' },
+    { city: 'Шушары',           address: 'Вишерская, 11',                                      phone: '+7 (812) 988-21-66' },
+    { city: 'Гатчина',          address: 'Ленинградское ш., 10',                               phone: '+7 (812) 317-15-16' },
+    { city: 'Кировск',          address: 'Магистральная, 46',                                  phone: '+7 (812) 999-92-26' },
+    { city: 'Тосно',            address: 'Московское ш., 33 лит А',                            phone: '+7 (812) 317-15-16' },
+    { city: 'Кронштадт',        address: 'Зосимова, 1 лит Б',                                  phone: '+7 (812) 425-35-39' },
+    { city: 'Ленсоветский',     address: 'Московское ш., 250 лит Б',                           phone: '+7 (812) 987-90-40' },
+    { city: 'Горелово',         address: 'Красносельское ш., 43 лит А',                        phone: '+7 (812) 987-28-28' },
+    { city: 'Песочный',         address: 'Ленинградская, 99 лит Д',                            phone: '+7 (812) 407-21-40' },
+    { city: 'Агалатово',        address: 'Приозерское ш., уч. 31 лит А',                       phone: '+7 (812) 926-10-10' },
+    { city: 'Новое Девяткино',  address: 'д. 118',                                             phone: '+7 (812) 385-57-01' },
+    { city: 'пос. Тельмана',    address: 'ул. Тельмана, 2 лит В',                              phone: '+7 (812) 988-81-66' },
+    { city: 'Всеволожск',       address: 'дер. Кальтино, Песочная, 30',                        phone: '+7 (812) 987-99-33' },
+    { city: 'Новосаратовка',    address: 'д. 267 лит А',                                       phone: '+7 (921) 344-44-80' },
+    { city: 'Разметелево',      address: 'Строителей, 2/3 лит Б',                              phone: '+7 (911) 242-80-98' },
+    { city: 'Ломоносов',        address: 'Михайловская, 40/7',                                 phone: '+7 (930) 035-33-50' },
+    { city: 'Сосновый Бор',     address: 'Ак. Александрова, 2',                                phone: '+7 (911) 922-17-77' },
+    { city: 'Кингисепп',        address: 'Карла Маркса, 42',                                   phone: '+7 (981) 810-22-44' },
+    { city: 'Выборг',           address: 'Железнодорожный тупик, 4',                           phone: '+7 (911) 980-37-77' },
+    { city: 'Кириши',           address: 'Героев, 33',                                         phone: '+7 (911) 949-27-77' },
+    { city: 'Красное Село',     address: 'Пушкинское ш., 1Б',                                  phone: '+7 (993) 981-21-21' },
+    { city: 'Великий Новгород', address: 'Псковская, 33 (Лента)',                              phone: '+7 (911) 099-37-77' },
+    { city: 'Псков',            address: 'Рижский пр-т, 96 лит Б',                             phone: '+7 (911) 902-17-77' },
+    { city: 'Петрозаводск',     address: 'Шотмана, 25 лит Б',                                  phone: '+7 (814) 244-55-33' },
+    { city: 'Рязань',           address: 'пр-д Шабулина, 31',                                  phone: '+7 (814) 244-55-33' },
+    { city: 'Рязань',           address: 'ул. Военных автомобилистов, 11',                     phone: '+7 (900) 603-33-22' },
+    { city: 'Рязань',           address: 'ул. Зубковой, 10 (р-н Песочня)',                     phone: '+7 (900) 603-44-33' },
+    { city: 'Саратов',          address: 'Максима Горького, 81/1',                             phone: '+7 (845) 260-41-14' },
+    { city: 'Ростов-на-Дону',   address: 'Таганрогская, 181/1',                                phone: '+7 (863) 333-26-99' },
+    { city: 'Ростов-на-Дону',   address: 'Портовая, 251',                                      phone: '+7 (863) 333-24-88' },
+    { city: 'Киров',            address: 'Нововятский р-н, Советская, 14',                     phone: '+7 (964) 250-69-00' },
+    { city: 'Братск',           address: 'Иркутская обл., ул. Мира, 65/9',                     phone: '+7 (991) 434-22-10' },
+    { city: 'Братск',           address: 'жилой район Энергетик, ул. Наймушина',               phone: '+7 (991) 435-10-22' },
+    { city: 'Усть-Кут',         address: 'ул. Кирова, уч. №65Е',                               phone: '+7 (991) 542-42-42' },
+    { city: 'Химки',            address: 'Новосходненское ш., квартал Филино, 143',            phone: '+7 (495) 215-17-16' }
+  ];
+  CITIES.forEach((c, i) => { c.id = i; c.tel = '+' + c.phone.replace(/\D/g, ''); });
+
+  const STORAGE_KEY = 'spot:selectedCity';
+  const cityNameEls = [document.getElementById('cityName'), document.getElementById('cityNameFooter')].filter(Boolean);
+  const phoneTextEls = () => document.querySelectorAll('.js-phone');
+  const phoneLinkEls = () => document.querySelectorAll('.js-phone-link');
+
+  const applyCity = (c) => {
+    cityNameEls.forEach(el => el.textContent = c.city);
+    phoneTextEls().forEach(el => el.textContent = c.phone);
+    phoneLinkEls().forEach(el => el.setAttribute('href', 'tel:' + c.tel));
+    try { localStorage.setItem(STORAGE_KEY, String(c.id)); } catch(_) {}
+  };
+
+  let savedId = 0;
+  try { savedId = parseInt(localStorage.getItem(STORAGE_KEY), 10) || 0; } catch(_) {}
+  if (savedId < 0 || savedId >= CITIES.length) savedId = 0;
+  applyCity(CITIES[savedId]);
+
+  const modal = document.getElementById('cityModal');
+  const list = document.getElementById('cityList');
+  const search = document.getElementById('citySearch');
+  const picker = document.getElementById('cityPicker');
+
+  const renderList = (filter = '') => {
+    if (!list) return;
+    const q = filter.trim().toLowerCase();
+    const items = CITIES.filter(c =>
+      !q || c.city.toLowerCase().includes(q) || c.address.toLowerCase().includes(q)
+    );
+    if (!items.length) {
+      list.innerHTML = '<div class="city-empty">Ничего не нашли. Попробуйте другой запрос.</div>';
+      return;
+    }
+    list.innerHTML = items.map(c => `
+      <button type="button" class="city-option${c.id === savedId ? ' is-active' : ''}" data-id="${c.id}">
+        <div>
+          <strong>${c.city}</strong>
+          <div class="city-addr">${c.address}</div>
+        </div>
+        <div class="city-phone">${c.phone}</div>
+      </button>
+    `).join('');
+  };
+
+  const openModal = () => {
+    if (!modal) return;
+    renderList();
+    modal.classList.add('is-open');
+    modal.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+    setTimeout(() => search && search.focus(), 50);
+  };
+  const closeModal = () => {
+    if (!modal) return;
+    modal.classList.remove('is-open');
+    modal.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+    if (search) search.value = '';
+  };
+
+  if (picker) picker.addEventListener('click', openModal);
+  document.querySelectorAll('[data-open-city]').forEach(b => b.addEventListener('click', openModal));
+  document.querySelectorAll('[data-close-city]').forEach(b => b.addEventListener('click', closeModal));
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && modal && modal.classList.contains('is-open')) closeModal(); });
+
+  if (search) search.addEventListener('input', () => renderList(search.value));
+  if (list) list.addEventListener('click', (e) => {
+    const btn = e.target.closest('.city-option');
+    if (!btn) return;
+    const id = parseInt(btn.dataset.id, 10);
+    const city = CITIES.find(c => c.id === id);
+    if (city) {
+      savedId = id;
+      applyCity(city);
+      closeModal();
+    }
+  });
 })();
