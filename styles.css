@@ -197,7 +197,7 @@ h5 { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em; marg
   right: -2%;
   top: 6%;
   width: clamp(520px, 62vw, 980px);
-  z-index: 2;
+  z-index: 1;
   pointer-events: none;
   will-change: transform;
 }
