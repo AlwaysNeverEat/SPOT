@@ -140,9 +140,10 @@ h5 { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em; marg
 /* =========== HERO =========== */
 .hero {
   position: relative;
+  overflow: hidden;
   min-height: clamp(720px, 100vh, 1000px);
   padding: 9rem 2.5rem 5rem;
-  overflow: visible;
+  /*overflow: visible;*/
   display: flex;
   align-items: center;
   background: linear-gradient(180deg, #fafafa 0%, #ffffff 100%);
@@ -197,7 +198,7 @@ h5 { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em; marg
   right: -2%;
   top: 6%;
   width: clamp(520px, 62vw, 980px);
-  z-index: 1;
+  z-index: 2;
   pointer-events: none;
   will-change: transform;
 }
