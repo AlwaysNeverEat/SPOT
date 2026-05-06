@@ -235,3 +235,26 @@
     }
   });
 })();
+
+/* ---------- Prices modal ---------- */
+(() => {
+  const priceModal = document.getElementById('priceModal');
+  if (!priceModal) return;
+
+  const openPrices = () => {
+    priceModal.classList.add('is-open');
+    priceModal.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+  };
+  const closePrices = () => {
+    priceModal.classList.remove('is-open');
+    priceModal.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+  };
+
+  document.querySelectorAll('[data-open-prices]').forEach(el => el.addEventListener('click', openPrices));
+  document.querySelectorAll('[data-close-prices]').forEach(el => el.addEventListener('click', closePrices));
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && priceModal.classList.contains('is-open')) closePrices();
+  });
+})();

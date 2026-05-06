@@ -175,10 +175,10 @@
       <p>Откройте полный прайс-лист по всем услугам или позвоните — рассчитаем стоимость по марке, модели и году выпуска вашего авто.</p>
     </div>
     <div class="price-cta-actions">
-      <a href="https://zamena-masla-spot.ru/uslugi" target="_blank" rel="noopener" class="btn btn-primary big">
+      <button type="button" class="btn btn-primary big" data-open-prices>
         Все цены на услуги
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-      </a>
+      </button>
       <a href="tel:+78126034480" class="btn btn-outline big js-phone-link">
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.68 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.32 1.85.55 2.81.68A2 2 0 0 1 22 16.92z"/></svg>
         Рассчитать по телефону
@@ -343,6 +343,41 @@
 <div class="mobile-cta">
   <a href="#signup" class="btn btn-ghost-mobile">История</a>
   <a href="#signup" class="btn btn-primary">Записаться</a>
+</div>
+
+
+
+<!-- =========== PRICES MODAL =========== -->
+<div class="price-modal" id="priceModal" aria-hidden="true" role="dialog" aria-labelledby="priceModalTitle">
+  <div class="price-modal-backdrop" data-close-prices></div>
+  <div class="price-modal-window">
+    <button class="price-modal-close" data-close-prices aria-label="Закрыть">×</button>
+    <h3 id="priceModalTitle">Прайс-лист услуг</h3>
+    <div class="price-modal-list">
+      <div class="price-item"><div><strong>Замена масла и фильтра в двигателе</strong><div class="price-note">При покупке у нас</div></div><span>0 ₽</span></div>
+      <div class="price-item"><div><strong>Замена в двигателе со своим маслом</strong><div class="price-note">Материалы клиента. Стоимость не зависит от снятия/установки защиты картера</div></div><span>1900 ₽</span></div>
+      <div class="price-item"><div><strong>Замена масла в АКПП со своим маслом</strong><div class="price-note">Материалы клиента, аппаратная замена</div></div><span>3350 ₽</span></div>
+      <div class="price-item"><div><strong>Замена масла в АКПП полная</strong><div class="price-note">Наши материалы, аппаратная замена</div></div><span>0 ₽</span></div>
+      <div class="price-item"><div><strong>Замена масла в АКПП частичная</strong><div class="price-note">Частичная замена, наше масло</div></div><span>1210 ₽</span></div>
+      <div class="price-item"><div><strong>Замена масла в АКПП частичная</strong><div class="price-note">Материалы клиента</div></div><span>1900 ₽</span></div>
+      <div class="price-item"><div><strong>Замена масла в МКПП</strong></div><span>1900 ₽</span></div>
+      <div class="price-item"><div><strong>Замена внешнего фильтра АКПП</strong><div class="price-note">Снятие/Установка</div></div><span>1200 ₽</span></div>
+      <div class="price-item"><div><strong>Замена фильтра АКПП</strong><div class="price-note">Снятие/установка поддона</div></div><span>1700 ₽</span></div>
+      <div class="price-item"><div><strong>Замена воздушного фильтра</strong><div class="price-note">1 категории, простой</div></div><span>350 ₽</span></div>
+      <div class="price-item"><div><strong>Замена воздушного фильтра</strong><div class="price-note">2 категории, сложный</div></div><span>600 ₽</span></div>
+      <div class="price-item"><div><strong>Замена воздушного фильтра</strong><div class="price-note">3 категории, усложненный</div></div><span>1150 ₽</span></div>
+      <div class="price-item"><div><strong>Замена салонного фильтра</strong><div class="price-note">1 категории, простой</div></div><span>550 ₽</span></div>
+      <div class="price-item"><div><strong>Замена салонного фильтра</strong><div class="price-note">2 категории, сложный</div></div><span>990 ₽</span></div>
+      <div class="price-item"><div><strong>Замена масла в редукторе</strong></div><span>1900 ₽</span></div>
+      <div class="price-item"><div><strong>Замена масла в раздатке</strong></div><span>1900 ₽</span></div>
+      <div class="price-item"><div><strong>Защита картера</strong><div class="price-note">Снятие/Установка</div></div><span>550 ₽</span></div>
+      <div class="price-item"><div><strong>Коррекция уровня масла</strong></div><span>550 ₽</span></div>
+      <div class="price-item"><div><strong>Заправка кондиционера</strong><div class="price-note">Стоимость фиксированная</div></div><span>3900 ₽</span></div>
+      <div class="price-item"><div><strong>Промывка двигателя</strong></div><span>550 ₽</span></div>
+      <div class="price-item"><div><strong>Нормо-час</strong><div class="price-note">Дополнительные работы</div></div><span>3350 ₽</span></div>
+      <div class="price-item"><div><strong>Расходники</strong><div class="price-note">перчатки, ветошь, обезжирка</div></div><span>33 ₽</span></div>
+    </div>
+  </div>
 </div>
 
 <!-- =========== CITY MODAL =========== -->

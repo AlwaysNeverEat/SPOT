@@ -860,3 +860,56 @@ html { scrollbar-color: var(--green) transparent; scrollbar-width: thin; }
 .hero .btn-primary:hover { background: #f3f3f3; }
 .hero .btn-outline { border-color: #fff; color: #fff; }
 .hero .btn-outline:hover { background: #fff; color: #111; }
+
+/* =========== PRICES MODAL =========== */
+.price-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 210;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+.price-modal.is-open { display: flex; animation: fadeIn .25s ease; }
+.price-modal-backdrop { position: absolute; inset: 0; background: rgba(12, 19, 26, 0.55); }
+.price-modal-window {
+  position: relative;
+  width: min(900px, 100%);
+  max-height: min(80vh, 900px);
+  overflow: hidden;
+  background: #fff;
+  border-radius: 22px;
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  padding: 1.3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+.price-modal-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--ink);
+  cursor: pointer;
+}
+.price-modal-list { overflow: auto; padding-right: 0.4rem; }
+.price-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 1rem;
+  padding: 0.8rem 0;
+  border-bottom: 1px solid var(--line);
+}
+.price-item strong { font-size: 0.98rem; }
+.price-note { color: var(--muted); font-size: 0.85rem; margin-top: 0.2rem; }
+.price-item span { color: var(--green); font-weight: 700; white-space: nowrap; }
+@media (max-width: 640px) {
+  .price-item { grid-template-columns: 1fr; gap: 0.35rem; }
+}
