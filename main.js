@@ -49,9 +49,8 @@
 
   /* ---------- Hero video fade-in ---------- */
   const heroVideo = document.getElementById('heroVideo');
-  const heroVideoWrap = heroVideo?.closest('.hero-video-wrap');
-  if (heroVideo && heroVideoWrap) {
-    const showVideo = () => heroVideoWrap.classList.add('is-loaded');
+  if (heroVideo) {
+    const showVideo = () => heroVideo.classList.add('is-loaded');
     heroVideo.addEventListener('loadeddata', showVideo, { once: true });
     heroVideo.addEventListener('canplay', showVideo, { once: true });
   }
