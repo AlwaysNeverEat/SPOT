@@ -158,7 +158,7 @@ h5 { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em; marg
 }
 .hero-content {
   position: relative;
-  z-index: 3;
+  z-index: 4;
   max-width: 760px;
 }
 .badge {
@@ -193,23 +193,21 @@ h5 { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em; marg
 }
 .hero-actions { display: flex; gap: 1rem; flex-wrap: wrap; }
 
-.hero-barrel {
-  position: absolute;
-  right: -2%;
-  top: 6%;
-  width: clamp(520px, 62vw, 980px);
-  z-index: 2;
+.hero-video-wrap {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
   pointer-events: none;
-  will-change: transform;
+  opacity: 0;
+  transition: opacity 1.8s ease;
 }
-.hero-barrel img {
-  width: 100%; height: auto; display: block;
-  filter: drop-shadow(0 40px 60px rgba(13,13,13,0.18));
-  animation: barrelFloat 8s ease-in-out infinite;
-}
-@keyframes barrelFloat {
-  0%,100% { transform: translateY(0) rotate(-1deg); }
-  50% { transform: translateY(-14px) rotate(1deg); }
+.hero-video-wrap.is-loaded { opacity: 1; }
+.hero-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: blur(6px);
+  transform: scale(1.05);
 }
 
 .scroll-hint {
@@ -241,22 +239,28 @@ h5 { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em; marg
 
 /* =========== STATS =========== */
 .stats {
+  position: relative;
+  isolation: isolate;
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   padding: 6rem 2.5rem;
-  background: var(--ink);
   color: #fff;
   gap: 2rem;
 }
-.stat { text-align: center; padding: 1rem; }
+.stats::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(13,13,13,0.72);
+  z-index: -1;
+}
+.stat { text-align: center; padding: 1rem; position: relative; z-index: 2; }
 .stat .num {
   font-size: clamp(2.5rem, 5vw, 4.5rem);
   font-weight: 900;
   letter-spacing: -0.04em;
-  background: linear-gradient(135deg, #fff 30%, var(--yellow) 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: #000;
+  mix-blend-mode: destination-out;
   margin-bottom: 0.5rem;
 }
 .stat .lbl {

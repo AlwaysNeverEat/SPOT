@@ -47,6 +47,15 @@
     updateHScroll();
   }
 
+  /* ---------- Hero video fade-in ---------- */
+  const heroVideo = document.getElementById('heroVideo');
+  const heroVideoWrap = heroVideo?.closest('.hero-video-wrap');
+  if (heroVideo && heroVideoWrap) {
+    const showVideo = () => heroVideoWrap.classList.add('is-loaded');
+    heroVideo.addEventListener('loadeddata', showVideo, { once: true });
+    heroVideo.addEventListener('canplay', showVideo, { once: true });
+  }
+
   /* ---------- Counter animation ---------- */
   const counters = document.querySelectorAll('[data-count]');
   const animateCounter = (el) => {
