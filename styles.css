@@ -630,26 +630,37 @@ h5 { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em; marg
 @media (max-width: 760px) {
   .header { padding: 0.7rem 1rem; }
   .cta-group { display: none; }
+  .logo img { height: 34px; }
   .city-picker { padding: 0.5rem 0.7rem; font-size: 0.82rem; }
   .city-picker .city-name { max-width: 110px; overflow: hidden; text-overflow: ellipsis; }
   .burger { display: flex; }
   .mobile-cta { display: flex; }
   body { padding-bottom: 70px; }
   .hero { padding: 7rem 1.2rem 3rem; min-height: auto; }
-  .hero-barrel {
-    position: relative;
-    right: auto; top: auto;
-    margin: 2.5rem auto 0;
-    width: min(90%, 360px);
+  .hero-video-wrap {
+    position: absolute;
+    z-index: 0;
+  }
+  .hero-content { max-width: 100%; }
+  .hero h1 { font-size: clamp(2rem, 9vw, 2.8rem); }
+  .hero .lead { font-size: 0.98rem; }
+  .badge { font-size: 0.78rem; }
+  .stats { grid-template-columns: 1fr; padding: 3.2rem 1.2rem; gap: 1.3rem; }
+  .stat {
+    padding: 1.2rem;
+    border-radius: 14px;
+    background: rgba(255,255,255,0.04);
   }
   .hero-actions { flex-direction: column; }
   .hero-actions .btn { width: 100%; }
-  .stats { grid-template-columns: 1fr 1fr; padding: 4rem 1.5rem; gap: 2rem 1rem; }
   .hscroll-wrap { height: auto; }
   .hscroll-pin { position: relative; height: auto; padding: 4rem 0; overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .hscroll-track { padding: 0 1.2rem; }
-  .hpanel { width: 80vw; height: 70vh; }
+  .hpanel { width: 86vw; height: 62vh; }
+  .hpanel-card .card-body { padding: 1.2rem 1.2rem 1.4rem; }
+  .hpanel-card p { font-size: 0.93rem; }
   .steps { grid-template-columns: 1fr; }
+  .step { padding: 1.4rem; }
   .how { padding: 5rem 1.2rem; }
   .brands { padding: 5rem 1.2rem; }
   .promo { padding: 5rem 1.2rem; }
