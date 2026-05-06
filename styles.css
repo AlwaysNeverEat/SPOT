@@ -158,13 +158,13 @@ h5 { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em; marg
   /*overflow: visible;*/
   display: flex;
   align-items: center;
-  background: #0d0d0d;
+  background: transparent;
 }
 .hero-bg {
   position: absolute; inset: 0;
   background:
     radial-gradient(circle at 20% 30%, rgba(31,157,63,0.16), transparent 45%),
-    linear-gradient(180deg, rgba(13,13,13,0.45), rgba(13,13,13,0.7));
+    linear-gradient(180deg, rgba(13,13,13,0.2), rgba(13,13,13,0.42));
   z-index: 2;
   will-change: transform;
 }
@@ -274,7 +274,9 @@ h5 { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em; marg
   content: "";
   position: absolute;
   inset: 0;
-  background: rgba(13,13,13,0.72);
+  background: rgba(13,13,13,0.58);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
   z-index: -1;
 }
 .stat { text-align: center; padding: 1rem; position: relative; z-index: 2; }
@@ -282,8 +284,8 @@ h5 { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em; marg
   font-size: clamp(2.5rem, 5vw, 4.5rem);
   font-weight: 900;
   letter-spacing: -0.04em;
-  color: #000;
-  mix-blend-mode: destination-out;
+  color: #fff;
+  mix-blend-mode: normal;
   margin-bottom: 0.5rem;
 }
 .stat .lbl {
