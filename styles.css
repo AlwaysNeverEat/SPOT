@@ -227,7 +227,7 @@ h5 { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em; marg
 }
 
 /* keep fixed video hidden under regular sections */
-.hscroll-wrap, .price-cta, .how, .brands, .stations, .promo, .reviews, .faq, .footer {
+.hscroll-wrap, .price-cta, .brands, .stations, .promo, .reviews, .faq, .footer {
   position: relative;
   z-index: 1;
   background: var(--white);
@@ -382,19 +382,25 @@ h5 { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em; marg
 /* =========== HOW IT WORKS =========== */
 .how {
   position: relative;
+  isolation: isolate;
   padding: 8rem 2.5rem;
-  background: var(--ink);
+  background: transparent;
   color: #fff;
   overflow: hidden;
+}
+.how::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(13,13,13,0.58);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  z-index: 1;
 }
 .how-bg {
   position: absolute;
   inset: -20% 0;
-  background-image:
-    linear-gradient(rgba(13,13,13,0.85), rgba(13,13,13,0.92)),
-    url('https://images.unsplash.com/photo-1487754180451-c456f719a1fc?w=1800&q=80&auto=format&fit=crop');
-  background-size: cover;
-  background-position: center;
+  background: transparent;
   z-index: 0;
   will-change: transform;
 }
