@@ -88,6 +88,18 @@ h5 { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em; marg
 .btn-ghost { background: transparent; color: var(--ink); }
 .btn-ghost:hover { background: var(--bg-soft); }
 
+/* Sticky header secondary CTA should read as an action */
+.header .cta-group .btn-ghost {
+  background: var(--yellow);
+  color: var(--black);
+  border-color: rgba(13,13,13,0.1);
+  font-weight: 700;
+}
+.header .cta-group .btn-ghost:hover {
+  background: #ffe15a;
+  transform: translateY(-1px);
+}
+
 /* =========== HEADER =========== */
 .header {
   position: fixed;
@@ -197,9 +209,9 @@ h5 { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em; marg
 .hero-actions { display: flex; gap: 1rem; flex-wrap: wrap; }
 
 .hero-video-wrap {
-  position: absolute;
+  position: fixed;
   inset: 0;
-  z-index: 1;
+  z-index: -2;
   overflow: hidden;
   pointer-events: none;
   opacity: 0;
@@ -212,6 +224,13 @@ h5 { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em; marg
   object-fit: cover;
   filter: blur(6px);
   transform: scale(1.05);
+}
+
+/* keep fixed video hidden under regular sections */
+.hscroll-wrap, .price-cta, .how, .brands, .stations, .promo, .reviews, .faq, .footer {
+  position: relative;
+  z-index: 1;
+  background: var(--white);
 }
 
 .scroll-hint {
