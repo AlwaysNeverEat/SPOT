@@ -39,7 +39,7 @@
   </div>
 
   <button class="burger" id="burger" aria-label="Меню">
-    <span></span><span></span><span></span>
+    <span class="price-tag"></span><span class="price-tag"></span><span class="price-tag"></span>
   </button>
 </header>
 
@@ -74,7 +74,7 @@
   </div>
 
   <div class="scroll-hint">
-    <span>прокрутите</span>
+    <span class="price-tag">прокрутите</span>
     <div class="scroll-line"></div>
   </div>
 </section>
@@ -227,15 +227,15 @@
 
   <div class="brand-marquee">
     <div class="brand-row">
-      <span>CASTROL</span><span>MOBIL</span><span>SHELL</span><span>MOTUL</span><span>ADDINOL</span><span>ELF</span><span>TOTAL</span><span>ZIC</span><span>ROLF</span><span>SPOT</span>
-      <span>CASTROL</span><span>MOBIL</span><span>SHELL</span><span>MOTUL</span><span>ADDINOL</span><span>ELF</span><span>TOTAL</span><span>ZIC</span><span>ROLF</span><span>SPOT</span>
+      <span class="price-tag">CASTROL</span><span class="price-tag">MOBIL</span><span class="price-tag">SHELL</span><span class="price-tag">MOTUL</span><span class="price-tag">ADDINOL</span><span class="price-tag">ELF</span><span class="price-tag">TOTAL</span><span class="price-tag">ZIC</span><span class="price-tag">ROLF</span><span class="price-tag">SPOT</span>
+      <span class="price-tag">CASTROL</span><span class="price-tag">MOBIL</span><span class="price-tag">SHELL</span><span class="price-tag">MOTUL</span><span class="price-tag">ADDINOL</span><span class="price-tag">ELF</span><span class="price-tag">TOTAL</span><span class="price-tag">ZIC</span><span class="price-tag">ROLF</span><span class="price-tag">SPOT</span>
     </div>
   </div>
 
   <div class="brand-cars">
     <h3>Обслуживаем все марки автомобилей</h3>
     <div class="car-tags">
-      <span>Toyota</span><span>Volkswagen</span><span>Skoda</span><span>BMW</span><span>Mercedes</span><span>Audi</span><span>Hyundai</span><span>Kia</span><span>Nissan</span><span>Renault</span><span>Ford</span><span>Lada</span><span>Chevrolet</span><span>Geely</span><span>Chery</span><span>Haval</span><span>Volvo</span><span>Opel</span><span>Changan</span><span>Exeed</span><span>Jaecoo</span><span>Omoda</span>
+      <span class="price-tag">Toyota</span><span class="price-tag">Volkswagen</span><span class="price-tag">Skoda</span><span class="price-tag">BMW</span><span class="price-tag">Mercedes</span><span class="price-tag">Audi</span><span class="price-tag">Hyundai</span><span class="price-tag">Kia</span><span class="price-tag">Nissan</span><span class="price-tag">Renault</span><span class="price-tag">Ford</span><span class="price-tag">Lada</span><span class="price-tag">Chevrolet</span><span class="price-tag">Geely</span><span class="price-tag">Chery</span><span class="price-tag">Haval</span><span class="price-tag">Volvo</span><span class="price-tag">Opel</span><span class="price-tag">Changan</span><span class="price-tag">Exeed</span><span class="price-tag">Jaecoo</span><span class="price-tag">Omoda</span>
     </div>
   </div>
 </section>
@@ -250,14 +250,14 @@
   </div>
   <div class="stations-right">
     <ul class="station-list">
-      <li><strong>ул. Фучика, 23А</strong><span>Фрунзенский район</span></li>
-      <li><strong>ул. Фучика, 14к4</strong><span>Фрунзенский район</span></li>
-      <li><strong>ул. Оптиков, 2</strong><span>Приморский район</span></li>
-      <li><strong>пр. Солидарности, 22А</strong><span>Невский район</span></li>
-      <li><strong>Выборгское ш., 2</strong><span>Выборгский район</span></li>
-      <li><strong>ул. Казакова, 29</strong><span>Кировский район</span></li>
-      <li><strong>Полюстровский пр., 59к1</strong><span>Калининский район</span></li>
-      <li><strong>пос. Мурино / Кудрово</strong><span>Лен. область</span></li>
+      <li><strong>ул. Фучика, 23А</strong><span class="price-tag">Фрунзенский район</span></li>
+      <li><strong>ул. Фучика, 14к4</strong><span class="price-tag">Фрунзенский район</span></li>
+      <li><strong>ул. Оптиков, 2</strong><span class="price-tag">Приморский район</span></li>
+      <li><strong>пр. Солидарности, 22А</strong><span class="price-tag">Невский район</span></li>
+      <li><strong>Выборгское ш., 2</strong><span class="price-tag">Выборгский район</span></li>
+      <li><strong>ул. Казакова, 29</strong><span class="price-tag">Кировский район</span></li>
+      <li><strong>Полюстровский пр., 59к1</strong><span class="price-tag">Калининский район</span></li>
+      <li><strong>пос. Мурино / Кудрово</strong><span class="price-tag">Лен. область</span></li>
     </ul>
   </div>
 </section>
@@ -352,30 +352,34 @@
   <div class="price-modal-backdrop" data-close-prices></div>
   <div class="price-modal-window">
     <button class="price-modal-close" data-close-prices aria-label="Закрыть">×</button>
-    <h3 id="priceModalTitle">Прайс-лист услуг</h3>
-    <div class="price-modal-list">
-      <div class="price-item"><div><strong>Замена масла и фильтра в двигателе</strong><div class="price-note">При покупке у нас</div></div><span>0 ₽</span></div>
-      <div class="price-item"><div><strong>Замена в двигателе со своим маслом</strong><div class="price-note">Материалы клиента. Стоимость не зависит от снятия/установки защиты картера</div></div><span>1900 ₽</span></div>
-      <div class="price-item"><div><strong>Замена масла в АКПП со своим маслом</strong><div class="price-note">Материалы клиента, аппаратная замена</div></div><span>3350 ₽</span></div>
-      <div class="price-item"><div><strong>Замена масла в АКПП полная</strong><div class="price-note">Наши материалы, аппаратная замена</div></div><span>0 ₽</span></div>
-      <div class="price-item"><div><strong>Замена масла в АКПП частичная</strong><div class="price-note">Частичная замена, наше масло</div></div><span>1210 ₽</span></div>
-      <div class="price-item"><div><strong>Замена масла в АКПП частичная</strong><div class="price-note">Материалы клиента</div></div><span>1900 ₽</span></div>
-      <div class="price-item"><div><strong>Замена масла в МКПП</strong></div><span>1900 ₽</span></div>
-      <div class="price-item"><div><strong>Замена внешнего фильтра АКПП</strong><div class="price-note">Снятие/Установка</div></div><span>1200 ₽</span></div>
-      <div class="price-item"><div><strong>Замена фильтра АКПП</strong><div class="price-note">Снятие/установка поддона</div></div><span>1700 ₽</span></div>
-      <div class="price-item"><div><strong>Замена воздушного фильтра</strong><div class="price-note">1 категории, простой</div></div><span>350 ₽</span></div>
-      <div class="price-item"><div><strong>Замена воздушного фильтра</strong><div class="price-note">2 категории, сложный</div></div><span>600 ₽</span></div>
-      <div class="price-item"><div><strong>Замена воздушного фильтра</strong><div class="price-note">3 категории, усложненный</div></div><span>1150 ₽</span></div>
-      <div class="price-item"><div><strong>Замена салонного фильтра</strong><div class="price-note">1 категории, простой</div></div><span>550 ₽</span></div>
-      <div class="price-item"><div><strong>Замена салонного фильтра</strong><div class="price-note">2 категории, сложный</div></div><span>990 ₽</span></div>
-      <div class="price-item"><div><strong>Замена масла в редукторе</strong></div><span>1900 ₽</span></div>
-      <div class="price-item"><div><strong>Замена масла в раздатке</strong></div><span>1900 ₽</span></div>
-      <div class="price-item"><div><strong>Защита картера</strong><div class="price-note">Снятие/Установка</div></div><span>550 ₽</span></div>
-      <div class="price-item"><div><strong>Коррекция уровня масла</strong></div><span>550 ₽</span></div>
-      <div class="price-item"><div><strong>Заправка кондиционера</strong><div class="price-note">Стоимость фиксированная</div></div><span>3900 ₽</span></div>
-      <div class="price-item"><div><strong>Промывка двигателя</strong></div><span>550 ₽</span></div>
-      <div class="price-item"><div><strong>Нормо-час</strong><div class="price-note">Дополнительные работы</div></div><span>3350 ₽</span></div>
-      <div class="price-item"><div><strong>Расходники</strong><div class="price-note">перчатки, ветошь, обезжирка</div></div><span>33 ₽</span></div>
+    <div class="price-modal-head">
+      <p class="price-modal-kicker">СТО SPOT</p>
+      <h3 id="priceModalTitle">Прайс-лист услуг</h3>
+      <p class="price-modal-sub">Актуальные цены на работы. Стоимость указана в рублях.</p>
+    </div>
+    <div class="price-modal-list" role="list">
+      <div class="price-item" role="listitem"><div><strong>Замена масла и фильтра в двигателе</strong><div class="price-note">При покупке у нас</div></div><span class="price-tag">0 ₽</span></div>
+      <div class="price-item"><div><strong>Замена в двигателе со своим маслом</strong><div class="price-note">Материалы клиента. Стоимость не зависит от снятия/установки защиты картера</div></div><span class="price-tag">1900 ₽</span></div>
+      <div class="price-item"><div><strong>Замена масла в АКПП со своим маслом</strong><div class="price-note">Материалы клиента, аппаратная замена</div></div><span class="price-tag">3350 ₽</span></div>
+      <div class="price-item"><div><strong>Замена масла в АКПП полная</strong><div class="price-note">Наши материалы, аппаратная замена</div></div><span class="price-tag">0 ₽</span></div>
+      <div class="price-item"><div><strong>Замена масла в АКПП частичная</strong><div class="price-note">Частичная замена, наше масло</div></div><span class="price-tag">1210 ₽</span></div>
+      <div class="price-item"><div><strong>Замена масла в АКПП частичная</strong><div class="price-note">Материалы клиента</div></div><span class="price-tag">1900 ₽</span></div>
+      <div class="price-item"><div><strong>Замена масла в МКПП</strong></div><span class="price-tag">1900 ₽</span></div>
+      <div class="price-item"><div><strong>Замена внешнего фильтра АКПП</strong><div class="price-note">Снятие/Установка</div></div><span class="price-tag">1200 ₽</span></div>
+      <div class="price-item"><div><strong>Замена фильтра АКПП</strong><div class="price-note">Снятие/установка поддона</div></div><span class="price-tag">1700 ₽</span></div>
+      <div class="price-item"><div><strong>Замена воздушного фильтра</strong><div class="price-note">1 категории, простой</div></div><span class="price-tag">350 ₽</span></div>
+      <div class="price-item"><div><strong>Замена воздушного фильтра</strong><div class="price-note">2 категории, сложный</div></div><span class="price-tag">600 ₽</span></div>
+      <div class="price-item"><div><strong>Замена воздушного фильтра</strong><div class="price-note">3 категории, усложненный</div></div><span class="price-tag">1150 ₽</span></div>
+      <div class="price-item"><div><strong>Замена салонного фильтра</strong><div class="price-note">1 категории, простой</div></div><span class="price-tag">550 ₽</span></div>
+      <div class="price-item"><div><strong>Замена салонного фильтра</strong><div class="price-note">2 категории, сложный</div></div><span class="price-tag">990 ₽</span></div>
+      <div class="price-item"><div><strong>Замена масла в редукторе</strong></div><span class="price-tag">1900 ₽</span></div>
+      <div class="price-item"><div><strong>Замена масла в раздатке</strong></div><span class="price-tag">1900 ₽</span></div>
+      <div class="price-item"><div><strong>Защита картера</strong><div class="price-note">Снятие/Установка</div></div><span class="price-tag">550 ₽</span></div>
+      <div class="price-item"><div><strong>Коррекция уровня масла</strong></div><span class="price-tag">550 ₽</span></div>
+      <div class="price-item"><div><strong>Заправка кондиционера</strong><div class="price-note">Стоимость фиксированная</div></div><span class="price-tag">3900 ₽</span></div>
+      <div class="price-item"><div><strong>Промывка двигателя</strong></div><span class="price-tag">550 ₽</span></div>
+      <div class="price-item"><div><strong>Нормо-час</strong><div class="price-note">Дополнительные работы</div></div><span class="price-tag">3350 ₽</span></div>
+      <div class="price-item"><div><strong>Расходники</strong><div class="price-note">перчатки, ветошь, обезжирка</div></div><span class="price-tag">33 ₽</span></div>
     </div>
   </div>
 </div>
