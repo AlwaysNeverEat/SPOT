@@ -54,7 +54,7 @@
     <h1 data-parallax="0.1">
       Замена масла<br/>
       <span class="accent-green">бесплатно</span>
-      <span class="thin">в Санкт-Петербурге</span>
+      <span class="thin">в <span class="js-city-loc">Санкт-Петербурге</span></span>
     </h1>
     <p class="lead" data-parallax="0.05">
       При покупке масла в СТО SPOT — работа мастера в подарок.<br/>
@@ -86,8 +86,8 @@
     <div class="lbl">замен масла с 2013 года</div>
   </div>
   <div class="stat">
-    <div class="num" data-count="23">0</div>
-    <div class="lbl">станций в Санкт-Петербурге</div>
+    <div class="num" data-count="23" id="statStationCount">0</div>
+    <div class="lbl">станций <span class="js-city-loc-prefixed">в Санкт-Петербурге</span></div>
   </div>
   <div class="stat">
     <div class="num" data-count="38">0</div>
@@ -175,10 +175,10 @@
       <p>Откройте полный прайс-лист по всем услугам или позвоните — рассчитаем стоимость по марке, модели и году выпуска вашего авто.</p>
     </div>
     <div class="price-cta-actions">
-      <a href="https://zamena-masla-spot.ru/uslugi" target="_blank" rel="noopener" class="btn btn-primary big">
+      <button type="button" id="openPrices" class="btn btn-primary big">
         Все цены на услуги
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-      </a>
+      </button>
       <a href="tel:+78126034480" class="btn btn-outline big js-phone-link">
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.68 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.32 1.85.55 2.81.68A2 2 0 0 1 22 16.92z"/></svg>
         Рассчитать по телефону
@@ -244,21 +244,12 @@
 <section class="stations" id="stations">
   <div class="stations-left" data-parallax="0.1">
     <div class="section-tag">Станции</div>
-    <h2>23 станции <br/>в Санкт-Петербурге</h2>
-    <p>А также филиалы в городах: Янино, Петрозаводск, Рязань, Гатчина, Кировск, Саратов, Шушары, Ростов-на-Дону, Казань, Калининград, Барнаул и других.</p>
+    <h2><span id="stationsCount">23</span> <span id="stationsWord">станции</span> <br/>в <span class="js-city-loc">Санкт-Петербурге</span></h2>
+    <p id="stationsCopy">А также филиалы в городах: Янино, Петрозаводск, Рязань, Гатчина, Кировск, Саратов, Шушары, Ростов-на-Дону и других.</p>
     <a href="#signup" class="btn btn-primary">Найти ближайшую</a>
   </div>
   <div class="stations-right">
-    <ul class="station-list">
-      <li><strong>ул. Фучика, 23А</strong><span>Фрунзенский район</span></li>
-      <li><strong>ул. Фучика, 14к4</strong><span>Фрунзенский район</span></li>
-      <li><strong>ул. Оптиков, 2</strong><span>Приморский район</span></li>
-      <li><strong>пр. Солидарности, 22А</strong><span>Невский район</span></li>
-      <li><strong>Выборгское ш., 2</strong><span>Выборгский район</span></li>
-      <li><strong>ул. Казакова, 29</strong><span>Кировский район</span></li>
-      <li><strong>Полюстровский пр., 59к1</strong><span>Калининский район</span></li>
-      <li><strong>пос. Мурино / Кудрово</strong><span>Лен. область</span></li>
-    </ul>
+    <ul class="station-list" id="stationList"></ul>
   </div>
 </section>
 
@@ -267,27 +258,88 @@
   <div class="section-tag light">Акции и бонусы</div>
   <h2>Выгоднее, чем кажется</h2>
 
+  <p class="promo-hint">Наведите на карточку — покажем условия акции</p>
+
   <div class="promo-grid">
-    <div class="promo-card promo-yellow">
-      <div class="promo-pct">−20%</div>
-      <p>на воздушные и салонные фильтры</p>
-    </div>
-    <div class="promo-card promo-green">
-      <div class="promo-pct">−10%</div>
-      <p>Happy Hours: c 9:00 до 11:00 ежедневно</p>
-    </div>
-    <div class="promo-card promo-dark">
-      <div class="promo-pct">10%</div>
-      <p>кешбэк за своевременную замену масла</p>
-    </div>
-    <div class="promo-card promo-yellow">
-      <div class="promo-pct">−10%</div>
-      <p>скидка в день рождения и 3 дня вокруг</p>
-    </div>
-    <div class="promo-card promo-green">
-      <div class="promo-pct">100%</div>
-      <p>оплата бонусами по программе лояльности</p>
-    </div>
+    <button type="button" class="promo-card promo-yellow" aria-expanded="false">
+      <div class="promo-front">
+        <div class="promo-pct">−20%</div>
+        <p>на воздушные и салонные фильтры</p>
+      </div>
+      <div class="promo-back">
+        <h4>Условия акции</h4>
+        <p>Скидка 20% на воздушный и салонный фильтры по схеме «1 + 1»: при покупке масла в СТО SPOT.</p>
+        <ul>
+          <li>Действует во всех СТО SPOT Express</li>
+          <li>Скидка считается от розничной цены</li>
+          <li>Не суммируется с другими акциями</li>
+        </ul>
+      </div>
+    </button>
+
+    <button type="button" class="promo-card promo-green" aria-expanded="false">
+      <div class="promo-front">
+        <div class="promo-pct">−10%</div>
+        <p>Happy Hours: c 9:00 до 11:00 ежедневно</p>
+      </div>
+      <div class="promo-back">
+        <h4>Условия акции</h4>
+        <p>Скидка 10% на все услуги при заезде с 9:00 до 11:00 в любой день недели.</p>
+        <ul>
+          <li>Время определяется временем заезда на пост</li>
+          <li>Действует во всех СТО SPOT</li>
+          <li>Не суммируется с днём рождения</li>
+        </ul>
+      </div>
+    </button>
+
+    <button type="button" class="promo-card promo-dark" aria-expanded="false">
+      <div class="promo-front">
+        <div class="promo-pct">10%</div>
+        <p>кешбэк за своевременную замену масла</p>
+      </div>
+      <div class="promo-back">
+        <h4>Условия акции</h4>
+        <p>Возвращаем 10% от стоимости работ и материалов бонусами при возвращении в рекомендованный интервал замены.</p>
+        <ul>
+          <li>1 бонус = 1 рубль</li>
+          <li>Бонусы начисляются после визита</li>
+          <li>Срок действия бонусов — 12 месяцев</li>
+        </ul>
+      </div>
+    </button>
+
+    <button type="button" class="promo-card promo-yellow" aria-expanded="false">
+      <div class="promo-front">
+        <div class="promo-pct">−10%</div>
+        <p>скидка в день рождения и 3 дня вокруг</p>
+      </div>
+      <div class="promo-back">
+        <h4>Условия акции</h4>
+        <p>Скидка 10% на услуги в день рождения, а также за 3 дня до и 3 дня после праздника.</p>
+        <ul>
+          <li>Нужно показать паспорт или права</li>
+          <li>Действует для одного автомобиля</li>
+          <li>Не суммируется с Happy Hours</li>
+        </ul>
+      </div>
+    </button>
+
+    <button type="button" class="promo-card promo-green" aria-expanded="false">
+      <div class="promo-front">
+        <div class="promo-pct">100%</div>
+        <p>оплата бонусами по программе лояльности</p>
+      </div>
+      <div class="promo-back">
+        <h4>Условия акции</h4>
+        <p>Можно оплатить до 100% следующего визита накопленными бонусами по программе лояльности SPOT.</p>
+        <ul>
+          <li>1 бонус = 1 рубль</li>
+          <li>Бонусы суммируются с другими акциями</li>
+          <li>Управление баллами — в личном кабинете</li>
+        </ul>
+      </div>
+    </button>
   </div>
 </section>
 
@@ -354,6 +406,215 @@
     <p class="city-modal-sub">Покажем телефон ближайшей станции — по одному звонку рассчитаем стоимость работ.</p>
     <input type="search" class="city-search" id="citySearch" placeholder="Поиск по городу или адресу…" autocomplete="off" />
     <div class="city-list" id="cityList"></div>
+  </div>
+</div>
+
+<!-- =========== PRICE MODAL =========== -->
+<div class="price-modal" id="priceModal" aria-hidden="true" role="dialog" aria-labelledby="priceModalTitle">
+  <div class="price-modal-backdrop" data-close-price></div>
+  <div class="price-modal-window">
+    <button class="price-modal-close" data-close-price aria-label="Закрыть">×</button>
+    <header class="price-modal-head">
+      <h3 id="priceModalTitle">Цены на услуги</h3>
+      <p class="price-modal-sub">Замена масла в двигателе, АКПП, фильтры и сопутствующие работы. Точную стоимость для вашей марки рассчитаем по телефону.</p>
+      <input type="search" class="price-search" id="priceSearch" placeholder="Поиск услуги…" autocomplete="off" />
+    </header>
+
+    <div class="price-list" id="priceList">
+      <section class="price-group" data-group>
+        <h4>Двигатель</h4>
+        <ul>
+          <li>
+            <div class="price-row-name">
+              <strong>Замена масла и фильтра в двигателе</strong>
+              <span>При покупке масла у нас</span>
+            </div>
+            <div class="price-row-cost free">0 ₽</div>
+          </li>
+          <li>
+            <div class="price-row-name">
+              <strong>Замена в двигателе со своим маслом</strong>
+              <span>Материалы клиента. Стоимость не зависит от снятия/установки защиты картера</span>
+            </div>
+            <div class="price-row-cost">1 900 ₽</div>
+          </li>
+          <li>
+            <div class="price-row-name">
+              <strong>Промывка двигателя</strong>
+              <span>Подготовка системы перед заменой масла</span>
+            </div>
+            <div class="price-row-cost">550 ₽</div>
+          </li>
+          <li>
+            <div class="price-row-name">
+              <strong>Коррекция уровня масла</strong>
+              <span>Долив и проверка уровня</span>
+            </div>
+            <div class="price-row-cost">550 ₽</div>
+          </li>
+        </ul>
+      </section>
+
+      <section class="price-group" data-group>
+        <h4>АКПП и трансмиссия</h4>
+        <ul>
+          <li>
+            <div class="price-row-name">
+              <strong>Замена масла в АКПП полная</strong>
+              <span>Наши материалы, аппаратная замена</span>
+            </div>
+            <div class="price-row-cost free">0 ₽</div>
+          </li>
+          <li>
+            <div class="price-row-name">
+              <strong>Замена масла в АКПП со своим маслом</strong>
+              <span>Материалы клиента, аппаратная замена</span>
+            </div>
+            <div class="price-row-cost">3 350 ₽</div>
+          </li>
+          <li>
+            <div class="price-row-name">
+              <strong>Замена масла в АКПП частичная</strong>
+              <span>Частичная замена, наше масло</span>
+            </div>
+            <div class="price-row-cost">1 210 ₽</div>
+          </li>
+          <li>
+            <div class="price-row-name">
+              <strong>Замена масла в АКПП частичная</strong>
+              <span>Материалы клиента</span>
+            </div>
+            <div class="price-row-cost">1 900 ₽</div>
+          </li>
+          <li>
+            <div class="price-row-name">
+              <strong>Замена масла в МКПП</strong>
+              <span>Механическая коробка передач</span>
+            </div>
+            <div class="price-row-cost">1 900 ₽</div>
+          </li>
+          <li>
+            <div class="price-row-name">
+              <strong>Замена внешнего фильтра АКПП</strong>
+              <span>Снятие/Установка</span>
+            </div>
+            <div class="price-row-cost">1 200 ₽</div>
+          </li>
+          <li>
+            <div class="price-row-name">
+              <strong>Замена фильтра АКПП</strong>
+              <span>Снятие/Установка поддона</span>
+            </div>
+            <div class="price-row-cost">1 700 ₽</div>
+          </li>
+        </ul>
+      </section>
+
+      <section class="price-group" data-group>
+        <h4>Фильтры</h4>
+        <ul>
+          <li>
+            <div class="price-row-name">
+              <strong>Замена воздушного фильтра</strong>
+              <span>1 категории, простой</span>
+            </div>
+            <div class="price-row-cost">350 ₽</div>
+          </li>
+          <li>
+            <div class="price-row-name">
+              <strong>Замена воздушного фильтра</strong>
+              <span>2 категории, сложный</span>
+            </div>
+            <div class="price-row-cost">600 ₽</div>
+          </li>
+          <li>
+            <div class="price-row-name">
+              <strong>Замена воздушного фильтра</strong>
+              <span>3 категории, усложнённый</span>
+            </div>
+            <div class="price-row-cost">1 150 ₽</div>
+          </li>
+          <li>
+            <div class="price-row-name">
+              <strong>Замена салонного фильтра</strong>
+              <span>1 категории, простой</span>
+            </div>
+            <div class="price-row-cost">550 ₽</div>
+          </li>
+          <li>
+            <div class="price-row-name">
+              <strong>Замена салонного фильтра</strong>
+              <span>2 категории, сложный</span>
+            </div>
+            <div class="price-row-cost">990 ₽</div>
+          </li>
+        </ul>
+      </section>
+
+      <section class="price-group" data-group>
+        <h4>Редукторы и раздатка</h4>
+        <ul>
+          <li>
+            <div class="price-row-name">
+              <strong>Замена масла в редукторе</strong>
+              <span>Передний / задний мост</span>
+            </div>
+            <div class="price-row-cost">1 900 ₽</div>
+          </li>
+          <li>
+            <div class="price-row-name">
+              <strong>Замена масла в раздатке</strong>
+              <span>Раздаточная коробка</span>
+            </div>
+            <div class="price-row-cost">1 900 ₽</div>
+          </li>
+        </ul>
+      </section>
+
+      <section class="price-group" data-group>
+        <h4>Дополнительные работы</h4>
+        <ul>
+          <li>
+            <div class="price-row-name">
+              <strong>Защита картера</strong>
+              <span>Снятие/Установка</span>
+            </div>
+            <div class="price-row-cost">550 ₽</div>
+          </li>
+          <li>
+            <div class="price-row-name">
+              <strong>Заправка кондиционера</strong>
+              <span>Стоимость фиксированная</span>
+            </div>
+            <div class="price-row-cost">3 900 ₽</div>
+          </li>
+          <li>
+            <div class="price-row-name">
+              <strong>Нормо-час</strong>
+              <span>Дополнительные работы</span>
+            </div>
+            <div class="price-row-cost">3 350 ₽</div>
+          </li>
+          <li>
+            <div class="price-row-name">
+              <strong>Расходники</strong>
+              <span>Перчатки, ветошь, обезжирка</span>
+            </div>
+            <div class="price-row-cost">33 ₽</div>
+          </li>
+        </ul>
+      </section>
+
+      <div class="price-empty" id="priceEmpty" hidden>Ничего не нашли. Попробуйте другой запрос.</div>
+    </div>
+
+    <footer class="price-modal-foot">
+      <p class="muted">Точную стоимость по марке, модели и году выпуска авто рассчитаем по телефону.</p>
+      <div class="price-modal-actions">
+        <a href="#signup" class="btn btn-primary" data-close-price>Записаться</a>
+        <a href="tel:+78126034480" class="btn btn-outline js-phone-link"><span class="js-phone">+7 (812) 603-44-80</span></a>
+      </div>
+    </footer>
   </div>
 </div>
 
