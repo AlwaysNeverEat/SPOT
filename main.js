@@ -29,22 +29,18 @@
   window.addEventListener('resize', updateParallax);
   updateParallax();
 
-  /* ---------- Horizontal scroll services ---------- */
-  const wrap = document.querySelector('.hscroll-wrap');
-  const track = document.getElementById('hscrollTrack');
-  if (wrap && track) {
-    const updateHScroll = () => {
-      if (isMobile()) { track.style.transform = 'none'; return; }
-      const wrapRect = wrap.getBoundingClientRect();
-      const wrapTop = window.scrollY + wrapRect.top;
-      const wrapHeight = wrap.offsetHeight - window.innerHeight;
-      const trackWidth = track.scrollWidth - window.innerWidth;
-      const progress = Math.min(Math.max((window.scrollY - wrapTop) / wrapHeight, 0), 1);
-      track.style.transform = `translate3d(${(-progress * trackWidth).toFixed(1)}px, 0, 0)`;
-    };
-    window.addEventListener('scroll', updateHScroll, { passive: true });
-    window.addEventListener('resize', updateHScroll);
-    updateHScroll();
+  /* ---------- Services scroll-snap indicator ---------- */
+  const slider = document.getElementById('hscrollSlider');
+  if (slider) {
+    const slides = slider.querySelectorAll('.slide');
+    const indicators = document.querySelectorAll('.indicator .indicator-index');
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        const i = entry.target.dataset.index;
+        if (indicators[i]) indicators[i].classList.toggle('expand', entry.isIntersecting);
+      });
+    }, { root: slider, threshold: 0.6 });
+    slides.forEach((s) => io.observe(s));
   }
 
   /* ---------- Hero video fade-in ---------- */

@@ -102,69 +102,76 @@
 
 <!-- =========== SERVICES — HORIZONTAL SCROLL =========== -->
 <section class="hscroll-wrap" id="services">
-  <div class="hscroll-pin">
-    <div class="hscroll-track" id="hscrollTrack">
+  <div class="slider" id="hscrollSlider">
 
-      <div class="hpanel hpanel-intro">
-        
-        <h2>Всё для двигателя <br/>вашего автомобиля</h2>
-        <p>Прокрутите вправо, чтобы посмотреть основные направления работы СТО SPOT.</p>
-        <div class="arrow-right">→</div>
-      </div>
-
-      <article class="hpanel hpanel-card">
-        <div class="card-img" style="background-image:url('photos/Engine oil change.jpg')"></div>
-        <div class="card-body">
-          <div class="num-tag">01</div>
-          <h3>Замена моторного масла</h3>
-          <p>Подбор масла по марке и году выпуска автомобиля. Оригинальные расходники и фильтры — работа при вас за 30 минут.</p>
-        </div>
-      </article>
-
-      <article class="hpanel hpanel-card">
-        <div class="card-img" style="background-image:url('photos/Gearbox oil change.jpg')"></div>
-        <div class="card-body">
-          <div class="num-tag">02</div>
-          <h3>Замена масла в коробке передач</h3>
-          <p>АКПП, МКПП, вариатор, робот. Полная и частичная замена с промывкой системы — продлеваем ресурс трансмиссии.</p>
-        </div>
-      </article>
-
-      <article class="hpanel hpanel-card">
-        <div class="card-img" style="background-image:url('photos/Air and cabin filter replacement.jpg')"></div>
-        <div class="card-body">
-          <div class="num-tag">03</div>
-          <h3>Замена воздушного и салонного фильтров</h3>
-          <p>Mann-Filter, Goodwill, LYNXauto и оригинал. До −20% по акции — заменим за 10 минут вместе с маслом.</p>
-        </div>
-      </article>
-
-      <article class="hpanel hpanel-card">
-        <div class="card-img" style="background-image:url('photos/Air conditioning refill.jpg')"></div>
-        <div class="card-body">
-          <div class="num-tag">04</div>
-          <h3>Заправка кондиционера</h3>
-          <p>Хладагент R134a и R1234yf. Диагностика системы, проверка на утечки и полная заправка по весу — холод как с завода.</p>
-        </div>
-      </article>
-
-      <article class="hpanel hpanel-card">
-        <div class="card-img" style="background-image:url('photos/oil change in the axles.jpg')"></div>
-        <div class="card-body">
-          <div class="num-tag">05</div>
-          <h3>Замена масла в редукторах</h3>
-          <p>Передний и задний мост, раздаточная коробка. Подбираем трансмиссионное масло точно под допуски производителя.</p>
-        </div>
-      </article>
-
-      <div class="hpanel hpanel-end">
-        <h3>Не нашли свою услугу?</h3>
-        <p>Позвоните нам — подскажем по телефону <strong class="js-phone">+7 (812) 603-44-80</strong></p>
-        <button type="button" class="btn btn-primary" data-open-booking>Записаться</button>
-      </div>
-
+    <div class="slide hpanel-intro" data-index="0">
+      <h2>Всё для двигателя <br/>вашего автомобиля</h2>
+      <p>Прокрутите вправо, чтобы посмотреть основные направления работы СТО SPOT.</p>
+      <div class="arrow-right">→</div>
     </div>
+
+    <article class="slide hpanel-card" data-index="1">
+      <div class="card-img" style="background-image:url('photos/Engine oil change.jpg')"></div>
+      <div class="card-body">
+        <div class="num-tag">01</div>
+        <h3>Замена моторного масла</h3>
+        <p>Подбор масла по марке и году выпуска автомобиля. Оригинальные расходники и фильтры — работа при вас за 30 минут.</p>
+      </div>
+    </article>
+
+    <article class="slide hpanel-card" data-index="2">
+      <div class="card-img" style="background-image:url('photos/Gearbox oil change.jpg')"></div>
+      <div class="card-body">
+        <div class="num-tag">02</div>
+        <h3>Замена масла в коробке передач</h3>
+        <p>АКПП, МКПП, вариатор, робот. Полная и частичная замена с промывкой системы — продлеваем ресурс трансмиссии.</p>
+      </div>
+    </article>
+
+    <article class="slide hpanel-card" data-index="3">
+      <div class="card-img" style="background-image:url('photos/Air and cabin filter replacement.jpg')"></div>
+      <div class="card-body">
+        <div class="num-tag">03</div>
+        <h3>Замена воздушного и салонного фильтров</h3>
+        <p>Mann-Filter, Goodwill, LYNXauto и оригинал. До −20% по акции — заменим за 10 минут вместе с маслом.</p>
+      </div>
+    </article>
+
+    <article class="slide hpanel-card" data-index="4">
+      <div class="card-img" style="background-image:url('photos/Air conditioning refill.jpg')"></div>
+      <div class="card-body">
+        <div class="num-tag">04</div>
+        <h3>Заправка кондиционера</h3>
+        <p>Хладагент R134a и R1234yf. Диагностика системы, проверка на утечки и полная заправка по весу — холод как с завода.</p>
+      </div>
+    </article>
+
+    <article class="slide hpanel-card" data-index="5">
+      <div class="card-img" style="background-image:url('photos/oil change in the axles.jpg')"></div>
+      <div class="card-body">
+        <div class="num-tag">05</div>
+        <h3>Замена масла в редукторах</h3>
+        <p>Передний и задний мост, раздаточная коробка. Подбираем трансмиссионное масло точно под допуски производителя.</p>
+      </div>
+    </article>
+
+    <div class="slide hpanel-end" data-index="6">
+      <h3>Не нашли свою услугу?</h3>
+      <p>Позвоните нам — подскажем по телефону <strong class="js-phone">+7 (812) 603-44-80</strong></p>
+      <button type="button" class="btn btn-primary" data-open-booking>Записаться</button>
+    </div>
+
   </div>
+
+  <ul class="indicator" aria-hidden="true">
+    <li class="indicator-index"></li>
+    <li class="indicator-index"></li>
+    <li class="indicator-index"></li>
+    <li class="indicator-index"></li>
+    <li class="indicator-index"></li>
+    <li class="indicator-index"></li>
+    <li class="indicator-index"></li>
+  </ul>
 </section>
 
 <!-- =========== PRICE LIST CTA =========== -->

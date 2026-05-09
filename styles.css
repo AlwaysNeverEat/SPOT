@@ -304,48 +304,43 @@ h5 { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em; marg
   font-weight: 400;
 }
 
-/* =========== HORIZONTAL SCROLL SERVICES =========== */
+/* =========== SERVICES — HORIZONTAL SCROLL-SNAP =========== */
 .hscroll-wrap {
-  height: 500vh; /* enough room to scrub through panels */
-  background: var(--white);
-  position: relative;
-}
-.hscroll-pin {
-  position: sticky;
-  top: 0;
   height: 100vh;
   width: 100%;
   overflow: hidden;
-  display: flex;
-  align-items: center;
 }
-.hscroll-track {
+.slider {
+  width: 100%;
+  height: 100%;
   display: flex;
-  gap: 2rem;
-  padding: 0 5vw;
-  will-change: transform;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
 }
-.hpanel {
-  flex: 0 0 auto;
-  width: 70vw;
-  max-width: 720px;
-  height: 75vh;
-  border-radius: 24px;
+.slider::-webkit-scrollbar { display: none; }
+
+.slide {
+  flex: 0 0 100%;
+  height: 100%;
+  scroll-snap-align: center;
   display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  background: var(--bg-soft);
   position: relative;
 }
-.hpanel-intro {
-  background: var(--white);
+.slide.hpanel-intro,
+.slide.hpanel-end {
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
-  padding: 3rem;
-  border: 1px solid var(--line);
+  text-align: center;
+  padding: 6vh 8vw;
 }
-.hpanel-intro h2 { margin: 1rem 0 1.5rem; }
-.hpanel-intro p { color: var(--muted); font-size: 1.1rem; max-width: 460px; }
-.hpanel-intro .arrow-right {
+.slide.hpanel-intro { background: var(--white); }
+.slide.hpanel-intro h2 { margin: 1rem 0 1.5rem; }
+.slide.hpanel-intro p { color: var(--muted); font-size: 1.1rem; max-width: 520px; }
+.slide.hpanel-intro .arrow-right {
   margin-top: 2rem;
   font-size: 3rem;
   color: var(--green);
@@ -355,19 +350,20 @@ h5 { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em; marg
   0%,100% { transform: translateX(0); }
   50% { transform: translateX(15px); }
 }
-.hpanel-card {
-  background: var(--white);
-  border: 1px solid var(--line);
-  box-shadow: var(--shadow);
-}
-.hpanel-card .card-img {
-  flex: 1;
+
+.slide.hpanel-card { flex-direction: row; align-items: stretch; }
+.slide.hpanel-card .card-img {
+  flex: 1 1 50%;
   background-size: cover;
   background-position: center;
 }
-.hpanel-card .card-body {
-  padding: 2rem 2.2rem 2.2rem;
-  background: #fff;
+.slide.hpanel-card .card-body {
+  flex: 1 1 50%;
+  background: var(--white);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 6vh 6vw;
 }
 .num-tag {
   display: inline-block;
@@ -377,17 +373,38 @@ h5 { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em; marg
   color: var(--green);
   margin-bottom: 0.7rem;
 }
-.hpanel-card h3 { margin-bottom: 0.7rem; }
-.hpanel-card p { color: var(--muted); font-size: 1rem; }
+.slide.hpanel-card h3 { margin-bottom: 0.7rem; max-width: 520px; }
+.slide.hpanel-card p { color: var(--muted); font-size: 1.05rem; max-width: 520px; }
 
-.hpanel-end {
-  background: var(--yellow);
-  justify-content: center;
-  align-items: flex-start;
-  padding: 3rem;
+.slide.hpanel-end { background: var(--yellow); }
+.slide.hpanel-end h3 { margin-bottom: 1rem; }
+.slide.hpanel-end p { margin-bottom: 1.5rem; font-size: 1.1rem; max-width: 520px; }
+
+.indicator {
+  position: absolute;
+  left: 50%;
+  bottom: 4vh;
+  transform: translateX(-50%);
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  z-index: 5;
+  pointer-events: none;
 }
-.hpanel-end h3 { margin-bottom: 1rem; }
-.hpanel-end p { margin-bottom: 1.5rem; font-size: 1.1rem; }
+.indicator-index {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--ink);
+  opacity: 0.25;
+  transition: transform .4s ease, opacity .4s ease, background .4s ease;
+}
+.indicator-index.expand {
+  transform: scale(1.6);
+  background: var(--green);
+  opacity: 1;
+}
 
 /* =========== HOW IT WORKS =========== */
 .how {
@@ -663,12 +680,11 @@ h5 { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em; marg
   }
   .hero-actions { flex-direction: column; }
   .hero-actions .btn { width: 100%; }
-  .hscroll-wrap { height: auto; }
-  .hscroll-pin { position: relative; height: auto; padding: 4rem 0; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  .hscroll-track { padding: 0 1.2rem; }
-  .hpanel { width: 86vw; height: 62vh; }
-  .hpanel-card .card-body { padding: 1.2rem 1.2rem 1.4rem; }
-  .hpanel-card p { font-size: 0.93rem; }
+  .slide.hpanel-card { flex-direction: column; }
+  .slide.hpanel-card .card-img { flex: 1 1 45%; }
+  .slide.hpanel-card .card-body { flex: 1 1 55%; padding: 2rem 1.4rem; }
+  .slide.hpanel-card p { font-size: 0.95rem; }
+  .indicator { bottom: 2.2vh; }
   .steps { grid-template-columns: 1fr; }
   .step { padding: 1.4rem; }
   .how { padding: 5rem 1.2rem; }
