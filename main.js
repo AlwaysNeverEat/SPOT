@@ -356,17 +356,351 @@
     if (e.key === 'Escape' && priceModal && priceModal.classList.contains('is-open')) closePriceModal();
   });
 
-  /* ---------- Promo cards: click toggles details (hover handled in CSS) ---------- */
-  document.querySelectorAll('.promo-card').forEach(card => {
-    card.addEventListener('click', (e) => {
-      // ignore clicks on internal links/buttons (none right now, but future-proof)
-      if (e.target.closest('a')) return;
-      const expanded = card.getAttribute('aria-expanded') === 'true';
-      // close siblings so only one is open via click
-      document.querySelectorAll('.promo-card[aria-expanded="true"]').forEach(c => {
-        if (c !== card) c.setAttribute('aria-expanded', 'false');
-      });
-      card.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+  /* ---------- Generic modal helpers ---------- */
+  const lockBody = () => { document.body.style.overflow = 'hidden'; };
+  const unlockBody = () => { document.body.style.overflow = ''; };
+  const openModalEl = (el) => {
+    if (!el) return;
+    el.classList.add('is-open');
+    el.setAttribute('aria-hidden', 'false');
+    lockBody();
+  };
+  const closeModalEl = (el) => {
+    if (!el) return;
+    el.classList.remove('is-open');
+    el.setAttribute('aria-hidden', 'true');
+    if (!document.querySelector('.is-open')) unlockBody();
+  };
+
+  /* ---------- Info modal (promo/warranty/photos/franchise/work) ---------- */
+  const infoModal = document.getElementById('infoModal');
+  const infoBody = document.getElementById('infoModalBody');
+
+  const PHOTOS = [
+    { src: 'photos/Engine oil change.jpg',                  caption: 'Замена моторного масла' },
+    { src: 'photos/Gearbox oil change.jpg',                 caption: 'Замена масла в АКПП и МКПП' },
+    { src: 'photos/Air and cabin filter replacement.jpg',   caption: 'Замена фильтров' },
+    { src: 'photos/Air conditioning refill.jpg',            caption: 'Заправка кондиционера' },
+    { src: 'photos/oil change in the axles.jpg',            caption: 'Замена масла в редукторах' },
+    { src: 'photos/hero.jpg',                               caption: 'Зона выдачи и приёма' }
+  ];
+
+  const phoneRow = `
+    <div class="info-cta">
+      <button type="button" class="btn btn-primary" data-open-booking>Записаться</button>
+      <a href="tel:+78126034480" class="btn btn-outline js-phone-link"><span class="js-phone">+7 (812) 603-44-80</span></a>
+    </div>`;
+
+  const INFO = {
+    filters: () => `
+      <div class="info-eyebrow">Акция «1 + 1»</div>
+      <h3>−20% на воздушные и салонные фильтры</h3>
+      <p>Скидка 20% на воздушный и салонный фильтры при покупке моторного масла в СТО SPOT.</p>
+      <ul class="info-bullets">
+        <li>Действует во всех СТО SPOT и SPOT Express.</li>
+        <li>Скидка считается от розничной цены.</li>
+        <li>Не суммируется с другими акциями.</li>
+        <li>Замена фильтра при замене масла — за 10 минут.</li>
+      </ul>
+      ${phoneRow}`,
+    happy: () => `
+      <div class="info-eyebrow">Happy Hours</div>
+      <h3>−10% на все услуги с 9:00 до 11:00</h3>
+      <p>Заезжайте утром — мы вернём 10% от стоимости работ и материалов прямо в чек, без купонов и регистрации.</p>
+      <ul class="info-bullets">
+        <li>Время определяется временем заезда на пост.</li>
+        <li>Действует ежедневно, в т. ч. в выходные и праздники.</li>
+        <li>Не суммируется со скидкой в день рождения.</li>
+        <li>Можно записаться заранее или приехать без записи.</li>
+      </ul>
+      ${phoneRow}`,
+    cashback: () => `
+      <div class="info-eyebrow">Программа лояльности</div>
+      <h3>10% кешбэк за своевременную замену масла</h3>
+      <p>Приехали на следующую замену в рекомендованный интервал — возвращаем 10% от чека бонусами на ваш счёт.</p>
+      <ul class="info-bullets">
+        <li>1 бонус = 1 рубль.</li>
+        <li>Срок действия бонусов — 12 месяцев.</li>
+        <li>Бонусы начисляются после визита в течение суток.</li>
+        <li>Можно оплатить до 100% следующего визита.</li>
+      </ul>
+      ${phoneRow}`,
+    birthday: () => `
+      <div class="info-eyebrow">Подарок ко дню рождения</div>
+      <h3>−10% в день рождения и три дня вокруг</h3>
+      <p>Дарим скидку 10% на все услуги в день рождения, а также за 3 дня до и 3 дня после.</p>
+      <ul class="info-bullets">
+        <li>Покажите паспорт или водительское удостоверение.</li>
+        <li>Действует на одного человека и один автомобиль.</li>
+        <li>Не суммируется с Happy Hours.</li>
+        <li>Действует во всех СТО SPOT.</li>
+      </ul>
+      ${phoneRow}`,
+    bonuses: () => `
+      <div class="info-eyebrow">Программа лояльности</div>
+      <h3>Оплата бонусами до 100%</h3>
+      <p>Накопленные бонусы можно потратить на следующие визиты — частично или полностью.</p>
+      <ul class="info-bullets">
+        <li>1 бонус = 1 рубль.</li>
+        <li>Накопленные бонусы суммируются с другими акциями.</li>
+        <li>Управляйте бонусами в личном кабинете или у мастера.</li>
+        <li>Вступление в программу — автоматически при первом визите.</li>
+      </ul>
+      ${phoneRow}`,
+    warranty: () => `
+      <div class="info-eyebrow">Гарантии</div>
+      <h3>Гарантия на работы и материалы</h3>
+      <p>Гарантия — это показатель нашей работы. Все масла и фильтры имеют сертификаты соответствия, оригинал доступен в любом СТО или по запросу.</p>
+      <ul class="info-bullets">
+        <li>Сертификаты на моторные, трансмиссионные масла, присадки и очистители.</li>
+        <li>Сертификаты на воздушные, салонные, масляные и топливные фильтры.</li>
+        <li>Гарантия на работы — до следующей замены масла.</li>
+        <li>Чек и акт выполненных работ выдаём при каждом визите.</li>
+      </ul>
+      <div class="info-stats">
+        <div class="info-stats-item"><strong>13 лет</strong><span>на рынке</span></div>
+        <div class="info-stats-item"><strong>896 000+</strong><span>замен масла</span></div>
+        <div class="info-stats-item"><strong>23</strong><span>станции в СПб</span></div>
+        <div class="info-stats-item"><strong>4.8 / 5</strong><span>средняя оценка</span></div>
+      </div>
+      ${phoneRow}`,
+    photos: () => `
+      <div class="info-eyebrow">Галерея</div>
+      <h3>Как проходит работа в СТО SPOT</h3>
+      <p>Реальные фотографии станций, постов, оборудования и моментов работы. Нажмите на любое фото — откроется в крупном размере.</p>
+      <div class="info-gallery">
+        ${PHOTOS.map((p, i) => `
+          <button type="button" data-lightbox="${i}" aria-label="${p.caption}">
+            <img src="${p.src}" alt="${p.caption}" loading="lazy" />
+          </button>
+        `).join('')}
+      </div>
+      <p class="muted small">Хотите посмотреть конкретную станцию вживую — приходите без записи: достаточно прозвонить и удостовериться в свободном посту.</p>`,
+    franchise: () => `
+      <div class="info-eyebrow">Франшиза</div>
+      <h3>Откройте свой СТО SPOT</h3>
+      <p>Сеть из 35+ станций в России. Помогаем партнёрам с подбором помещения, обучением, поставками масел и маркетингом.</p>
+      <ul class="info-bullets">
+        <li>Готовая бизнес-модель и проверенные техпроцессы.</li>
+        <li>Обучение мастеров и администраторов в учебном центре.</li>
+        <li>Закупочные цены на масла и расходники сети SPOT.</li>
+        <li>Запуск под ключ — от 90 дней.</li>
+      </ul>
+      <div class="info-stats">
+        <div class="info-stats-item"><strong>от 90 дн.</strong><span>срок запуска</span></div>
+        <div class="info-stats-item"><strong>35+</strong><span>станций сети</span></div>
+        <div class="info-stats-item"><strong>10+</strong><span>городов России</span></div>
+        <div class="info-stats-item"><strong>200+</strong><span>обученных мастеров</span></div>
+      </div>
+      <div class="info-cta">
+        <a href="tel:+78126034480" class="btn btn-primary js-phone-link"><span class="js-phone">+7 (812) 603-44-80</span></a>
+        <button type="button" class="btn btn-outline" data-open-booking>Оставить заявку</button>
+      </div>`,
+    work: () => `
+      <div class="info-eyebrow">Работа в SPOT</div>
+      <h3>Команда из 200+ специалистов</h3>
+      <p>Ищем мастеров по замене масла, администраторов и менеджеров клиентского сервиса. Стабильная нагрузка, обучение, рост по сетке.</p>
+      <ul class="info-bullets">
+        <li>Белая зарплата и оформление по ТК РФ.</li>
+        <li>Обучение в собственном учебном центре.</li>
+        <li>Гибкие графики: 2/2, 5/2, сменные.</li>
+        <li>Карьерный рост: мастер → старший мастер → управляющий.</li>
+      </ul>
+      <div class="info-cta">
+        <a href="tel:+78126034480" class="btn btn-primary js-phone-link"><span class="js-phone">+7 (812) 603-44-80</span></a>
+        <button type="button" class="btn btn-outline" data-open-booking>Оставить контакты</button>
+      </div>`
+  };
+
+  const openInfo = (key) => {
+    if (!infoModal || !infoBody || !INFO[key]) return;
+    infoBody.innerHTML = INFO[key]();
+    // re-apply current city to fresh phones
+    const c = CITIES[savedId];
+    if (c) {
+      infoBody.querySelectorAll('.js-phone').forEach(el => el.textContent = c.phone);
+      infoBody.querySelectorAll('.js-phone-link').forEach(el => el.setAttribute('href', 'tel:' + c.tel));
+    }
+    openModalEl(infoModal);
+    infoBody.scrollTop = 0;
+  };
+  const closeInfo = () => closeModalEl(infoModal);
+
+  document.addEventListener('click', (e) => {
+    const opener = e.target.closest('[data-open-info]');
+    if (opener) {
+      e.preventDefault();
+      openInfo(opener.dataset.openInfo);
+      return;
+    }
+    if (e.target.closest('[data-close-info]')) {
+      closeInfo();
+      return;
+    }
+  });
+
+  /* Promo cards open the info modal */
+  document.querySelectorAll('.promo-card[data-promo]').forEach(card => {
+    card.addEventListener('click', () => openInfo(card.dataset.promo));
+  });
+
+  /* ---------- Booking modal ---------- */
+  const bookModal = document.getElementById('bookModal');
+  const bookForm = document.getElementById('bookForm');
+  const bookStation = document.getElementById('bookStation');
+
+  const buildStationOptions = () => {
+    if (!bookStation) return;
+    const groups = {};
+    CITIES.forEach(c => {
+      const key = c.city === 'Санкт-Петербург' ? 'Санкт-Петербург (любая станция)' : c.city;
+      (groups[key] ||= []).push(c);
     });
+    bookStation.innerHTML = Object.entries(groups).map(([cityKey, list]) => {
+      if (list.length === 1) {
+        const c = list[0];
+        const label = c.city === 'Санкт-Петербург'
+          ? cityKey
+          : `${c.city} — ${c.address}`;
+        return `<option value="${c.id}">${label}</option>`;
+      }
+      return `<optgroup label="${cityKey}">${list.map(c => `<option value="${c.id}">${c.address}</option>`).join('')}</optgroup>`;
+    }).join('');
+    bookStation.value = String(savedId);
+  };
+  buildStationOptions();
+
+  const openBooking = () => {
+    if (!bookModal) return;
+    if (bookStation) bookStation.value = String(savedId);
+    // reset to form step
+    bookModal.querySelectorAll('[data-step]').forEach(s => {
+      s.hidden = s.dataset.step !== 'form';
+    });
+    if (bookForm) bookForm.reset();
+    if (bookStation) bookStation.value = String(savedId);
+    openModalEl(bookModal);
+  };
+  const closeBooking = () => closeModalEl(bookModal);
+
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('[data-open-booking]')) {
+      e.preventDefault();
+      openBooking();
+    } else if (e.target.closest('[data-close-book]')) {
+      closeBooking();
+    }
+  });
+
+  if (bookForm) {
+    bookForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const data = new FormData(bookForm);
+      if (!data.get('name') || !data.get('phone')) {
+        bookForm.querySelector('input[name="name"]').focus();
+        return;
+      }
+      // No backend yet — show confirmation step.
+      bookModal.querySelectorAll('[data-step]').forEach(s => {
+        s.hidden = s.dataset.step !== 'done';
+      });
+    });
+  }
+
+  /* ---------- History modal ---------- */
+  const historyModal = document.getElementById('historyModal');
+  const historyForm = document.getElementById('historyForm');
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('[data-open-history]')) {
+      e.preventDefault();
+      openModalEl(historyModal);
+    } else if (e.target.closest('[data-close-history]')) {
+      closeModalEl(historyModal);
+    }
+  });
+  if (historyForm) {
+    historyForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const phone = historyForm.querySelector('input[name="phone"]').value.trim();
+      if (!phone) return;
+      historyForm.innerHTML = `
+        <div class="book-done">
+          <div class="book-done-ico" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 12 10 18 20 6"/></svg>
+          </div>
+          <h4>SMS отправлено</h4>
+          <p>Мы выслали историю обслуживания на номер <strong>${phone}</strong>. Если SMS не пришла в течение 5 минут — позвоните нам.</p>
+        </div>`;
+    });
+  }
+
+  /* ---------- Oil picker modal ---------- */
+  const oilModal = document.getElementById('oilModal');
+  const oilForm = document.getElementById('oilForm');
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('[data-open-oilpicker]')) {
+      e.preventDefault();
+      openModalEl(oilModal);
+    } else if (e.target.closest('[data-close-oil]')) {
+      closeModalEl(oilModal);
+    }
+  });
+  if (oilForm) {
+    oilForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const data = new FormData(oilForm);
+      if (!data.get('phone')) return;
+      oilForm.innerHTML = `
+        <div class="book-done">
+          <div class="book-done-ico" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 12 10 18 20 6"/></svg>
+          </div>
+          <h4>Заявка принята</h4>
+          <p>Мастер подберёт масло по вашей машине и перезвонит на указанный номер в ближайший час.</p>
+          <button type="button" class="btn btn-outline" data-close-oil>Закрыть</button>
+        </div>`;
+    });
+  }
+
+  /* ---------- Lightbox ---------- */
+  const lightbox = document.getElementById('lightbox');
+  const lightboxImg = document.getElementById('lightboxImg');
+  let lbIndex = 0;
+  const showLightbox = (i) => {
+    if (!lightbox || !lightboxImg) return;
+    lbIndex = ((i % PHOTOS.length) + PHOTOS.length) % PHOTOS.length;
+    lightboxImg.src = PHOTOS[lbIndex].src;
+    lightboxImg.alt = PHOTOS[lbIndex].caption || '';
+    openModalEl(lightbox);
+  };
+  document.addEventListener('click', (e) => {
+    const lb = e.target.closest('[data-lightbox]');
+    if (lb) {
+      e.preventDefault();
+      showLightbox(parseInt(lb.dataset.lightbox, 10) || 0);
+      return;
+    }
+    if (e.target.closest('[data-close-lightbox]')) { closeModalEl(lightbox); return; }
+    if (e.target.closest('[data-lb-prev]')) { showLightbox(lbIndex - 1); return; }
+    if (e.target.closest('[data-lb-next]')) { showLightbox(lbIndex + 1); return; }
+  });
+
+  /* ---------- Reviews carousel arrows ---------- */
+  const reviewsTrack = document.getElementById('reviewsTrack');
+  if (reviewsTrack) {
+    document.querySelectorAll('[data-rev]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const dir = btn.dataset.rev === 'next' ? 1 : -1;
+        const card = reviewsTrack.querySelector('.review');
+        const step = card ? card.offsetWidth + 16 : 320;
+        reviewsTrack.scrollBy({ left: dir * step, behavior: 'smooth' });
+      });
+    });
+  }
+
+  /* ---------- Global Esc closes any open modal ---------- */
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    document.querySelectorAll('.is-open').forEach(closeModalEl);
   });
 })();
