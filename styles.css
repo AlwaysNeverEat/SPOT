@@ -68,8 +68,8 @@ h5 { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em; marg
 /* ----------- Buttons ----------- */
 
 @keyframes btn-liquid-wave {
-  0%   { transform: translate(-50%, -75%) rotate(0deg); }
-  100% { transform: translate(-50%, -75%) rotate(360deg); }
+  0%   { transform: translate(-25%, -75%) rotate(0deg); }
+  100% { transform: translate(-25%, -75%) rotate(360deg); }
 }
 
 .btn {
@@ -83,12 +83,14 @@ h5 { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em; marg
   border-radius: 100px;
   border: 1.5px solid transparent;
   cursor: pointer;
-  transition: transform .25s ease, background .25s ease, color .25s ease, box-shadow .25s ease;
+  /* box-shadow gets a 0.2s delay on hover so the glow appears after the wave starts rising */
+  transition: transform .25s ease 0s, background .25s ease 0s, color .25s ease 0s, box-shadow .35s ease 0s;
   white-space: nowrap;
   position: relative;
   overflow: hidden;
   --wave-fill:   rgba(255,255,255,0.2);
-  --wave-circle: #ffffff;
+  --wave-circle: rgba(255,255,255,0.9);
+  --wave-glow:   rgba(255,255,255,0.35);
 }
 
 /* Liquid element injected by JS — sits below button content */
@@ -99,35 +101,43 @@ h5 { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em; marg
   width: 100%;
   height: 200px;
   background: var(--wave-fill);
-  box-shadow: inset 0 0 50px rgba(0,0,0,0.12);
-  transition: top 0.65s cubic-bezier(0.19, 1, 0.22, 1);
+  box-shadow: inset 0 0 50px rgba(0,0,0,0.5);
+  transition: top 0.6s;
   pointer-events: none;
   z-index: 1;
 }
-/* Two rotating circles whose edges form the wave surface */
-.btn .liquid::before,
-.btn .liquid::after {
+.btn .liquid::after,
+.btn .liquid::before {
   content: '';
   position: absolute;
   width: 200%;
   height: 200%;
   top: 0;
-  left: 50%;
-  transform: translate(-50%, -75%);
-  background: var(--wave-circle);
+  left: 0;
+  transform: translate(-25%, -75%);
 }
-.btn .liquid::before {
-  border-radius: 45%;
-  animation: btn-liquid-wave 5s linear infinite;
-}
+/* Main wave circle — solid, glowing edge */
 .btn .liquid::after {
+  border-radius: 45%;
+  background: var(--wave-circle);
+  box-shadow: 0 0 10px 5px var(--wave-glow), inset 0 0 5px var(--wave-glow);
+  animation: btn-liquid-wave 5s linear infinite;
+  opacity: 0.9;
+}
+/* Secondary wave circle — slower, semi-transparent */
+.btn .liquid::before {
   border-radius: 40%;
-  opacity: 0.65;
+  background: var(--wave-circle);
+  opacity: 0.5;
+  box-shadow: 0 0 10px var(--wave-glow), inset 0 0 5px var(--wave-glow);
   animation: btn-liquid-wave 7s linear infinite;
 }
 
-/* Hover: liquid rises and fills the button */
+/* Hover: liquid rises fully into the button */
 .btn:hover .liquid { top: -110px; }
+
+/* Glow appears 0.2s after hover (liquid is already rising by then) */
+.btn:hover { transition-delay: 0s, 0s, 0s, 0.2s; }
 
 /* Button text/icons float above the liquid */
 .btn-inner {
@@ -145,26 +155,40 @@ h5 { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em; marg
   color: #fff;
   box-shadow: 0 8px 24px rgba(31,157,63,0.3);
   --wave-fill:   #28b54a;
-  --wave-circle: var(--green);
+  --wave-circle: rgba(255,255,255,0.13);
+  --wave-glow:   rgba(255,255,255,0.4);
 }
-.btn-primary:hover { background: var(--green-dark); transform: translateY(-2px); box-shadow: 0 12px 30px rgba(31,157,63,0.4); }
+.btn-primary:hover {
+  background: var(--green-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgba(31,157,63,0.4), 0 0 8px rgba(40,181,74,0.5), inset 0 0 6px rgba(40,181,74,0.3);
+}
 
 .btn-outline {
   background: transparent;
   color: var(--ink);
   border-color: var(--ink);
   --wave-fill:   var(--ink);
-  --wave-circle: var(--white);
+  --wave-circle: rgba(255,255,255,0.92);
+  --wave-glow:   rgba(31,157,63,0.35);
 }
-.btn-outline:hover { background: var(--ink); color: #fff; }
+.btn-outline:hover {
+  background: var(--ink);
+  color: #fff;
+  box-shadow: 0 0 8px rgba(31,157,63,0.35), inset 0 0 5px rgba(31,157,63,0.2);
+}
 
 .btn-ghost {
   background: transparent;
   color: var(--ink);
   --wave-fill:   var(--bg-soft);
-  --wave-circle: var(--white);
+  --wave-circle: rgba(255,255,255,0.92);
+  --wave-glow:   rgba(26,26,26,0.1);
 }
-.btn-ghost:hover { background: var(--bg-soft); }
+.btn-ghost:hover {
+  background: var(--bg-soft);
+  box-shadow: 0 0 6px rgba(26,26,26,0.12), inset 0 0 4px rgba(26,26,26,0.06);
+}
 
 /* Sticky header secondary CTA should read as an action */
 .header .cta-group .btn-ghost {
@@ -173,11 +197,13 @@ h5 { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em; marg
   border-color: rgba(13,13,13,0.1);
   font-weight: 700;
   --wave-fill:   #fce060;
-  --wave-circle: var(--yellow);
+  --wave-circle: rgba(255,255,255,0.13);
+  --wave-glow:   rgba(245,210,42,0.55);
 }
 .header .cta-group .btn-ghost:hover {
   background: #ffe15a;
   transform: translateY(-1px);
+  box-shadow: 0 0 8px rgba(245,210,42,0.55), inset 0 0 5px rgba(245,210,42,0.3);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1715,7 +1741,20 @@ html { scrollbar-color: var(--green) transparent; scrollbar-width: thin; }
 
 .hero .accent-green { color: #c5ff6a; }
 .hero .thin { color: rgba(255,255,255,0.92); }
-.hero .btn-primary { background: #ffffff; color: #111; box-shadow: 0 8px 24px rgba(255,255,255,0.25); --wave-fill: #e8e8e8; --wave-circle: #ffffff; }
-.hero .btn-primary:hover { background: #f3f3f3; }
-.hero .btn-outline { border-color: #fff; color: #fff; --wave-fill: rgba(255,255,255,0.88); --wave-circle: rgba(255,255,255,0.12); }
-.hero .btn-outline:hover { background: #fff; color: #111; }
+.hero .btn-primary {
+  background: #ffffff; color: #111;
+  box-shadow: 0 8px 24px rgba(255,255,255,0.25);
+  --wave-fill: #e8e8e8; --wave-circle: rgba(255,255,255,0.9); --wave-glow: rgba(26,26,26,0.1);
+}
+.hero .btn-primary:hover {
+  background: #f3f3f3;
+  box-shadow: 0 0 8px rgba(255,255,255,0.5), inset 0 0 5px rgba(255,255,255,0.3);
+}
+.hero .btn-outline {
+  border-color: #fff; color: #fff;
+  --wave-fill: rgba(255,255,255,0.88); --wave-circle: rgba(255,255,255,0.1); --wave-glow: rgba(255,255,255,0.3);
+}
+.hero .btn-outline:hover {
+  background: #fff; color: #111;
+  box-shadow: 0 0 8px rgba(255,255,255,0.5), inset 0 0 5px rgba(255,255,255,0.25);
+}
