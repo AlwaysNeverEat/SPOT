@@ -29,10 +29,11 @@
   window.addEventListener('resize', updateParallax);
   updateParallax();
 
-  /* ---------- Services indicator (vertical scroll-snap) ---------- */
+  /* ---------- Services slides: indicator + JS-driven snap ---------- */
+  const servicesSection = document.getElementById('services');
   const slides = document.querySelectorAll('.hscroll-wrap .slide');
   const indicators = document.querySelectorAll('.indicator .indicator-index');
-  if (slides.length && indicators.length) {
+  if (servicesSection && slides.length && indicators.length) {
     const io = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
         const i = entry.target.dataset.index;
@@ -40,6 +41,37 @@
       });
     }, { threshold: 0.5 });
     slides.forEach((s) => io.observe(s));
+
+    // Snap to nearest slide ~120ms after the user stops scrolling, but only
+    // while the services section is the dominant thing on screen. Outside
+    // that range we leave scroll alone, so the rest of the page is free.
+    const HEADER_OFFSET = 70;
+    let snapTimer;
+    let snapping = false;
+    const onScrollSnap = () => {
+      if (snapping) return;
+      clearTimeout(snapTimer);
+      snapTimer = setTimeout(() => {
+        const sec = servicesSection.getBoundingClientRect();
+        const inSection = sec.top < window.innerHeight * 0.5
+          && sec.bottom > window.innerHeight * 0.5;
+        if (!inSection) return;
+
+        let closest = null;
+        let minDist = Infinity;
+        slides.forEach((s) => {
+          const dist = Math.abs(s.getBoundingClientRect().top - HEADER_OFFSET);
+          if (dist < minDist) { minDist = dist; closest = s; }
+        });
+        if (closest && minDist > 4) {
+          snapping = true;
+          const target = closest.getBoundingClientRect().top + window.scrollY - HEADER_OFFSET;
+          window.scrollTo({ top: target, behavior: 'smooth' });
+          setTimeout(() => { snapping = false; }, 600);
+        }
+      }, 120);
+    };
+    window.addEventListener('scroll', onScrollSnap, { passive: true });
   }
 
   /* ---------- Hero video fade-in ---------- */
