@@ -304,8 +304,15 @@ h5 { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em; marg
   font-weight: 400;
 }
 
-/* =========== SERVICES — HORIZONTAL SCROLL-SNAP =========== */
+/* =========== SERVICES — HORIZONTAL SCROLL =========== */
 .hscroll-wrap {
+  /* tall wrapper — vertical page scroll through it drives the horizontal track */
+  height: 700vh;
+  width: 100%;
+}
+.hscroll-pin {
+  position: sticky;
+  top: 0;
   height: 100vh;
   width: 100%;
   overflow: hidden;
@@ -314,18 +321,11 @@ h5 { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em; marg
   width: 100%;
   height: 100%;
   display: flex;
-  overflow-x: auto;
-  overflow-y: hidden;
-  scroll-snap-type: x mandatory;
-  scrollbar-width: none;
-  -webkit-overflow-scrolling: touch;
+  will-change: transform;
 }
-.slider::-webkit-scrollbar { display: none; }
-
 .slide {
-  flex: 0 0 100%;
+  flex: 0 0 100vw;
   height: 100%;
-  scroll-snap-align: center;
   display: flex;
   position: relative;
 }
@@ -680,11 +680,25 @@ h5 { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em; marg
   }
   .hero-actions { flex-direction: column; }
   .hero-actions .btn { width: 100%; }
+  /* mobile: drop the pin, fall back to native horizontal scroll-snap */
+  .hscroll-wrap { height: auto; }
+  .hscroll-pin { position: relative; height: auto; overflow: visible; }
+  .slider {
+    height: 100vh;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    transform: none !important;
+  }
+  .slider::-webkit-scrollbar { display: none; }
+  .slide { scroll-snap-align: center; }
   .slide.hpanel-card { flex-direction: column; }
   .slide.hpanel-card .card-img { flex: 1 1 45%; }
   .slide.hpanel-card .card-body { flex: 1 1 55%; padding: 2rem 1.4rem; }
   .slide.hpanel-card p { font-size: 0.95rem; }
-  .indicator { bottom: 2.2vh; }
+  .indicator { display: none; }
   .steps { grid-template-columns: 1fr; }
   .step { padding: 1.4rem; }
   .how { padding: 5rem 1.2rem; }

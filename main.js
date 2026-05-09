@@ -29,18 +29,41 @@
   window.addEventListener('resize', updateParallax);
   updateParallax();
 
-  /* ---------- Services scroll-snap indicator ---------- */
+  /* ---------- Services horizontal scroll (pin + translate) ---------- */
+  const wrap = document.querySelector('.hscroll-wrap');
   const slider = document.getElementById('hscrollSlider');
-  if (slider) {
+  if (wrap && slider) {
     const slides = slider.querySelectorAll('.slide');
     const indicators = document.querySelectorAll('.indicator .indicator-index');
-    const io = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        const i = entry.target.dataset.index;
-        if (indicators[i]) indicators[i].classList.toggle('expand', entry.isIntersecting);
-      });
-    }, { root: slider, threshold: 0.6 });
-    slides.forEach((s) => io.observe(s));
+    let activeIndicator = -1;
+    let ticking = false;
+
+    const updateHScroll = () => {
+      ticking = false;
+      if (isMobile()) {
+        slider.style.transform = '';
+        return;
+      }
+      const wrapRect = wrap.getBoundingClientRect();
+      const wrapTop = window.scrollY + wrapRect.top;
+      const scrollable = wrap.offsetHeight - window.innerHeight;
+      const trackWidth = slider.scrollWidth - window.innerWidth;
+      const progress = Math.min(Math.max((window.scrollY - wrapTop) / scrollable, 0), 1);
+      slider.style.transform = `translate3d(${(-progress * trackWidth).toFixed(1)}px, 0, 0)`;
+
+      const idx = Math.round(progress * (slides.length - 1));
+      if (idx !== activeIndicator) {
+        if (indicators[activeIndicator]) indicators[activeIndicator].classList.remove('expand');
+        if (indicators[idx]) indicators[idx].classList.add('expand');
+        activeIndicator = idx;
+      }
+    };
+    const onScroll = () => {
+      if (!ticking) { requestAnimationFrame(updateHScroll); ticking = true; }
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', updateHScroll);
+    updateHScroll();
   }
 
   /* ---------- Hero video fade-in ---------- */
