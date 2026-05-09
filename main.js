@@ -704,18 +704,11 @@
     document.querySelectorAll('.is-open').forEach(closeModalEl);
   });
 
-  /* ---------- Button ripple on hover ---------- */
+  /* ---------- Button liquid animations — wrap content above ::before/::after waves ---------- */
   document.querySelectorAll('.btn').forEach(btn => {
-    btn.addEventListener('mouseenter', e => {
-      const rect = btn.getBoundingClientRect();
-      const size = Math.max(rect.width, rect.height) * 2.4;
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      const ripple = document.createElement('span');
-      ripple.className = 'ripple';
-      ripple.style.cssText = `left:${x}px;top:${y}px;--ripple-size:${size}px`;
-      btn.appendChild(ripple);
-      ripple.addEventListener('animationend', () => ripple.remove(), { once: true });
-    });
+    const inner = document.createElement('span');
+    inner.className = 'btn-inner';
+    while (btn.firstChild) inner.appendChild(btn.firstChild);
+    btn.appendChild(inner);
   });
 })();

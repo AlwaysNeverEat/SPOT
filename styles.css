@@ -66,9 +66,14 @@ h5 { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em; marg
 .thin { font-weight: 300; }
 
 /* ----------- Buttons ----------- */
-@keyframes ripple-expand {
-  0%   { transform: translate(-50%, -50%) scale(0); opacity: 0.55; }
-  100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+
+/* Liquid surface wobble while hovered */
+@keyframes btn-wave-wobble {
+  0%   { border-radius: 48% 52% 35% 65% / 26% 22% 0 0; }
+  25%  { border-radius: 55% 45% 60% 40% / 20% 28% 0 0; }
+  50%  { border-radius: 40% 60% 48% 52% / 30% 18% 0 0; }
+  75%  { border-radius: 52% 48% 38% 62% / 22% 26% 0 0; }
+  100% { border-radius: 48% 52% 35% 65% / 26% 22% 0 0; }
 }
 
 .btn {
@@ -86,24 +91,71 @@ h5 { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em; marg
   white-space: nowrap;
   position: relative;
   overflow: hidden;
-  --btn-ripple: rgba(255, 255, 255, 0.45);
+  isolation: isolate;
 }
-.btn .ripple {
+
+/* Liquid wave — rises from below on hover */
+.btn::after {
+  content: '';
   position: absolute;
-  border-radius: 50%;
-  width: var(--ripple-size);
-  height: var(--ripple-size);
-  background: var(--btn-ripple);
+  left: -20%; right: -20%;
+  top: -20%;
+  height: 200%;
+  border-radius: 48% 52% 35% 65% / 26% 22% 0 0;
+  background: rgba(255,255,255,0.2);
+  transform: translateY(100%);
+  transition: transform 0.45s ease;
+  will-change: transform;
   pointer-events: none;
-  animation: ripple-expand 0.6s ease-out forwards;
+  z-index: 1;
 }
+.btn:hover::after {
+  transform: translateY(0%);
+  transition: transform 0.8s cubic-bezier(0.19, 1, 0.22, 1);
+  animation: btn-wave-wobble 2.8s ease-in-out infinite 0.45s;
+}
+
+/* Iridescent shimmer that sweeps once on hover */
+.btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    110deg,
+    transparent 20%,
+    rgba(255,255,255,0.11) 34%,
+    rgba(255,255,255,0.34) 50%,
+    rgba(255,255,255,0.11) 66%,
+    transparent 80%
+  );
+  transform: translateX(-110%) skewX(-12deg);
+  transition: transform 0.3s ease;
+  pointer-events: none;
+  z-index: 2;
+}
+.btn:hover::before {
+  transform: translateX(120%) skewX(-12deg);
+  transition: transform 0.62s ease 0.06s;
+}
+
+/* Content wrapper sits above wave and shimmer */
+.btn-inner {
+  position: relative;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .btn.big { padding: 1.1rem 2.2rem; font-size: 1.05rem; }
 .btn-primary { background: var(--green); color: #fff; box-shadow: 0 8px 24px rgba(31,157,63,0.3); }
 .btn-primary:hover { background: var(--green-dark); transform: translateY(-2px); box-shadow: 0 12px 30px rgba(31,157,63,0.4); }
-.btn-outline { background: transparent; color: var(--ink); border-color: var(--ink); --btn-ripple: rgba(13, 13, 13, 0.1); }
+.btn-outline { background: transparent; color: var(--ink); border-color: var(--ink); }
 .btn-outline:hover { background: var(--ink); color: #fff; }
-.btn-ghost { background: transparent; color: var(--ink); --btn-ripple: rgba(13, 13, 13, 0.08); }
+.btn-outline::after { background: rgba(13,13,13,0.1); }
+.btn-ghost { background: transparent; color: var(--ink); }
 .btn-ghost:hover { background: var(--bg-soft); }
+.btn-ghost::after { background: rgba(13,13,13,0.08); }
 
 /* Sticky header secondary CTA should read as an action */
 .header .cta-group .btn-ghost {
@@ -115,6 +167,10 @@ h5 { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em; marg
 .header .cta-group .btn-ghost:hover {
   background: #ffe15a;
   transform: translateY(-1px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn::before, .btn::after { display: none; }
 }
 
 /* =========== HEADER =========== */
@@ -1652,3 +1708,5 @@ html { scrollbar-color: var(--green) transparent; scrollbar-width: thin; }
 .hero .btn-primary:hover { background: #f3f3f3; }
 .hero .btn-outline { border-color: #fff; color: #fff; }
 .hero .btn-outline:hover { background: #fff; color: #111; }
+.hero .btn-primary::after { background: rgba(0,0,0,0.07); }
+.hero .btn-outline::after { background: rgba(255,255,255,0.28); }
