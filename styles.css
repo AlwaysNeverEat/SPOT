@@ -308,10 +308,24 @@ h5 { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em; marg
 .hscroll-wrap {
   position: relative;
   width: 100%;
-}
-.slide {
   height: 100vh;
+  overflow: hidden;
+}
+.services-scroll {
   width: 100%;
+  height: 100%;
+  overflow-y: scroll;
+  overflow-x: hidden;
+  scroll-snap-type: y mandatory;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+}
+.services-scroll::-webkit-scrollbar { display: none; }
+.slide {
+  height: 100%;
+  width: 100%;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
   display: flex;
   position: relative;
   overflow: hidden;
@@ -367,18 +381,10 @@ h5 { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em; marg
 .slide.hpanel-end h3 { margin-bottom: 1rem; }
 .slide.hpanel-end p { margin-bottom: 1.5rem; font-size: 1.1rem; max-width: 520px; }
 
-/* Indicator rail — sticks to viewport while inside the section */
-.hscroll-rail {
-  position: sticky;
-  top: 0;
-  height: 0;
-  z-index: 10;
-  pointer-events: none;
-}
 .indicator {
   position: absolute;
   right: 4vw;
-  top: 50vh;
+  top: 50%;
   transform: translateY(-50%);
   list-style: none;
   display: flex;
@@ -387,6 +393,8 @@ h5 { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em; marg
   align-items: center;
   height: 14rem;
   width: 1.2rem;
+  z-index: 10;
+  pointer-events: none;
 }
 .indicator-index {
   position: relative;
