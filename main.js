@@ -704,11 +704,17 @@
     document.querySelectorAll('.is-open').forEach(closeModalEl);
   });
 
-  /* ---------- Button liquid animations — wrap content above ::before/::after waves ---------- */
+  /* ---------- Button liquid wave animation ---------- */
   document.querySelectorAll('.btn').forEach(btn => {
+    // Collect existing content into a z-indexed wrapper
     const inner = document.createElement('span');
     inner.className = 'btn-inner';
     while (btn.firstChild) inner.appendChild(btn.firstChild);
+
+    // .liquid goes in first (behind), content wrapper on top
+    const liquid = document.createElement('span');
+    liquid.className = 'liquid';
+    btn.appendChild(liquid);
     btn.appendChild(inner);
   });
 })();
