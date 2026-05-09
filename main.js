@@ -706,15 +706,27 @@
 
   /* ---------- Button liquid wave animation ---------- */
   document.querySelectorAll('.btn').forEach(btn => {
-    // Collect existing content into a z-indexed wrapper
     const inner = document.createElement('span');
     inner.className = 'btn-inner';
     while (btn.firstChild) inner.appendChild(btn.firstChild);
 
-    // .liquid goes in first (behind), content wrapper on top
     const liquid = document.createElement('span');
     liquid.className = 'liquid';
     btn.appendChild(liquid);
     btn.appendChild(inner);
+
+    const fit = () => {
+      const w = btn.offsetWidth;
+      const h = btn.offsetHeight;
+      // Liquid height = button width so the 200%×200% circles stay square
+      const lh = w;
+      // Circle bottom sits at 50% of liquid height (from translate(-25%,-75%) geometry)
+      const cb = lh * 0.5;
+      btn.style.setProperty('--liquid-h',     lh + 'px');
+      btn.style.setProperty('--liquid-rest',  Math.round(-(cb - h - 8)) + 'px');
+      btn.style.setProperty('--liquid-hover', Math.round(-(cb + 10))    + 'px');
+    };
+    fit();
+    window.addEventListener('resize', fit, { passive: true });
   });
 })();

@@ -94,12 +94,13 @@ h5 { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em; marg
 }
 
 /* Liquid element injected by JS — sits below button content */
+/* --liquid-h / --liquid-rest / --liquid-hover are set per-button by JS */
 .btn .liquid {
   position: absolute;
-  top: -40px;
+  top: var(--liquid-rest, -40px);
   left: 0;
   width: 100%;
-  height: 200px;
+  height: var(--liquid-h, 200px);
   background: var(--wave-fill);
   box-shadow: inset 0 0 50px rgba(0,0,0,0.5);
   transition: top 0.6s;
@@ -116,12 +117,12 @@ h5 { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em; marg
   left: 0;
   transform: translate(-25%, -75%);
 }
-/* Main wave circle — solid, glowing edge */
+/* Main wave circle — spins only while button is hovered */
 .btn .liquid::after {
   border-radius: 45%;
   background: var(--wave-circle);
   box-shadow: 0 0 10px 5px var(--wave-glow), inset 0 0 5px var(--wave-glow);
-  animation: btn-liquid-wave 5s linear infinite;
+  animation: btn-liquid-wave 5s linear infinite paused;
   opacity: 0.9;
 }
 /* Secondary wave circle — slower, semi-transparent */
@@ -130,11 +131,13 @@ h5 { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em; marg
   background: var(--wave-circle);
   opacity: 0.5;
   box-shadow: 0 0 10px var(--wave-glow), inset 0 0 5px var(--wave-glow);
-  animation: btn-liquid-wave 7s linear infinite;
+  animation: btn-liquid-wave 7s linear infinite paused;
 }
+.btn:hover .liquid::after,
+.btn:hover .liquid::before { animation-play-state: running; }
 
 /* Hover: liquid rises fully into the button */
-.btn:hover .liquid { top: -110px; }
+.btn:hover .liquid { top: var(--liquid-hover, -110px); }
 
 /* Glow appears 0.2s after hover (liquid is already rising by then) */
 .btn:hover { transition-delay: 0s, 0s, 0s, 0.2s; }
