@@ -304,28 +304,29 @@ h5 { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em; marg
   font-weight: 400;
 }
 
-/* =========== SERVICES — VERTICAL SCROLL-SNAP =========== */
+/* =========== SERVICES — PINNED VERTICAL SLIDER =========== */
 .hscroll-wrap {
   position: relative;
+  width: 100%;
+  /* one viewport per slide of vertical page-scroll travel */
+  height: calc(100vh * 7);
+}
+.hscroll-pin {
+  position: sticky;
+  top: 0;
   width: 100%;
   height: 100vh;
   overflow: hidden;
 }
-.services-scroll {
+.hscroll-track {
   width: 100%;
   height: 100%;
-  overflow-y: scroll;
-  overflow-x: hidden;
-  scroll-snap-type: y mandatory;
-  scroll-behavior: smooth;
-  scrollbar-width: none;
+  will-change: transform;
+  transition: transform 0.55s cubic-bezier(0.65, 0, 0.35, 1);
 }
-.services-scroll::-webkit-scrollbar { display: none; }
 .slide {
-  height: 100%;
+  height: 100vh;
   width: 100%;
-  scroll-snap-align: start;
-  scroll-snap-stop: always;
   display: flex;
   position: relative;
   overflow: hidden;
@@ -704,12 +705,16 @@ h5 { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em; marg
   }
   .hero-actions { flex-direction: column; }
   .hero-actions .btn { width: 100%; }
-  /* mobile: stack image above text inside each card slide */
+  /* mobile: drop the pin, render slides as a normal vertical stack */
+  .hscroll-wrap { height: auto; }
+  .hscroll-pin { position: relative; height: auto; overflow: visible; }
+  .hscroll-track { transform: none !important; transition: none; height: auto; }
+  .slide { height: 80vh; }
   .slide.hpanel-card { flex-direction: column; }
   .slide.hpanel-card .card-img { flex: 1 1 45%; }
   .slide.hpanel-card .card-body { flex: 1 1 55%; padding: 2rem 1.4rem; }
   .slide.hpanel-card p { font-size: 0.95rem; }
-  .indicator { right: 1.2rem; }
+  .indicator { display: none; }
   .indicator-index { font-size: 0.55rem; }
   .steps { grid-template-columns: 1fr; }
   .step { padding: 1.4rem; }

@@ -29,18 +29,40 @@
   window.addEventListener('resize', updateParallax);
   updateParallax();
 
-  /* ---------- Services indicator (native scroll-snap inside .services-scroll) ---------- */
-  const servicesScroll = document.getElementById('servicesScroll');
-  const slides = servicesScroll ? servicesScroll.querySelectorAll('.slide') : [];
+  /* ---------- Services pinned vertical slider ---------- */
+  const wrap = document.querySelector('.hscroll-wrap');
+  const track = document.getElementById('hscrollTrack');
+  const slides = track ? track.querySelectorAll('.slide') : [];
   const indicators = document.querySelectorAll('.indicator .indicator-index');
-  if (servicesScroll && slides.length && indicators.length) {
-    const io = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        const i = entry.target.dataset.index;
-        if (indicators[i]) indicators[i].classList.toggle('expand', entry.isIntersecting);
-      });
-    }, { root: servicesScroll, threshold: 0.5 });
-    slides.forEach((s) => io.observe(s));
+  let currentSlide = -1;
+  if (wrap && track && slides.length && indicators.length) {
+    const update = () => {
+      if (isMobile()) {
+        track.style.transform = '';
+        currentSlide = -1;
+        return;
+      }
+      const rect = wrap.getBoundingClientRect();
+      const wrapTop = window.scrollY + rect.top;
+      const scrollable = wrap.offsetHeight - window.innerHeight;
+      const progress = Math.min(Math.max((window.scrollY - wrapTop) / scrollable, 0), 1);
+      const idx = Math.round(progress * (slides.length - 1));
+      if (idx !== currentSlide) {
+        currentSlide = idx;
+        track.style.transform = `translate3d(0, -${idx * 100}vh, 0)`;
+        indicators.forEach((ind, i) => ind.classList.toggle('expand', i === idx));
+      }
+    };
+    let ticking = false;
+    const onScroll = () => {
+      if (!ticking) {
+        requestAnimationFrame(() => { update(); ticking = false; });
+        ticking = true;
+      }
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', update);
+    update();
   }
 
   /* ---------- Hero video fade-in ---------- */
@@ -98,7 +120,6 @@
         const target = document.querySelector(id);
         if (target) {
           e.preventDefault();
-          if (id === '#services' && servicesScroll) servicesScroll.scrollTop = 0;
           window.scrollTo({ top: target.getBoundingClientRect().top + window.scrollY - 70, behavior: 'smooth' });
         }
       }
