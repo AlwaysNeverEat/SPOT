@@ -77,7 +77,7 @@
   counters.forEach(c => counterObs.observe(c));
 
   /* ---------- Reveal on scroll ---------- */
-  const reveals = document.querySelectorAll('h2, .step, .promo-card, .station-list li, .hpanel-card');
+  const reveals = document.querySelectorAll('h2, .step, .promo-card, .station-list li');
   reveals.forEach(el => el.classList.add('reveal'));
   const revealObs = new IntersectionObserver((entries) => {
     entries.forEach(e => {

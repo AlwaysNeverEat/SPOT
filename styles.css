@@ -385,15 +385,17 @@ h5 { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em; marg
   list-style: none;
   display: flex;
   flex-direction: column;
+  justify-content: space-between;
   align-items: center;
+  height: 14rem;
+  width: 1.2rem;
 }
 .indicator-index {
   position: relative;
   font: 0.65rem helvetica, sans-serif;
   color: var(--ink);
   opacity: 0.45;
-  margin: 0.5rem 0;
-  transition: transform 0.5s ease-in-out, margin 0.5s ease-in-out, color 0.4s ease, opacity 0.4s ease;
+  transition: transform 0.5s ease-in-out, color 0.4s ease, opacity 0.4s ease;
 }
 .indicator-index:first-of-type::before,
 .indicator-index:last-of-type::after { content: none; }
@@ -412,13 +414,10 @@ h5 { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em; marg
 .indicator-index::after  { bottom: -1.3rem; transform-origin: top; }
 
 .indicator-index.expand {
-  transform: scale(3);
-  margin: 5rem 0;
+  transform: scale(2.4);
   color: var(--green);
   opacity: 1;
 }
-.indicator-index.expand:first-of-type { margin-top: 0; }
-.indicator-index.expand:last-of-type  { margin-bottom: 0; }
 .indicator-index.expand::before,
 .indicator-index.expand::after {
   transform: scaleY(1);
