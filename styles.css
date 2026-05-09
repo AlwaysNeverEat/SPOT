@@ -23,7 +23,7 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; scroll-snap-type: y mandatory; scroll-padding-top: 70px; }
 
 body {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
@@ -304,30 +304,19 @@ h5 { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em; marg
   font-weight: 400;
 }
 
-/* =========== SERVICES — HORIZONTAL SCROLL =========== */
+/* =========== SERVICES — VERTICAL SCROLL-SNAP =========== */
 .hscroll-wrap {
-  /* tall wrapper — vertical page scroll through it drives the horizontal track */
-  height: 700vh;
+  position: relative;
   width: 100%;
-}
-.hscroll-pin {
-  position: sticky;
-  top: 0;
-  height: 100vh;
-  width: 100%;
-  overflow: hidden;
-}
-.slider {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  will-change: transform;
 }
 .slide {
-  flex: 0 0 100vw;
-  height: 100%;
+  height: 100vh;
+  width: 100%;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
   display: flex;
   position: relative;
+  overflow: hidden;
 }
 .slide.hpanel-intro,
 .slide.hpanel-end {
@@ -340,15 +329,15 @@ h5 { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em; marg
 .slide.hpanel-intro { background: var(--white); }
 .slide.hpanel-intro h2 { margin: 1rem 0 1.5rem; }
 .slide.hpanel-intro p { color: var(--muted); font-size: 1.1rem; max-width: 520px; }
-.slide.hpanel-intro .arrow-right {
+.slide.hpanel-intro .arrow-down {
   margin-top: 2rem;
   font-size: 3rem;
   color: var(--green);
-  animation: arrowSlide 1.5s ease-in-out infinite;
+  animation: arrowDrop 1.5s ease-in-out infinite;
 }
-@keyframes arrowSlide {
-  0%,100% { transform: translateX(0); }
-  50% { transform: translateX(15px); }
+@keyframes arrowDrop {
+  0%,100% { transform: translateY(0); }
+  50% { transform: translateY(15px); }
 }
 
 .slide.hpanel-card { flex-direction: row; align-items: stretch; }
@@ -380,31 +369,56 @@ h5 { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em; marg
 .slide.hpanel-end h3 { margin-bottom: 1rem; }
 .slide.hpanel-end p { margin-bottom: 1.5rem; font-size: 1.1rem; max-width: 520px; }
 
-.indicator {
-  position: absolute;
-  left: 50%;
-  bottom: 4vh;
-  transform: translateX(-50%);
-  list-style: none;
-  display: flex;
-  align-items: center;
-  gap: 0.55rem;
-  z-index: 5;
+/* Indicator rail — sticks to viewport while inside the section */
+.hscroll-rail {
+  position: sticky;
+  top: 0;
+  height: 0;
+  z-index: 10;
   pointer-events: none;
 }
+.indicator {
+  position: absolute;
+  right: 4vw;
+  top: 50vh;
+  transform: translateY(-50%);
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  mix-blend-mode: difference;
+}
 .indicator-index {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--ink);
-  opacity: 0.25;
-  transition: transform .4s ease, opacity .4s ease, background .4s ease;
+  position: relative;
+  font: 0.65rem helvetica, sans-serif;
+  color: white;
+  margin: 0.5rem 0;
+  transition: transform 0.5s ease-in-out, margin 0.5s ease-in-out;
 }
+.indicator-index:first-of-type::before,
+.indicator-index:last-of-type::after { content: none; }
+.indicator-index::before,
+.indicator-index::after {
+  content: '';
+  position: absolute;
+  left: calc(50% - 0.03rem);
+  width: 0.015rem;
+  height: 1.25rem;
+  background-color: white;
+  transform: scaleY(0);
+  transition: transform 0.5s ease-in-out;
+}
+.indicator-index::before { top: -1.3rem; transform-origin: bottom; }
+.indicator-index::after  { bottom: -1.3rem; transform-origin: top; }
+
 .indicator-index.expand {
-  transform: scale(1.6);
-  background: var(--green);
-  opacity: 1;
+  transform: scale(3);
+  margin: 5rem 0;
 }
+.indicator-index.expand:first-of-type { margin-top: 0; }
+.indicator-index.expand:last-of-type  { margin-bottom: 0; }
+.indicator-index.expand::before,
+.indicator-index.expand::after { transform: scaleY(1); }
 
 /* =========== HOW IT WORKS =========== */
 .how {
@@ -680,25 +694,13 @@ h5 { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em; marg
   }
   .hero-actions { flex-direction: column; }
   .hero-actions .btn { width: 100%; }
-  /* mobile: drop the pin, fall back to native horizontal scroll-snap */
-  .hscroll-wrap { height: auto; }
-  .hscroll-pin { position: relative; height: auto; overflow: visible; }
-  .slider {
-    height: 100vh;
-    overflow-x: auto;
-    overflow-y: hidden;
-    scroll-snap-type: x mandatory;
-    scrollbar-width: none;
-    -webkit-overflow-scrolling: touch;
-    transform: none !important;
-  }
-  .slider::-webkit-scrollbar { display: none; }
-  .slide { scroll-snap-align: center; }
+  /* mobile: stack image above text inside each card slide */
   .slide.hpanel-card { flex-direction: column; }
   .slide.hpanel-card .card-img { flex: 1 1 45%; }
   .slide.hpanel-card .card-body { flex: 1 1 55%; padding: 2rem 1.4rem; }
   .slide.hpanel-card p { font-size: 0.95rem; }
-  .indicator { display: none; }
+  .indicator { right: 1.2rem; }
+  .indicator-index { font-size: 0.55rem; }
   .steps { grid-template-columns: 1fr; }
   .step { padding: 1.4rem; }
   .how { padding: 5rem 1.2rem; }
