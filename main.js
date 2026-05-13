@@ -1,14 +1,11 @@
-/* СТО SPOT — interactivity (parallax, horizontal scroll, counters, reveal) */
 (() => {
   const isMobile = () => window.matchMedia('(max-width: 760px)').matches;
 
-  /* ---------- Header on scroll ---------- */
   const header = document.getElementById('header');
   const onScrollHeader = () => header.classList.toggle('scrolled', window.scrollY > 20);
   window.addEventListener('scroll', onScrollHeader, { passive: true });
   onScrollHeader();
 
-  /* ---------- Parallax ---------- */
   const parallaxItems = Array.from(document.querySelectorAll('[data-parallax]'));
   let ticking = false;
   const updateParallax = () => {
@@ -18,8 +15,7 @@
       const rect = el.getBoundingClientRect();
       const center = rect.top + rect.height / 2 - vh / 2;
       const speed = parseFloat(el.dataset.parallax) || 0.2;
-      const offset = -center * speed;
-      el.style.transform = `translate3d(0, ${offset.toFixed(1)}px, 0)`;
+      el.style.transform = `translate3d(0, ${(-center * speed).toFixed(1)}px, 0)`;
     });
     ticking = false;
   };
@@ -29,7 +25,6 @@
   window.addEventListener('resize', updateParallax);
   updateParallax();
 
-  /* ---------- Horizontal scroll services ---------- */
   const wrap = document.querySelector('.hscroll-wrap');
   const track = document.getElementById('hscrollTrack');
   if (wrap && track) {
@@ -47,7 +42,6 @@
     updateHScroll();
   }
 
-  /* ---------- Hero video fade-in ---------- */
   const heroVideo = document.getElementById('heroVideo');
   if (heroVideo) {
     const showVideo = () => heroVideo.classList.add('is-loaded');
@@ -55,7 +49,6 @@
     heroVideo.addEventListener('canplay', showVideo, { once: true });
   }
 
-  /* ---------- Counter animation ---------- */
   const counters = document.querySelectorAll('[data-count]');
   const animateCounter = (el) => {
     const target = parseInt(el.dataset.count, 10);
@@ -81,7 +74,6 @@
   }, { threshold: 0.4 });
   counters.forEach(c => counterObs.observe(c));
 
-  /* ---------- Reveal on scroll ---------- */
   const reveals = document.querySelectorAll('h2, .step, .promo-card, .station-list li, .hpanel-card');
   reveals.forEach(el => el.classList.add('reveal'));
   const revealObs = new IntersectionObserver((entries) => {
@@ -94,7 +86,6 @@
   }, { threshold: 0.15 });
   reveals.forEach(el => revealObs.observe(el));
 
-  /* ---------- Smooth-scroll polish for in-page links ---------- */
   document.querySelectorAll('a[href^="#"]').forEach(a => {
     a.addEventListener('click', (e) => {
       const id = a.getAttribute('href');
@@ -108,7 +99,6 @@
     });
   });
 
-  /* ---------- Mobile burger (toggle CTAs visibility) ---------- */
   const burger = document.getElementById('burger');
   if (burger) {
     burger.addEventListener('click', () => {
@@ -117,7 +107,6 @@
     });
   }
 
-  /* ---------- City picker ---------- */
   const CITIES = [
     { city: 'Санкт-Петербург',  loc: 'Санкт-Петербурге',   address: '23 станции по городу',                              phone: '+7 (812) 603-44-80' },
     { city: 'Янино',            loc: 'Янино',              address: 'Шоссейная ул., 36',                                  phone: '+7 (812) 987-77-27' },
@@ -158,7 +147,7 @@
   ];
   CITIES.forEach((c, i) => { c.id = i; c.tel = '+' + c.phone.replace(/\D/g, ''); });
 
-  /* SPb keeps a curated list of district stations (network total = 23). */
+  // Saint Petersburg has a curated district list; other cities map 1:1 from CITIES
   const SPB_STATIONS = [
     { addr: 'ул. Фучика, 23А',         area: 'Фрунзенский район' },
     { addr: 'ул. Фучика, 14к4',        area: 'Фрунзенский район' },
@@ -185,7 +174,7 @@
     return CITIES.filter(c => c.city === cityName).length;
   };
 
-  /* Russian plural for «станция» (1 → станция, 2-4 → станции, else → станций) */
+  // Russian pluralisation: 1 → станция, 2–4 → станции, 5+ → станций
   const stationWord = (n) => {
     const mod10 = n % 10;
     const mod100 = n % 100;
@@ -308,7 +297,6 @@
     }
   });
 
-  /* ---------- Price modal ---------- */
   const priceModal = document.getElementById('priceModal');
   const openPricesBtn = document.getElementById('openPrices');
   const priceSearch = document.getElementById('priceSearch');
@@ -356,7 +344,6 @@
     if (e.key === 'Escape' && priceModal && priceModal.classList.contains('is-open')) closePriceModal();
   });
 
-  /* ---------- Generic modal helpers ---------- */
   const lockBody = () => { document.body.style.overflow = 'hidden'; };
   const unlockBody = () => { document.body.style.overflow = ''; };
   const openModalEl = (el) => {
@@ -372,7 +359,6 @@
     if (!document.querySelector('.is-open')) unlockBody();
   };
 
-  /* ---------- Info modal (promo/warranty/photos/franchise/work) ---------- */
   const infoModal = document.getElementById('infoModal');
   const infoBody = document.getElementById('infoModalBody');
 
@@ -542,7 +528,6 @@
     card.addEventListener('click', () => openInfo(card.dataset.promo));
   });
 
-  /* ---------- Booking modal ---------- */
   const bookModal = document.getElementById('bookModal');
   const bookForm = document.getElementById('bookForm');
   const bookStation = document.getElementById('bookStation');
@@ -571,7 +556,6 @@
   const openBooking = () => {
     if (!bookModal) return;
     if (bookStation) bookStation.value = String(savedId);
-    // reset to form step
     bookModal.querySelectorAll('[data-step]').forEach(s => {
       s.hidden = s.dataset.step !== 'form';
     });
@@ -598,14 +582,13 @@
         bookForm.querySelector('input[name="name"]').focus();
         return;
       }
-      // No backend yet — show confirmation step.
+      // No backend yet — show confirmation step
       bookModal.querySelectorAll('[data-step]').forEach(s => {
         s.hidden = s.dataset.step !== 'done';
       });
     });
   }
 
-  /* ---------- History modal ---------- */
   const historyModal = document.getElementById('historyModal');
   const historyForm = document.getElementById('historyForm');
   document.addEventListener('click', (e) => {
@@ -632,7 +615,6 @@
     });
   }
 
-  /* ---------- Oil picker modal ---------- */
   const oilModal = document.getElementById('oilModal');
   const oilForm = document.getElementById('oilForm');
   document.addEventListener('click', (e) => {
@@ -660,7 +642,6 @@
     });
   }
 
-  /* ---------- Lightbox ---------- */
   const lightbox = document.getElementById('lightbox');
   const lightboxImg = document.getElementById('lightboxImg');
   let lbIndex = 0;
@@ -683,7 +664,6 @@
     if (e.target.closest('[data-lb-next]')) { showLightbox(lbIndex + 1); return; }
   });
 
-  /* ---------- Reviews carousel arrows ---------- */
   const reviewsTrack = document.getElementById('reviewsTrack');
   if (reviewsTrack) {
     document.querySelectorAll('[data-rev]').forEach(btn => {
@@ -696,7 +676,6 @@
     });
   }
 
-  /* ---------- Global Esc closes any open modal ---------- */
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
     document.querySelectorAll('.is-open').forEach(closeModalEl);
