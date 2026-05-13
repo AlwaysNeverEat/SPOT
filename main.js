@@ -515,7 +515,6 @@
   const openInfo = (key) => {
     if (!infoModal || !infoBody || !INFO[key]) return;
     infoBody.innerHTML = INFO[key]();
-    // re-apply current city to fresh phones
     const c = CITIES[savedId];
     if (c) {
       infoBody.querySelectorAll('.js-phone').forEach(el => el.textContent = c.phone);
@@ -539,7 +538,6 @@
     }
   });
 
-  /* Promo cards open the info modal */
   document.querySelectorAll('.promo-card[data-promo]').forEach(card => {
     card.addEventListener('click', () => openInfo(card.dataset.promo));
   });
