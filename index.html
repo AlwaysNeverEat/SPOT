@@ -39,10 +39,25 @@
     <button type="button" class="btn btn-primary" data-open-booking>Записаться</button>
   </div>
 
-  <button class="burger" id="burger" aria-label="Меню">
+  <button class="burger" id="burger" aria-label="Меню" aria-expanded="false" aria-controls="mobileNav">
     <span></span><span></span><span></span>
   </button>
 </header>
+
+<!-- =========== MOBILE NAV =========== -->
+<div class="mobile-nav" id="mobileNav" aria-hidden="true">
+  <a href="#services" class="mobile-nav-link">Услуги</a>
+  <a href="#prices" class="mobile-nav-link">Цены</a>
+  <a href="#stations" class="mobile-nav-link">Станции</a>
+  <a href="#promo" class="mobile-nav-link">Акции</a>
+  <a href="#reviews" class="mobile-nav-link">Отзывы</a>
+  <a href="#faq" class="mobile-nav-link">FAQ</a>
+  <a href="#contacts" class="mobile-nav-link">Контакты</a>
+  <div class="mobile-nav-foot">
+    <button type="button" class="btn btn-primary big" data-open-booking>Записаться онлайн</button>
+    <a href="tel:+78126034480" class="mobile-nav-phone js-phone-link"><span class="js-phone">+7 (812) 603-44-80</span></a>
+  </div>
+</div>
 
 <!-- =========== HERO =========== -->
 <section class="hero" id="hero">
@@ -244,7 +259,7 @@
 <!-- =========== STATIONS =========== -->
 <section class="stations" id="stations">
   <div class="stations-left" data-parallax="0.1">
-    <div class="section-tag">Станции</div>
+    <div class="section-tag light">Станции</div>
     <h2><span id="stationsCount">23</span> <span id="stationsWord">станции</span> <br/>в <span class="js-city-loc">Санкт-Петербурге</span></h2>
     <p id="stationsCopy">А также филиалы в городах: Янино, Петрозаводск, Рязань, Гатчина, Кировск, Саратов, Шушары, Ростов-на-Дону и других.</p>
     <a href="#signup" class="btn btn-primary">Найти ближайшую</a>

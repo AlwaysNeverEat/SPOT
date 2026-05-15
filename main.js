@@ -82,8 +82,20 @@
   counters.forEach(c => counterObs.observe(c));
 
   /* ---------- Reveal on scroll ---------- */
-  const reveals = document.querySelectorAll('h2, .step, .promo-card, .station-list li, .hpanel-card');
+  const reveals = document.querySelectorAll('h2, .step, .promo-card, .trust-card, .station-list li, .hpanel-card');
   reveals.forEach(el => el.classList.add('reveal'));
+
+  /* Stagger delays — applied before .in so hover is unaffected after reveal */
+  document.querySelectorAll('.steps .step').forEach((el, i) => {
+    el.style.setProperty('--stagger-delay', `${i * 65}ms`);
+  });
+  document.querySelectorAll('.promo-grid .promo-card').forEach((el, i) => {
+    el.style.setProperty('--stagger-delay', `${i * 50}ms`);
+  });
+  document.querySelectorAll('.trust-grid .trust-card').forEach((el, i) => {
+    el.style.setProperty('--stagger-delay', `${i * 50}ms`);
+  });
+
   const revealObs = new IntersectionObserver((entries) => {
     entries.forEach(e => {
       if (e.isIntersecting) {
@@ -108,14 +120,43 @@
     });
   });
 
-  /* ---------- Mobile burger (toggle CTAs visibility) ---------- */
+  /* ---------- Mobile burger ---------- */
   const burger = document.getElementById('burger');
+  const mobileNav = document.getElementById('mobileNav');
+  let navOpen = false;
+
+  const openMobileNav = () => {
+    navOpen = true;
+    burger && burger.classList.add('is-open');
+    burger && burger.setAttribute('aria-expanded', 'true');
+    mobileNav && mobileNav.classList.add('is-open');
+    mobileNav && mobileNav.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+  };
+  const closeMobileNav = () => {
+    navOpen = false;
+    burger && burger.classList.remove('is-open');
+    burger && burger.setAttribute('aria-expanded', 'false');
+    mobileNav && mobileNav.classList.remove('is-open');
+    mobileNav && mobileNav.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+  };
+
   if (burger) {
-    burger.addEventListener('click', () => {
-      const cta = document.querySelector('.cta-group');
-      if (cta) cta.style.display = cta.style.display === 'flex' ? '' : 'flex';
+    burger.addEventListener('click', () => navOpen ? closeMobileNav() : openMobileNav());
+  }
+
+  if (mobileNav) {
+    mobileNav.querySelectorAll('.mobile-nav-link').forEach(link => {
+      link.addEventListener('click', () => {
+        closeMobileNav();
+      });
     });
   }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && navOpen) closeMobileNav();
+  });
 
   /* ---------- City picker ---------- */
   const CITIES = [
