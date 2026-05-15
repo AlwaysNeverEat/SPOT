@@ -685,15 +685,38 @@
     if (e.target.closest('[data-lb-next]')) { showLightbox(lbIndex + 1); return; }
   });
 
-  /* ---------- Reviews carousel arrows ---------- */
-  const reviewsTrack = document.getElementById('reviewsTrack');
-  if (reviewsTrack) {
+  /* ---------- Reviews deck ---------- */
+  const reviewsDeck = document.querySelector('.reviews-deck');
+  if (reviewsDeck) {
+    const cards = Array.from(reviewsDeck.querySelectorAll('.review'));
+    const counter = document.getElementById('revCounter');
+    const n = cards.length;
+    let current = 0;
+    let busy = false;
+
+    function applyDeck() {
+      cards.forEach(c => c.classList.remove('is-active', 'is-deck-2', 'is-deck-3'));
+      cards[current].classList.add('is-active');
+      cards[(current + 1) % n].classList.add('is-deck-2');
+      cards[(current + 2) % n].classList.add('is-deck-3');
+      if (counter) counter.textContent = `${current + 1} / ${n}`;
+    }
+
+    applyDeck();
+
     document.querySelectorAll('[data-rev]').forEach(btn => {
       btn.addEventListener('click', () => {
+        if (busy) return;
+        busy = true;
         const dir = btn.dataset.rev === 'next' ? 1 : -1;
-        const card = reviewsTrack.querySelector('.review');
-        const step = card ? card.offsetWidth + 16 : 320;
-        reviewsTrack.scrollBy({ left: dir * step, behavior: 'smooth' });
+        const outgoing = cards[current];
+        outgoing.classList.add(dir > 0 ? 'exit-left' : 'exit-right');
+        current = ((current + dir) % n + n) % n;
+        applyDeck();
+        setTimeout(() => {
+          outgoing.classList.remove('exit-left', 'exit-right');
+          busy = false;
+        }, 480);
       });
     });
   }
