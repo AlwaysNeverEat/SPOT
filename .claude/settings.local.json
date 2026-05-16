@@ -6,7 +6,15 @@
       "Bash(git commit *)",
       "Bash(git push *)",
       "Bash(gh auth *)",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(Get-Item \"D:\\\\gitworkspace\\\\SPOT\\\\sources\\\\metro spb.pdf\")",
+      "Bash(Select-Object Name, Length)",
+      "PowerShell(Remove-Item *)",
+      "WebSearch",
+      "WebFetch(domain:spot-auto.ru)",
+      "WebFetch(domain:2gis.ru)",
+      "WebFetch(domain:zoon.ru)",
+      "WebFetch(domain:zamena-masla-spot.ru)"
     ]
   }
 }

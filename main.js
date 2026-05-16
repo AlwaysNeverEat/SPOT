@@ -82,7 +82,7 @@
   counters.forEach(c => counterObs.observe(c));
 
   /* ---------- Reveal on scroll ---------- */
-  const reveals = document.querySelectorAll('h2, .step, .promo-card, .station-list li, .hpanel-card');
+  const reveals = document.querySelectorAll('h2, .step, .promo-card, .hpanel-card');
   reveals.forEach(el => el.classList.add('reveal'));
   const revealObs = new IntersectionObserver((entries) => {
     entries.forEach(e => {
@@ -158,22 +158,47 @@
   ];
   CITIES.forEach((c, i) => { c.id = i; c.tel = '+' + c.phone.replace(/\D/g, ''); });
 
-  /* SPb keeps a curated list of district stations (network total = 23). */
+  const LINE_COLORS = { 1: '#E8112D', 2: '#0B53A5', 3: '#009E60', 4: '#F26522', 5: '#9B59B6' };
+  const LINE_NAMES  = { 1: 'Кировско-Выборгская', 2: 'Московско-Петроградская', 3: 'Невско-Василеостровская', 4: 'Правобережная', 5: 'Фрунзенско-Приморская' };
+
+  /* Full SPb station list — coordinates from zamena-masla-spot.ru Yandex Maps links. */
   const SPB_STATIONS = [
-    { addr: 'ул. Фучика, 23А',         area: 'Фрунзенский район' },
-    { addr: 'ул. Фучика, 14к4',        area: 'Фрунзенский район' },
-    { addr: 'ул. Оптиков, 2',          area: 'Приморский район' },
-    { addr: 'пр. Солидарности, 22А',   area: 'Невский район' },
-    { addr: 'Выборгское ш., 2',        area: 'Выборгский район' },
-    { addr: 'ул. Казакова, 29',        area: 'Кировский район' },
-    { addr: 'Полюстровский пр., 59к1', area: 'Калининский район' },
-    { addr: 'пос. Мурино / Кудрово',   area: 'Лен. область' }
+    // Линия 1 — Кировско-Выборгская (Красная)
+    { short: 'Выборгское ш., 212',  station: 'Парнас',            line: 1, box: '#19', layout: '1 бокс / 1 яма',                height: '2 м',       lat: 60.068668, lng: 30.293284 },
+    { short: 'Парголово',           station: 'Парнас',            line: 1, box: '',    layout: '',                              height: '',          lat: 60.074,    lng: 30.252    },
+    { short: 'Полюстровский пр.',   station: 'Площадь Ленина',    line: 1, box: '#24', layout: '1 бокс / 1 яма',                height: '2.2 м',     lat: 59.972947, lng: 30.380196 },
+    { short: 'Руставели 69',        station: 'Академическая',     line: 1, box: '#33', layout: '2 бокса / 2 ямы',               height: '2.6 м',     lat: 60.037149, lng: 30.433234 },
+    { short: 'Охтинская / Мурино',  station: 'Девяткино',         line: 1, box: '#34', layout: '1 бокс / 1 яма',                height: '2.5 м',     lat: 60.047551, lng: 30.427322 },
+    { short: 'Кубинская 82',        station: 'Ленинский пр.',     line: 1, box: '#15', layout: '1 бокс / 1 подъёмник',          height: '2.6 м',     lat: 59.837636, lng: 30.303902 },
+    { short: 'Казакова 29',         station: 'Пр. Ветеранов',     line: 1, box: '#28', layout: '2 бокса / 1 подъёмник',         height: '3 / 2.6 м', lat: 59.860364, lng: 30.213586 },
+    { short: 'Жукова 21',           station: 'Автово',            line: 1, box: '#05', layout: '1 бокс / 1 подъёмник',          height: '2.5 м',     lat: 59.862877, lng: 30.233586 },
+    // Линия 2 — Московско-Петроградская (Синяя)
+    { short: 'Придорожная',         station: 'Просвещения',       line: 2, box: '#02', layout: '2 бокса / 2 подъёмника',        height: '2.2 м',     lat: 60.056333, lng: 30.357981 },
+    { short: 'Выборгское ш., 2',    station: 'Озерки',            line: 2, box: '#09', layout: '2 бокса / 2 подъёмника',        height: '2.4 м',     lat: 60.033674, lng: 30.319866 },
+    { short: 'Кузнецовская 60',     station: 'Парк Победы',       line: 2, box: '#35', layout: '2 бокса / 2 подъёмника',        height: '2.6 м',     lat: 59.873365, lng: 30.352412 },
+    { short: 'Типанова 20',         station: 'Московская',        line: 2, box: '#22', layout: '2 бокса / 2 ямы',               height: '2 м',       lat: 59.851919, lng: 30.339988 },
+    { short: 'М. Балканская 35',    station: 'Купчино',           line: 2, box: '#20', layout: '1 бокс / 1 яма',                height: '2.2 м',     lat: 59.824276, lng: 30.396365 },
+    // Линия 3 — Невско-Василеостровская (Зелёная)
+    { short: 'Уральская 7',         station: 'Василеостровская',  line: 3, box: '#30', layout: '2 бокса / 2 ямы',               height: '2.3 м',     lat: 59.952524, lng: 30.262814 },
+    { short: 'Карваевская 15',      station: 'Рыбацкое',          line: 3, box: '#21', layout: '1 бокс / 1 яма',                height: '2.2 м',     lat: 59.835876, lng: 30.495576 },
+    { short: 'Советский 55',        station: 'Рыбацкое',          line: 3, box: '#11', layout: '1 бокс / 1 подъёмник',          height: '2.9 м',     lat: 59.825058, lng: 30.552574 },
+    // Линия 4 — Правобережная (Оранжевая)
+    { short: 'Индустриальный пр.',  station: 'Ладожская',         line: 4, box: '#27', layout: '1 бокс / 1 яма',                height: '2.7 м',     lat: 59.959278, lng: 30.464728 },
+    { short: 'Дальневосточный пр.', station: 'Пр. Большевиков',   line: 4, box: '#07', layout: '2 бокса / 1 подъёмник / 1 яма', height: '2.5 м',     lat: 59.916306, lng: 30.429029 },
+    { short: 'Солидарности 22',     station: 'Пр. Большевиков',   line: 4, box: '#06', layout: '2 бокса / 2 подъёмника',        height: '2.3 м',     lat: 59.913645, lng: 30.500104 },
+    { short: 'Кудрово',             station: 'Ул. Дыбенко',       line: 4, box: '#08', layout: '2 бокса / 2 подъёмника',        height: '2.6 м',     lat: 59.905967, lng: 30.505727 },
+    // Линия 5 — Фрунзенско-Приморская (Фиолетовая)
+    { short: 'Планерная 16',        station: 'Комендантский пр.', line: 5, box: '#18', layout: '2 бокса / 1 подъёмник / 1 яма', height: '2.8 м',     lat: 59.999687, lng: 30.233421 },
+    { short: 'Оптиков 2',           station: 'Комендантский пр.', line: 5, box: '#04', layout: '3 бокса / 1 подъёмник / 2 ямы', height: '2.4 м',     lat: 59.995075, lng: 30.254630 },
+    { short: 'Фучика 23',           station: 'Бухарестская',      line: 5, box: '#01', layout: '1 бокс / 1 яма',                height: '2.6 м',     lat: 59.883381, lng: 30.386512, note: 'Во дворе' },
+    { short: 'Фучика 14',           station: 'Международная',     line: 5, box: '#03', layout: '2 бокса / 2 подъёмника',        height: '2.2 м',     lat: 59.884379, lng: 30.386548, note: 'На улице' },
+    { short: 'Дунайский 21',        station: 'Дунайская',         line: 5, box: '#12', layout: '1 бокс / 1 подъёмник',          height: '2.2 м',     lat: 59.851,    lng: 30.387    },
   ];
   const SPB_TOTAL_COUNT = 23;
 
   const stationsForCity = (cityName) => {
     if (cityName === 'Санкт-Петербург') {
-      return SPB_STATIONS.map(s => ({ ...s, label: s.addr, sub: s.area }));
+      return SPB_STATIONS.map(s => ({ ...s, label: s.short }));
     }
     return CITIES
       .filter(c => c.city === cityName)
@@ -207,16 +232,46 @@
   const statStationCountEl = document.getElementById('statStationCount');
   const stationsCopyEl = document.getElementById('stationsCopy');
 
+  const makeCard = (s) => {
+    const color = LINE_COLORS[s.line] || '#999';
+    return `<div class="stn-card">
+      <div class="stn-card-stripe" style="background:${color}"></div>
+      <div class="stn-card-body">
+        <strong>${s.short || s.label}</strong>
+        <span>${s.station ? 'м. ' + s.station : (s.sub || '')}</span>
+        ${s.layout ? `<span class="stn-card-detail">${s.layout}</span>` : ''}
+      </div>
+    </div>`;
+  };
+
   const renderStations = (cityName) => {
     if (!stationListEl) return;
     const list = stationsForCity(cityName);
     if (!list.length) {
-      stationListEl.innerHTML = `<li><strong>Станций пока нет</strong><span>Свяжитесь с нами по телефону</span></li>`;
+      stationListEl.innerHTML = '<ul class="station-list"><li><strong>Станций пока нет</strong><span>Свяжитесь с нами по телефону</span></li></ul>';
       return;
     }
-    stationListEl.innerHTML = list.map(s => `
-      <li><strong>${s.label}</strong><span>${s.sub || ''}</span></li>
-    `).join('');
+    if (cityName === 'Санкт-Петербург') {
+      const ROWS = 3;
+      const SPEEDS = [110, 90, 125];
+      const DIRS   = ['left','right','left'];
+      let rows = '';
+      for (let i = 0; i < ROWS; i++) {
+        const offset = Math.floor((i / ROWS) * list.length);
+        const rotated = [...list.slice(offset), ...list.slice(0, offset)];
+        const cards = rotated.map(makeCard).join('');
+        rows += `<div class="stn-track" data-dir="${DIRS[i]}" style="animation-duration:${SPEEDS[i]}s">${cards}${cards}</div>`;
+      }
+      stationListEl.innerHTML = `<div class="stn-ticker-wrap">${rows}</div>`;
+      return;
+    }
+    stationListEl.innerHTML = '<ul class="station-list">' + list.map(s => {
+      const color = LINE_COLORS[s.line];
+      const metro = s.station
+        ? `<span class="stn-metro"><span class="stn-dot" style="background:${color}"></span>м. ${s.station}</span>`
+        : `<span>${s.sub || ''}</span>`;
+      return `<li><strong>${s.label}</strong>${metro}</li>`;
+    }).join('') + '</ul>';
   };
 
   const applyCity = (c) => {
@@ -720,6 +775,124 @@
       });
     });
   }
+
+  /* ---------- Map modal ---------- */
+  const mapModal = document.getElementById('mapModal');
+  const mapStationListEl = document.getElementById('mapStationList');
+  let leafletMap = null;
+  let mapReady = false;
+  const stationMarkers = new Map(); // box → { marker, color }
+
+  const renderMapList = () => {
+    if (!mapStationListEl) return;
+    const byLine = {};
+    SPB_STATIONS.forEach(s => { (byLine[s.line] ||= []).push(s); });
+    mapStationListEl.innerHTML = Object.keys(byLine).sort((a, b) => a - b).map(line => {
+      const color = LINE_COLORS[line] || '#999';
+      const name = LINE_NAMES[line] || 'Линия ' + line;
+      return `<div class="map-line-group">
+        <div class="map-line-head">
+          <span class="map-line-badge" style="background:${color}">Л${line}</span>
+          <span>${name}</span>
+        </div>
+        <ul class="map-stn-list">
+          ${byLine[line].map(s => `
+            <li data-box="${s.box}">
+              <strong>${s.short}</strong>
+              <span>м. ${s.station}</span>
+              ${s.layout ? `<span class="map-stn-detail">${s.layout}${s.height ? ' · ' + s.height : ''}</span>` : ''}
+            </li>`).join('')}
+        </ul>
+      </div>`;
+    }).join('');
+  };
+
+  const setSidebarActive = (box, on) => {
+    if (!mapStationListEl) return;
+    const li = mapStationListEl.querySelector(`[data-box="${box}"]`);
+    if (!li) return;
+    li.classList.toggle('is-active', on);
+    if (on) li.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  };
+
+  const setMarkerActive = (box, on) => {
+    const entry = stationMarkers.get(box);
+    if (!entry) return;
+    const el = entry.marker.getElement();
+    if (el) el.classList.toggle('spot-pin-active', on);
+  };
+
+  const createPinIcon = (color) => L.divIcon({
+    className: 'spot-pin',
+    html: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 32" width="24" height="32"><path d="M12 0C5.373 0 0 5.373 0 12c0 8.5 12 20 12 20S24 20.5 24 12C24 5.373 18.627 0 12 0z" fill="${color}" stroke="#fff" stroke-width="1.5"/><circle cx="12" cy="12" r="5" fill="#fff" fill-opacity="0.9"/></svg>`,
+    iconSize: [24, 32],
+    iconAnchor: [12, 32],
+    popupAnchor: [0, -34]
+  });
+
+  const initMap = () => {
+    const mapEl = document.getElementById('spotMap');
+    if (!mapEl || typeof L === 'undefined') return;
+    if (mapReady) { leafletMap && leafletMap.invalidateSize(); return; }
+    leafletMap = L.map('spotMap', { zoomControl: true, attributionControl: false }).setView([59.940, 30.315], 11);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      attribution: '', subdomains: 'abcd', maxZoom: 19
+    }).addTo(leafletMap);
+    SPB_STATIONS.forEach(s => {
+      if (!s.lat) return;
+      const color = LINE_COLORS[s.line] || '#999';
+      const marker = L.marker([s.lat, s.lng], { icon: createPinIcon(color) })
+        .bindPopup(
+          `<div class="spp">
+            <div class="spp-addr">${s.short}</div>
+            <div class="spp-metro"><span class="spp-dot" style="background:${color}"></span>м. ${s.station}</div>
+            ${s.layout ? `<div class="spp-detail">${s.layout} · ${s.height}</div>` : ''}
+            ${s.note ? `<div class="spp-note">${s.note}</div>` : ''}
+            <button class="spp-btn spot-popup-book">Записаться</button>
+          </div>`,
+          { maxWidth: 220, className: 'spot-popup-wrap' }
+        ).addTo(leafletMap);
+      stationMarkers.set(s.box, { marker, color });
+      marker.on('mouseover', () => { setMarkerActive(s.box, true);  setSidebarActive(s.box, true); });
+      marker.on('mouseout',  () => { setMarkerActive(s.box, false); setSidebarActive(s.box, false); });
+    });
+    mapReady = true;
+  };
+
+  const openMapModal = () => {
+    if (!mapModal) return;
+    renderMapList();
+    openModalEl(mapModal);
+    setTimeout(initMap, 80);
+  };
+  const closeMapModal = () => closeModalEl(mapModal);
+
+  if (mapStationListEl) {
+    mapStationListEl.addEventListener('mouseover', (e) => {
+      const li = e.target.closest('[data-box]');
+      if (li) { setMarkerActive(li.dataset.box, true);  li.classList.add('is-active'); }
+    });
+    mapStationListEl.addEventListener('mouseout', (e) => {
+      const li = e.target.closest('[data-box]');
+      if (li) { setMarkerActive(li.dataset.box, false); li.classList.remove('is-active'); }
+    });
+    mapStationListEl.addEventListener('click', (e) => {
+      const li = e.target.closest('[data-box]');
+      if (!li) return;
+      const entry = stationMarkers.get(li.dataset.box);
+      if (entry && leafletMap) {
+        leafletMap.setView(entry.marker.getLatLng(), 14, { animate: true });
+        entry.marker.openPopup();
+      }
+    });
+  }
+
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('[data-open-map]')) { e.preventDefault(); openMapModal(); return; }
+    if (e.target.closest('[data-close-map]')) { closeMapModal(); return; }
+    if (e.target.closest('[data-map-to-booking]')) { closeMapModal(); openBooking(); return; }
+    if (e.target.closest('.spot-popup-book')) { closeMapModal(); openBooking(); return; }
+  });
 
   /* ---------- Global Esc closes any open modal ---------- */
   document.addEventListener('keydown', (e) => {
