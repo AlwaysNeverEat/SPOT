@@ -14,7 +14,9 @@
       "WebFetch(domain:spot-auto.ru)",
       "WebFetch(domain:2gis.ru)",
       "WebFetch(domain:zoon.ru)",
-      "WebFetch(domain:zamena-masla-spot.ru)"
+      "WebFetch(domain:zamena-masla-spot.ru)",
+      "Bash(Select-String -Path \"D:\\\\gitworkspace\\\\SPOT\\\\main.js\" -Pattern \".\")",
+      "Bash(Select-Object -First 50)"
     ]
   }
 }

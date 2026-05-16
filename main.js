@@ -82,17 +82,71 @@
   counters.forEach(c => counterObs.observe(c));
 
   /* ---------- Reveal on scroll ---------- */
-  const reveals = document.querySelectorAll('h2, .step, .promo-card, .hpanel-card');
-  reveals.forEach(el => el.classList.add('reveal'));
-  const revealObs = new IntersectionObserver((entries) => {
-    entries.forEach(e => {
-      if (e.isIntersecting) {
-        e.target.classList.add('in');
-        revealObs.unobserve(e.target);
-      }
+  // Run after applyCity so dynamic spans (stationsCount etc.) already have final text
+  setTimeout(() => {
+    // Recursively walk nodes: text → individual .char spans, elements → preserved wrapper with chars inside
+    const processNodes = (container, nodes, ref) => {
+      nodes.forEach(node => {
+        if (node.nodeType === Node.TEXT_NODE) {
+          [...node.textContent].forEach(ch => {
+            if (ch === ' ') {
+              // Plain text node — preserves word-wrap, spaces don't need animation
+              container.appendChild(document.createTextNode(' '));
+              ref.i++;
+            } else {
+              const s = document.createElement('span');
+              s.className = 'char';
+              s.textContent = ch;
+              s.style.transitionDelay = `${ref.i * 30}ms`;
+              container.appendChild(s);
+              ref.i++;
+            }
+          });
+        } else if (node.nodeType === Node.ELEMENT_NODE) {
+          const el = document.createElement(node.tagName);
+          for (const attr of node.attributes) el.setAttribute(attr.name, attr.value);
+          processNodes(el, Array.from(node.childNodes), ref);
+          container.appendChild(el);
+        }
+      });
+    };
+
+    document.querySelectorAll('h2').forEach(h2 => {
+      const nodes = Array.from(h2.childNodes);
+      const lines = [];
+      let cur = [];
+      nodes.forEach(n => {
+        if (n.nodeName === 'BR') { lines.push(cur); cur = []; }
+        else cur.push(n);
+      });
+      if (cur.length) lines.push(cur);
+
+      h2.innerHTML = '';
+      const ref = { i: 0 };
+
+      lines.forEach(line => {
+        const wrap = document.createElement('span');
+        wrap.className = 'line-wrap';
+        processNodes(wrap, line, ref);
+        h2.appendChild(wrap);
+      });
+
+      h2.classList.add('line-reveal');
     });
-  }, { threshold: 0.15 });
-  reveals.forEach(el => revealObs.observe(el));
+
+    const blockReveals = document.querySelectorAll('.step, .promo-card, .hpanel-card');
+    blockReveals.forEach(el => el.classList.add('reveal'));
+
+    const revealObs = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          e.target.classList.add('in');
+          revealObs.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.15 });
+    document.querySelectorAll('.line-reveal, .reveal').forEach(el => revealObs.observe(el));
+  }, 0);
 
   /* ---------- Smooth-scroll polish for in-page links ---------- */
   document.querySelectorAll('a[href^="#"]').forEach(a => {
@@ -165,7 +219,6 @@
   const SPB_STATIONS = [
     // Линия 1 — Кировско-Выборгская (Красная)
     { short: 'Выборгское ш., 212',  station: 'Парнас',            line: 1, box: '#19', layout: '1 бокс / 1 яма',                height: '2 м',       lat: 60.068668, lng: 30.293284 },
-    { short: 'Парголово',           station: 'Парнас',            line: 1, box: '',    layout: '',                              height: '',          lat: 60.074,    lng: 30.252    },
     { short: 'Полюстровский пр.',   station: 'Площадь Ленина',    line: 1, box: '#24', layout: '1 бокс / 1 яма',                height: '2.2 м',     lat: 59.972947, lng: 30.380196 },
     { short: 'Руставели 69',        station: 'Академическая',     line: 1, box: '#33', layout: '2 бокса / 2 ямы',               height: '2.6 м',     lat: 60.037149, lng: 30.433234 },
     { short: 'Охтинская / Мурино',  station: 'Девяткино',         line: 1, box: '#34', layout: '1 бокс / 1 яма',                height: '2.5 м',     lat: 60.047551, lng: 30.427322 },
@@ -194,7 +247,34 @@
     { short: 'Фучика 14',           station: 'Международная',     line: 5, box: '#03', layout: '2 бокса / 2 подъёмника',        height: '2.2 м',     lat: 59.884379, lng: 30.386548, note: 'На улице' },
     { short: 'Дунайский 21',        station: 'Дунайская',         line: 5, box: '#12', layout: '1 бокс / 1 подъёмник',          height: '2.2 м',     lat: 59.851,    lng: 30.387    },
   ];
-  const SPB_TOTAL_COUNT = 23;
+  const SPB_TOTAL_COUNT = 28;
+
+  /* ---------- Station employees (parsed from zamena-masla-spot.ru/contacts) ---------- */
+  const STATION_EMPLOYEES = {
+    'Фучика 23':           [{ name: 'Александр', photo: 'https://zamena-masla-spot.ru/crmFiles/files/images/68be8233567197.05474015.png' }, { name: 'Егор', photo: 'https://zamena-masla-spot.ru/crmFiles/files/images/68f20a8d0af3f8.25060800.png' }],
+    'Придорожная':         [{ name: 'Борис', photo: 'https://zamena-masla-spot.ru/crmFiles/files/images/69d90b9fb4a587.66647630.png' }, { name: 'Максим', photo: 'https://zamena-masla-spot.ru/crmFiles/files/images/69e086733d1ba9.06682022.png' }],
+    'Фучика 14':           [{ name: 'Олег', photo: 'https://zamena-masla-spot.ru/crmFiles/files/images/68f2099802e764.56557934.png' }, { name: 'Дмитрий', photo: 'https://zamena-masla-spot.ru/crmFiles/files/images/68f20978217972.01412270.png' }, { name: 'Денис', photo: 'https://zamena-masla-spot.ru/crmFiles/files/images/690314978d0ae6.74276015.png' }],
+    'Оптиков 2':           [{ name: 'Андрей', photo: 'https://zamena-masla-spot.ru/crmFiles/files/images/5f4dff56418366.26828154.png' }, { name: 'Антон', photo: 'https://zamena-masla-spot.ru/crmFiles/files/images/69cbc397ad1d98.78264386.png' }, { name: 'Никита', photo: 'https://zamena-masla-spot.ru/crmFiles/files/images/68d65709b6f6d5.83557149.png' }],
+    'Жукова 21':           [{ name: 'Дмитрий', photo: 'https://zamena-masla-spot.ru/crmFiles/files/images/68f0fb33a7e029.65438681.png' }, { name: 'Александр', photo: 'https://zamena-masla-spot.ru/crmFiles/files/images/68f1e45b8d5795.50308788.png' }],
+    'Солидарности 22':     [{ name: 'Кирилл', photo: 'https://zamena-masla-spot.ru/crmFiles/files/images/657d4a313e8571.95447206.png' }, { name: 'Александр', photo: 'https://zamena-masla-spot.ru/crmFiles/files/images/66335097741789.28056728.png' }, { name: 'Михаил', photo: 'https://zamena-masla-spot.ru/crmFiles/files/images/5ffc62a03d7128.46946284.png' }],
+    'Дальневосточный пр.': [{ name: 'Даниил', photo: 'https://zamena-masla-spot.ru/crmFiles/files/images/62020b1b6e0011.07624590.png' }, { name: 'Павел', photo: 'https://zamena-masla-spot.ru/crmFiles/files/images/650afc0cd2e7d7.17895503.png' }, { name: 'Кирилл', photo: 'https://zamena-masla-spot.ru/crmFiles/files/images/657d4a313e8571.95447206.png' }],
+    'Кудрово':             [{ name: 'Кирилл', photo: 'https://zamena-masla-spot.ru/crmFiles/files/images/657d4a313e8571.95447206.png' }, { name: 'Антон', photo: 'https://zamena-masla-spot.ru/crmFiles/files/images/688862c9b5e972.17785232.png' }, { name: 'Андрей', photo: 'https://zamena-masla-spot.ru/crmFiles/files/images/64d6021d11bd83.24775563.png' }],
+    'Выборгское ш., 2':    [{ name: 'Илья', photo: 'https://zamena-masla-spot.ru/crmFiles/files/images/67d1237d56d277.04186190.png' }, { name: 'Евгений', photo: 'https://zamena-masla-spot.ru/crmFiles/files/images/67cef261492e52.25128304.png' }, { name: 'Никита', photo: 'https://zamena-masla-spot.ru/crmFiles/files/images/692c556b008da9.81412809.png' }],
+    'Советский 55':        [{ name: 'Денис', photo: 'https://zamena-masla-spot.ru/crmFiles/files/images/6422a34b666dc9.71850780.png' }, { name: 'Михаил', photo: 'https://zamena-masla-spot.ru/crmFiles/files/images/5ffc62a03d7128.46946284.png' }, { name: 'Сергей', photo: 'https://zamena-masla-spot.ru/crmFiles/files/images/60b72c17f0ffa7.38273221.png' }],
+    'Кубинская 82':        [{ name: 'Денис', photo: 'https://zamena-masla-spot.ru/crmFiles/files/images/62416953551b25.56618425.png' }, { name: 'Вячеслав', photo: 'https://zamena-masla-spot.ru/crmFiles/files/images/68f0d7310dad91.63343740.png' }, { name: 'Сергей', photo: 'https://zamena-masla-spot.ru/crmFiles/files/images/60b72c17f0ffa7.38273221.png' }],
+    'Планерная 16':        [{ name: 'Егор', photo: 'https://zamena-masla-spot.ru/crmFiles/files/images/63354928e02524.90147040.png' }, { name: 'Антон', photo: 'https://zamena-masla-spot.ru/crmFiles/files/images/69cbc397ad1d98.78264386.png' }],
+    'Выборгское ш., 212':  [{ name: 'Сергей', photo: 'https://zamena-masla-spot.ru/crmFiles/files/images/62a98e17de5130.33386455.png' }, { name: 'Александр', photo: 'https://zamena-masla-spot.ru/crmFiles/files/images/69cbc55584e065.39037656.png' }],
+    'М. Балканская 35':    [{ name: 'Константин', photo: 'https://zamena-masla-spot.ru/crmFiles/files/images/68f0eeba7c02d6.92635769.png' }, { name: 'Александр', photo: 'https://zamena-masla-spot.ru/crmFiles/files/images/68be8233567197.05474015.png' }],
+    'Карваевская 15':      [{ name: 'Алексей', photo: 'https://zamena-masla-spot.ru/crmFiles/files/images/65094bf382f878.20723038.png' }, { name: 'Кирилл', photo: 'https://zamena-masla-spot.ru/crmFiles/files/images/6817782edd9d09.23369102.png' }],
+    'Типанова 20':         [{ name: 'Артемий', photo: 'https://zamena-masla-spot.ru/crmFiles/files/images/68f255fa0ee2b5.55079347.png' }, { name: 'Руслан', photo: 'https://zamena-masla-spot.ru/crmFiles/files/images/68f0e7d3020a96.37839175.png' }, { name: 'Дмитрий', photo: 'https://zamena-masla-spot.ru/crmFiles/files/images/6903140c440742.24481610.png' }],
+    'Полюстровский пр.':   [{ name: 'Максим', photo: 'https://zamena-masla-spot.ru/crmFiles/files/images/69e086733d1ba9.06682022.png' }, { name: 'Артем', photo: 'https://zamena-masla-spot.ru/crmFiles/files/images/699848e1129cb1.63503761.png' }],
+    'Индустриальный пр.':  [{ name: 'Даниил', photo: 'https://zamena-masla-spot.ru/crmFiles/files/images/62020b1b6e0011.07624590.png' }, { name: 'Кирилл', photo: 'https://zamena-masla-spot.ru/crmFiles/files/images/657d4a313e8571.95447206.png' }, { name: 'Антон', photo: 'https://zamena-masla-spot.ru/crmFiles/files/images/69cbc397ad1d98.78264386.png' }],
+    'Казакова 29':         [{ name: 'Максим', photo: 'https://zamena-masla-spot.ru/crmFiles/files/images/690453c2eafaa9.95793955.png' }, { name: 'Денис', photo: 'https://zamena-masla-spot.ru/crmFiles/files/images/68f1e43d27daf8.30755146.png' }, { name: 'Максим', photo: 'https://zamena-masla-spot.ru/crmFiles/files/images/69f322f9102894.64004066.png' }],
+    'Руставели 69':        [{ name: 'Владимир', photo: 'https://zamena-masla-spot.ru/crmFiles/files/images/690328de42b926.13569556.png' }, { name: 'Сергей', photo: 'https://zamena-masla-spot.ru/crmFiles/files/images/68f0d75cd7d679.59409444.png' }, { name: 'Андрей', photo: 'https://zamena-masla-spot.ru/crmFiles/files/images/690328bf185ce4.79711170.png' }],
+    'Охтинская / Мурино':  [{ name: 'Максим', photo: 'https://zamena-masla-spot.ru/crmFiles/files/images/69157d5a627157.92869160.png' }],
+    'Кузнецовская 60':     [{ name: 'Денис', photo: 'https://zamena-masla-spot.ru/crmFiles/files/images/690c76d0620526.66085211.png' }, { name: 'Вячеслав', photo: 'https://zamena-masla-spot.ru/crmFiles/files/images/68f0d7310dad91.63343740.png' }],
+  };
+  const getEmployees = (short) => STATION_EMPLOYEES[short] || [];
 
   const stationsForCity = (cityName) => {
     if (cityName === 'Санкт-Петербург') {
@@ -232,14 +312,31 @@
   const statStationCountEl = document.getElementById('statStationCount');
   const stationsCopyEl = document.getElementById('stationsCopy');
 
+  const stationImgSrc = (s) => {
+    if (s.photo) return s.photo;
+    if (s.lat) return `https://static-maps.yandex.ru/1.x/?ll=${s.lng},${s.lat}&z=17&l=sat&size=300,200`;
+    return null;
+  };
+
   const makeCard = (s) => {
     const color = LINE_COLORS[s.line] || '#999';
+    const src = stationImgSrc(s);
+    const emps = s.short ? getEmployees(s.short) : [];
+    const teamHtml = emps.length
+      ? `<div class="stn-card-team">${emps.slice(0, 4).map(e =>
+          `<img class="stn-card-avatar" src="${e.photo}" alt="${e.name}" title="${e.name}" loading="lazy" onerror="this.style.display='none'">`
+        ).join('')}<span class="stn-card-team-names">${emps.map(e => e.name).join(', ')}</span></div>`
+      : '';
     return `<div class="stn-card">
+      <div class="stn-card-photo" style="--c:${color}">
+        ${src ? `<img src="${src}" alt="" loading="lazy" onerror="this.style.display='none'">` : ''}
+      </div>
       <div class="stn-card-stripe" style="background:${color}"></div>
       <div class="stn-card-body">
         <strong>${s.short || s.label}</strong>
         <span>${s.station ? 'м. ' + s.station : (s.sub || '')}</span>
         ${s.layout ? `<span class="stn-card-detail">${s.layout}</span>` : ''}
+        ${teamHtml}
       </div>
     </div>`;
   };
@@ -291,7 +388,7 @@
     if (stationsCopyEl) {
       stationsCopyEl.textContent = c.city === 'Санкт-Петербург'
         ? 'А также филиалы в городах: Янино, Петрозаводск, Рязань, Гатчина, Кировск, Саратов, Шушары, Ростов-на-Дону и других.'
-        : `Сеть СТО SPOT: 23 станции в Санкт-Петербурге и филиалы в более чем 20 городах России.`;
+        : `Сеть СТО SPOT: 28 станций в Санкт-Петербурге и филиалы в более чем 20 городах России.`;
     }
     renderStations(c.city);
 
@@ -515,7 +612,7 @@
       <div class="info-stats">
         <div class="info-stats-item"><strong>13 лет</strong><span>на рынке</span></div>
         <div class="info-stats-item"><strong>896 000+</strong><span>замен масла</span></div>
-        <div class="info-stats-item"><strong>23</strong><span>станции в СПб</span></div>
+        <div class="info-stats-item"><strong>28+</strong><span>станций в СПб</span></div>
         <div class="info-stats-item"><strong>4.8 / 5</strong><span>средняя оценка</span></div>
       </div>
       ${phoneRow}`,
@@ -796,12 +893,27 @@
           <span>${name}</span>
         </div>
         <ul class="map-stn-list">
-          ${byLine[line].map(s => `
-            <li data-box="${s.box}">
-              <strong>${s.short}</strong>
-              <span>м. ${s.station}</span>
-              ${s.layout ? `<span class="map-stn-detail">${s.layout}${s.height ? ' · ' + s.height : ''}</span>` : ''}
-            </li>`).join('')}
+          ${byLine[line].map(s => {
+            const src = stationImgSrc(s);
+            const emps = getEmployees(s.short);
+            const teamRow = emps.length
+              ? `<div class="map-stn-team">
+                  ${emps.slice(0, 3).map(e => `<img class="map-stn-avatar" src="${e.photo}" alt="${e.name}" title="${e.name}" loading="lazy" onerror="this.style.display='none'">`).join('')}
+                  <span>${emps.map(e => e.name).join(', ')}</span>
+                </div>`
+              : '';
+            return `<li data-box="${s.box}">
+              <div class="map-stn-thumb" style="--c:${color}">
+                ${src ? `<img src="${src}" alt="" loading="lazy" onerror="this.style.display='none'">` : ''}
+              </div>
+              <div class="map-stn-info">
+                <strong>${s.short}</strong>
+                <span>м. ${s.station}</span>
+                ${s.layout ? `<span class="map-stn-detail">${s.layout}${s.height ? ' · ' + s.height : ''}</span>` : ''}
+                ${teamRow}
+              </div>
+            </li>`;
+          }).join('')}
         </ul>
       </div>`;
     }).join('');
@@ -843,13 +955,24 @@
       const color = LINE_COLORS[s.line] || '#999';
       const marker = L.marker([s.lat, s.lng], { icon: createPinIcon(color) })
         .bindPopup(
-          `<div class="spp">
-            <div class="spp-addr">${s.short}</div>
-            <div class="spp-metro"><span class="spp-dot" style="background:${color}"></span>м. ${s.station}</div>
-            ${s.layout ? `<div class="spp-detail">${s.layout} · ${s.height}</div>` : ''}
-            ${s.note ? `<div class="spp-note">${s.note}</div>` : ''}
-            <button class="spp-btn spot-popup-book">Записаться</button>
-          </div>`,
+          (() => {
+            const popupEmps = getEmployees(s.short);
+            const teamBlock = popupEmps.length
+              ? `<div class="spp-team">
+                  <div class="spp-team-avatars">${popupEmps.slice(0, 4).map(e => `<img class="spp-avatar" src="${e.photo}" alt="${e.name}" title="${e.name}" loading="lazy" onerror="this.style.display='none'">`).join('')}</div>
+                  <div class="spp-team-names">${popupEmps.map(e => e.name).join(' · ')}</div>
+                </div>`
+              : '';
+            return `<div class="spp">
+              ${stationImgSrc(s) ? `<div class="spp-photo"><img src="${stationImgSrc(s)}" alt="" loading="lazy" onerror="this.parentElement.style.display='none'"></div>` : ''}
+              <div class="spp-addr">${s.short}</div>
+              <div class="spp-metro"><span class="spp-dot" style="background:${color}"></span>м. ${s.station}</div>
+              ${s.layout ? `<div class="spp-detail">${s.layout} · ${s.height}</div>` : ''}
+              ${s.note ? `<div class="spp-note">${s.note}</div>` : ''}
+              ${teamBlock}
+              <a href="https://yandex.ru/maps/?rtext=~${s.lat},${s.lng}&rtt=auto" target="_blank" rel="noopener" class="spp-btn">Маршрут</a>
+            </div>`;
+          })(),
           { maxWidth: 220, className: 'spot-popup-wrap' }
         ).addTo(leafletMap);
       stationMarkers.set(s.box, { marker, color });
@@ -891,7 +1014,6 @@
     if (e.target.closest('[data-open-map]')) { e.preventDefault(); openMapModal(); return; }
     if (e.target.closest('[data-close-map]')) { closeMapModal(); return; }
     if (e.target.closest('[data-map-to-booking]')) { closeMapModal(); openBooking(); return; }
-    if (e.target.closest('.spot-popup-book')) { closeMapModal(); openBooking(); return; }
   });
 
   /* ---------- Global Esc closes any open modal ---------- */
