@@ -349,17 +349,17 @@
       return;
     }
     if (cityName === 'Санкт-Петербург') {
-      const ROWS = 3;
-      const SPEEDS = [110, 90, 125];
-      const DIRS   = ['left','right','left'];
-      let rows = '';
-      for (let i = 0; i < ROWS; i++) {
-        const offset = Math.floor((i / ROWS) * list.length);
+      const COLS = 2;
+      const SPEEDS = [90, 120];
+      const DIRS   = ['up', 'down'];
+      let cols = '';
+      for (let i = 0; i < COLS; i++) {
+        const offset = Math.floor((i / COLS) * list.length);
         const rotated = [...list.slice(offset), ...list.slice(0, offset)];
         const cards = rotated.map(makeCard).join('');
-        rows += `<div class="stn-track" data-dir="${DIRS[i]}" style="animation-duration:${SPEEDS[i]}s">${cards}${cards}</div>`;
+        cols += `<div class="stn-track" data-dir="${DIRS[i]}" style="animation-duration:${SPEEDS[i]}s">${cards}${cards}</div>`;
       }
-      stationListEl.innerHTML = `<div class="stn-ticker-wrap">${rows}</div>`;
+      stationListEl.innerHTML = `<div class="stn-ticker-wrap">${cols}</div>`;
       return;
     }
     stationListEl.innerHTML = '<ul class="station-list">' + list.map(s => {
