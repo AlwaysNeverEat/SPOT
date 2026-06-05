@@ -16,7 +16,8 @@
       "WebFetch(domain:zoon.ru)",
       "WebFetch(domain:zamena-masla-spot.ru)",
       "Bash(Select-String -Path \"D:\\\\gitworkspace\\\\SPOT\\\\main.js\" -Pattern \".\")",
-      "Bash(Select-Object -First 50)"
+      "Bash(Select-Object -First 50)",
+      "Bash(claude mcp *)"
     ]
   }
 }
