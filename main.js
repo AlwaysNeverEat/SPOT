@@ -916,50 +916,64 @@
     });
   }
 
-  /* ---------- Cars feed slider ---------- */
+  /* ---------- Cars feed slider (infinite loop) ---------- */
   const carsTrack = document.getElementById('carsTrack');
   if (carsTrack) {
     const viewport = carsTrack.closest('.cars-viewport');
     const prevBtn = viewport && viewport.querySelector('.cars-arrow-prev');
     const nextBtn = viewport && viewport.querySelector('.cars-arrow-next');
 
-    const stepSize = () => {
+    /* duplicate the set on both sides so the track loops seamlessly */
+    const originals = Array.from(carsTrack.children);
+    const n = originals.length;
+    const head = document.createDocumentFragment();
+    const tail = document.createDocumentFragment();
+    originals.forEach(c => { head.appendChild(c.cloneNode(true)); tail.appendChild(c.cloneNode(true)); });
+    carsTrack.insertBefore(head, carsTrack.firstChild);
+    carsTrack.appendChild(tail);
+
+    const cardStep = () => {
       const card = carsTrack.querySelector('.car-card');
-      if (!card) return carsTrack.clientWidth * 0.8;
       const gap = parseFloat(getComputedStyle(carsTrack).columnGap) || 0;
-      return card.offsetWidth + gap;
+      return (card ? card.offsetWidth : carsTrack.clientWidth * 0.8) + gap;
     };
+    let setWidth = cardStep() * n;
 
-    const syncArrows = () => {
-      if (!prevBtn || !nextBtn) return;
-      const maxScroll = carsTrack.scrollWidth - carsTrack.clientWidth - 1;
-      prevBtn.disabled = carsTrack.scrollLeft <= 0;
-      nextBtn.disabled = carsTrack.scrollLeft >= maxScroll;
-    };
+    /* park the viewport on the middle copy */
+    const recenter = () => { setWidth = cardStep() * n; carsTrack.scrollLeft = setWidth; };
+    recenter();
+    window.addEventListener('resize', recenter);
 
-    prevBtn && prevBtn.addEventListener('click', () => carsTrack.scrollBy({ left: -stepSize(), behavior: 'smooth' }));
-    nextBtn && nextBtn.addEventListener('click', () => carsTrack.scrollBy({ left: stepSize(), behavior: 'smooth' }));
-    carsTrack.addEventListener('scroll', syncArrows, { passive: true });
-    window.addEventListener('resize', syncArrows);
-    syncArrows();
+    /* whenever we drift into a clone, jump one set back/forward — identical
+       content makes the jump invisible, so the carousel never hits an end */
+    let wrapping = false;
+    carsTrack.addEventListener('scroll', () => {
+      if (wrapping) return;
+      const x = carsTrack.scrollLeft;
+      if (x >= setWidth * 2) { wrapping = true; carsTrack.scrollLeft = x - setWidth; wrapping = false; }
+      else if (x < setWidth) { wrapping = true; carsTrack.scrollLeft = x + setWidth; wrapping = false; }
+    }, { passive: true });
 
-    /* drag-to-scroll on desktop (pointer) */
-    let down = false, startX = 0, startScroll = 0, moved = false;
+    prevBtn && prevBtn.addEventListener('click', () => carsTrack.scrollBy({ left: -cardStep(), behavior: 'smooth' }));
+    nextBtn && nextBtn.addEventListener('click', () => carsTrack.scrollBy({ left: cardStep(), behavior: 'smooth' }));
+
+    /* drag-to-scroll on desktop (incremental, so it plays nice with wrapping) */
+    let down = false, lastX = 0, downX = 0, moved = false;
     carsTrack.addEventListener('pointerdown', (e) => {
       if (e.pointerType === 'touch') return; // native touch swipe handles this
       down = true; moved = false;
-      startX = e.clientX;
-      startScroll = carsTrack.scrollLeft;
+      lastX = downX = e.clientX;
     });
     carsTrack.addEventListener('pointermove', (e) => {
       if (!down) return;
-      const dx = e.clientX - startX;
-      if (Math.abs(dx) > 4) {
+      const dx = e.clientX - lastX;
+      lastX = e.clientX;
+      if (Math.abs(e.clientX - downX) > 4) {
         moved = true;
         carsTrack.classList.add('is-dragging');
         carsTrack.setPointerCapture(e.pointerId);
       }
-      carsTrack.scrollLeft = startScroll - dx;
+      carsTrack.scrollLeft -= dx;
     });
     const endDrag = () => { down = false; carsTrack.classList.remove('is-dragging'); };
     carsTrack.addEventListener('pointerup', endDrag);
