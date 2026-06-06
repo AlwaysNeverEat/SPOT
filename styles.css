@@ -21,7 +21,11 @@
   --radius-sm: 10px;
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; overflow-wrap: break-word; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* Break long words only in block text, not in headings/UI elements */
+p, li, dt, dd, td, th, blockquote, label, figcaption { overflow-wrap: break-word; }
+h1, h2, h3, h4, h5, h6 { overflow-wrap: normal; word-break: normal; hyphens: none; }
 
 html { scroll-behavior: smooth; }
 
@@ -893,14 +897,16 @@ body.menu-open { overflow: hidden; }
   .footer-grid { grid-template-columns: 1fr; gap: 2rem; }
   .scroll-hint { display: none; }
   .reviews-deck { max-width: 100%; padding: 0 1.2rem 2rem; }
+  .trust { padding: 4rem 1.2rem; }
+  .trust-grid { grid-template-columns: 1fr; gap: 0.9rem; }
+  .trust-card { padding: 1.4rem 1.2rem; }
+  .trust-card h3 { font-size: 1.1rem; }
 }
 
 /* ---- Телефон: финальные 1-col, типографика ---- */
 @media (max-width: 480px) {
   .stats { grid-template-columns: 1fr; padding: 3.2rem 1.2rem; gap: 1.3rem; }
   .promo-grid { grid-template-columns: 1fr; }
-  .trust { padding: 4rem 1.2rem; }
-  .trust-grid { grid-template-columns: 1fr; }
   .reviews { padding: 4rem 0; }
   .reviews-head { padding: 0 1.2rem; }
   .review { padding: 1.4rem 1.2rem 1rem; }
