@@ -916,6 +916,61 @@
     });
   }
 
+  /* ---------- Cars feed slider ---------- */
+  const carsTrack = document.getElementById('carsTrack');
+  if (carsTrack) {
+    const viewport = carsTrack.closest('.cars-viewport');
+    const prevBtn = viewport && viewport.querySelector('.cars-arrow-prev');
+    const nextBtn = viewport && viewport.querySelector('.cars-arrow-next');
+
+    const stepSize = () => {
+      const card = carsTrack.querySelector('.car-card');
+      if (!card) return carsTrack.clientWidth * 0.8;
+      const gap = parseFloat(getComputedStyle(carsTrack).columnGap) || 0;
+      return card.offsetWidth + gap;
+    };
+
+    const syncArrows = () => {
+      if (!prevBtn || !nextBtn) return;
+      const maxScroll = carsTrack.scrollWidth - carsTrack.clientWidth - 1;
+      prevBtn.disabled = carsTrack.scrollLeft <= 0;
+      nextBtn.disabled = carsTrack.scrollLeft >= maxScroll;
+    };
+
+    prevBtn && prevBtn.addEventListener('click', () => carsTrack.scrollBy({ left: -stepSize(), behavior: 'smooth' }));
+    nextBtn && nextBtn.addEventListener('click', () => carsTrack.scrollBy({ left: stepSize(), behavior: 'smooth' }));
+    carsTrack.addEventListener('scroll', syncArrows, { passive: true });
+    window.addEventListener('resize', syncArrows);
+    syncArrows();
+
+    /* drag-to-scroll on desktop (pointer) */
+    let down = false, startX = 0, startScroll = 0, moved = false;
+    carsTrack.addEventListener('pointerdown', (e) => {
+      if (e.pointerType === 'touch') return; // native touch swipe handles this
+      down = true; moved = false;
+      startX = e.clientX;
+      startScroll = carsTrack.scrollLeft;
+    });
+    carsTrack.addEventListener('pointermove', (e) => {
+      if (!down) return;
+      const dx = e.clientX - startX;
+      if (Math.abs(dx) > 4) {
+        moved = true;
+        carsTrack.classList.add('is-dragging');
+        carsTrack.setPointerCapture(e.pointerId);
+      }
+      carsTrack.scrollLeft = startScroll - dx;
+    });
+    const endDrag = () => { down = false; carsTrack.classList.remove('is-dragging'); };
+    carsTrack.addEventListener('pointerup', endDrag);
+    carsTrack.addEventListener('pointercancel', endDrag);
+    carsTrack.addEventListener('pointerleave', endDrag);
+    /* swallow click that ends a drag so «Выбрать» doesn't fire on a swipe */
+    carsTrack.addEventListener('click', (e) => {
+      if (moved) { e.preventDefault(); e.stopPropagation(); moved = false; }
+    }, true);
+  }
+
   /* ---------- Map modal ---------- */
   const mapModal = document.getElementById('mapModal');
   const mapStationListEl = document.getElementById('mapStationList');
