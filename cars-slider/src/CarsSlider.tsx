@@ -15,33 +15,39 @@ const reduceMotion =
   window.matchMedia &&
   window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-const slideVariants = {
-  enter: (dir: number) => ({
-    x: dir > 0 ? 600 : -600,
-    rotateY: dir > 0 ? 40 : -40,
-    opacity: 0,
-    scale: 0.8,
-  }),
-  center: {
-    x: 0,
-    rotateY: 0,
-    opacity: 1,
-    scale: 1,
-    transition: { duration: reduceMotion ? 0 : 0.7, ease: [0.25, 0.1, 0.25, 1] as const },
-  },
-  exit: (dir: number) => ({
-    x: dir > 0 ? -600 : 600,
-    rotateY: dir > 0 ? -40 : 40,
-    opacity: 0,
-    scale: 0.8,
-    transition: { duration: reduceMotion ? 0 : 0.7, ease: [0.25, 0.1, 0.25, 1] as const },
-  }),
-};
+const slideVariants = reduceMotion
+  ? {
+      enter: { opacity: 0, x: 0, rotateY: 0, scale: 1 },
+      center: { opacity: 1, x: 0, rotateY: 0, scale: 1, transition: { duration: 0.25 } },
+      exit: { opacity: 0, x: 0, rotateY: 0, scale: 1, transition: { duration: 0.2 } },
+    }
+  : {
+      enter: (dir: number) => ({
+        x: dir > 0 ? 600 : -600,
+        rotateY: dir > 0 ? 40 : -40,
+        opacity: 0,
+        scale: 0.8,
+      }),
+      center: {
+        x: 0,
+        rotateY: 0,
+        opacity: 1,
+        scale: 1,
+        transition: { duration: 0.7, ease: [0.25, 0.1, 0.25, 1] as const },
+      },
+      exit: (dir: number) => ({
+        x: dir > 0 ? -600 : 600,
+        rotateY: dir > 0 ? -40 : 40,
+        opacity: 0,
+        scale: 0.8,
+        transition: { duration: 0.7, ease: [0.25, 0.1, 0.25, 1] as const },
+      }),
+    };
 
 export function CarsSlider() {
   const [index, setIndex] = useState(0);
   const [direction, setDirection] = useState(0);
-  const [playing, setPlaying] = useState(!reduceMotion);
+  const [playing, setPlaying] = useState(true);
   const [hover, setHover] = useState(false);
   const [progress, setProgress] = useState(0);
   const progressRef = useRef(0);
@@ -118,7 +124,7 @@ export function CarsSlider() {
               if (info.offset.x < -80) go(1);
               else if (info.offset.x > 80) go(-1);
             }}
-            style={{ transformStyle: 'preserve-3d', cursor: 'grab' }}
+            style={{ transformStyle: 'preserve-3d', cursor: 'grab', width: 'min(420px, calc(100vw - 90px))' }}
           >
             <div style={styles.card}>
               <div style={styles.imgWrap}>
@@ -230,7 +236,7 @@ const styles: Record<string, CSSProperties> = {
     perspective: '1500px',
   },
   card: {
-    width: 'min(420px, 100%)',
+    width: '100%',
     borderRadius: 24,
     overflow: 'hidden',
     background: '#fff',
@@ -238,7 +244,7 @@ const styles: Record<string, CSSProperties> = {
     position: 'relative',
     textAlign: 'left',
   },
-  imgWrap: { position: 'relative', height: 'min(300px, 54vw)', overflow: 'hidden', background: 'var(--bg-soft, #f3f4f1)' },
+  imgWrap: { position: 'relative', width: '100%', aspectRatio: '7 / 4', overflow: 'hidden', background: 'var(--bg-soft, #f3f4f1)' },
   img: { width: '100%', height: '100%', objectFit: 'cover', display: 'block' },
   imgShade: { position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.45), transparent 55%)' },
   body: { padding: '1.8rem 1.8rem 2rem' },
