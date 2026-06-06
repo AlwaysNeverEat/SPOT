@@ -709,18 +709,27 @@
     const loadCatalog = async () => {
       if (catalogLoaded) return;
       catalogLoaded = true;
-      try {
-        const res = await fetch('data/oils.json', { cache: 'no-cache' });
-        if (!res.ok) throw new Error('HTTP ' + res.status);
-        const json = await res.json();
-        CATALOG = json.items || [];
+      const apply = (data) => {
+        CATALOG = (data && data.items) || [];
         buildFilters();
         cLoading.hidden = true;
         render();
-      } catch (e) {
+      };
+      // Данные подключаем тегом <script> (data/oils.js → window.__SPOT_OILS__),
+      // чтобы каталог работал и при открытии index.html напрямую по file://,
+      // где fetch() локального JSON блокируется браузером.
+      if (window.__SPOT_OILS__) { apply(window.__SPOT_OILS__); return; }
+      const script = document.createElement('script');
+      script.src = 'data/oils.js';
+      script.onload = () => {
+        if (window.__SPOT_OILS__) apply(window.__SPOT_OILS__);
+        else { catalogLoaded = false; cLoading.textContent = 'Не удалось загрузить каталог. Попробуйте обновить страницу.'; }
+      };
+      script.onerror = () => {
         catalogLoaded = false;
         cLoading.textContent = 'Не удалось загрузить каталог. Попробуйте обновить страницу.';
-      }
+      };
+      document.head.appendChild(script);
     };
 
     const openCatalog = () => {

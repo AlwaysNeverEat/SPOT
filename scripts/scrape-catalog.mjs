@@ -215,7 +215,12 @@ async function main() {
 
   await mkdir(dirname(OUT), { recursive: true });
   await writeFile(OUT, JSON.stringify(payload, null, 2), 'utf8');
+  // JS-обёртка: грузится через <script>, работает при открытии index.html по file://
+  // (fetch JSON браузер блокирует на file://). Сайт читает window.__SPOT_OILS__.
+  const OUT_JS = OUT.replace(/\.json$/, '.js');
+  await writeFile(OUT_JS, `window.__SPOT_OILS__ = ${JSON.stringify(payload)};\n`, 'utf8');
   console.log(`Готово: ${items.length} товаров → ${OUT}`);
+  console.log(`  + JS-обёртка → ${OUT_JS}`);
   const withPrice = items.filter((i) => i.price).length;
   const withVisc = items.filter((i) => i.viscosity).length;
   console.log(`  с ценой: ${withPrice}, с вязкостью: ${withVisc}`);
