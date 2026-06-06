@@ -23,6 +23,10 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* Break a word only when it genuinely can't fit; never break mid-word
+   unnecessarily, never hyphenate. Safe for both body text and headings. */
+* { overflow-wrap: break-word; word-break: normal; hyphens: none; }
+
 html { scroll-behavior: smooth; }
 
 body {
@@ -146,8 +150,108 @@ h5 { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em; marg
 
 .cta-group { display: flex; gap: 0.6rem; align-items: center; }
 
-.burger { display: none; background: none; border: none; flex-direction: column; gap: 5px; cursor: pointer; padding: 8px; }
-.burger span { display: block; width: 24px; height: 2px; background: var(--ink); transition: .3s; }
+.burger { display: none; background: none; border: none; flex-direction: column; gap: 5px; cursor: pointer; padding: 8px; min-width: 40px; min-height: 40px; align-items: center; justify-content: center; }
+.burger span { display: block; width: 24px; height: 2px; background: var(--ink); transition: transform .3s, opacity .3s, background .3s; }
+.burger.is-open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.burger.is-open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
+.burger.is-open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+body.menu-open { overflow: hidden; }
+
+/* =========== MOBILE MENU =========== */
+.mobile-menu {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 150;
+}
+.mobile-menu.is-open { display: block; }
+.mobile-menu-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(13,13,13,0.45);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  opacity: 0;
+  transition: opacity .3s ease;
+  cursor: pointer;
+}
+.mobile-menu.is-open .mobile-menu-backdrop { opacity: 1; }
+.mobile-menu-panel {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  background: var(--white);
+  max-height: 100dvh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  transform: translateY(-100%);
+  transition: transform .35s cubic-bezier(.2,.8,.3,1);
+  border-radius: 0 0 var(--radius) var(--radius);
+  box-shadow: var(--shadow-lg);
+}
+.mobile-menu.is-open .mobile-menu-panel { transform: translateY(0); }
+.mobile-menu-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--line);
+  flex-shrink: 0;
+}
+.mobile-menu-close {
+  width: 40px; height: 40px;
+  border: 1.5px solid var(--line);
+  background: var(--bg-soft);
+  border-radius: 50%;
+  cursor: pointer;
+  color: var(--ink);
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: background .2s, border-color .2s, color .2s;
+  flex-shrink: 0;
+}
+.mobile-menu-close:hover { background: var(--ink); color: #fff; border-color: var(--ink); }
+.mobile-menu-nav { display: flex; flex-direction: column; }
+.mobile-menu-link {
+  display: flex;
+  align-items: center;
+  padding: 0.9rem 1.4rem;
+  font-size: 1.08rem;
+  font-weight: 600;
+  color: var(--ink);
+  border-bottom: 1px solid var(--line);
+  transition: background .15s, color .15s;
+  min-height: 52px;
+}
+.mobile-menu-link:hover { background: var(--bg-soft); color: var(--green); }
+.mobile-menu-actions {
+  padding: 1.2rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  border-top: 1px solid var(--line);
+  padding-bottom: calc(1.2rem + env(safe-area-inset-bottom));
+}
+.mobile-menu-actions .btn { justify-content: center; min-height: 48px; }
+.mobile-menu-city {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--ink);
+  cursor: pointer;
+  transition: border-color .2s;
+  min-height: 44px;
+}
+.mobile-menu-city:hover { border-color: var(--green); }
+.mobile-menu-city svg { color: var(--green); flex: 0 0 auto; }
+@media (min-width: 1025px) { .mobile-menu { display: none !important; } }
 
 /* =========== HERO =========== */
 .hero {
@@ -704,65 +808,15 @@ h5 { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em; marg
   z-index: 99;
   background: rgba(255,255,255,0.95);
   backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   padding: 0.75rem 1rem;
+  padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));
   gap: 0.6rem;
   border-top: 1px solid var(--line);
 }
-.mobile-cta .btn { flex: 1; padding: 0.85rem; font-size: 0.9rem; }
-.btn-ghost-mobile { background: var(--bg-soft); color: var(--ink); }
+.mobile-cta .btn { flex: 1; padding: 0.85rem; font-size: 0.9rem; min-height: 48px; }
+.btn-ghost-mobile { background: var(--bg-soft); color: var(--ink); border: 1.5px solid var(--line); }
 
-/* =========== RESPONSIVE =========== */
-@media (max-width: 1100px) {
-  .nav { display: none; }
-  .header { padding: 0.8rem 1.5rem; gap: 0.8rem; }
-  .stations { grid-template-columns: 1fr; gap: 3rem; padding: 5rem 1.5rem; }
-  .station-list { grid-template-columns: 1fr; }
-  .promo-grid { grid-template-columns: repeat(2, 1fr); }
-  .footer-grid { grid-template-columns: 1fr 1fr; }
-}
-@media (max-width: 760px) {
-  .header { padding: 0.7rem 1rem; }
-  .cta-group { display: none; }
-  .logo img { height: 34px; }
-  .city-picker { padding: 0.5rem 0.7rem; font-size: 0.82rem; }
-  .city-picker .city-name { max-width: 110px; overflow: hidden; text-overflow: ellipsis; }
-  .burger { display: flex; }
-  .mobile-cta { display: flex; }
-  body { padding-bottom: 70px; }
-  .hero { padding: 7rem 1.2rem 3rem; min-height: auto; }
-  .hero-video-wrap {
-    position: absolute;
-    z-index: 0;
-  }
-  .hero-content { max-width: 100%; }
-  .hero h1 { font-size: clamp(2rem, 9vw, 2.8rem); }
-  .hero .lead { font-size: 0.98rem; }
-  .badge { font-size: 0.78rem; }
-  .stats { grid-template-columns: 1fr; padding: 3.2rem 1.2rem; gap: 1.3rem; }
-  .stat {
-    padding: 1.2rem;
-    border-radius: 14px;
-    background: rgba(255,255,255,0.04);
-  }
-  .hero-actions { flex-direction: column; }
-  .hero-actions .btn { width: 100%; }
-  .hscroll-wrap { height: auto; }
-  .hscroll-pin { position: relative; height: auto; padding: 4rem 0; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  .hscroll-track { padding: 0 1.2rem; }
-  .hpanel { width: 86vw; height: 62vh; }
-  .hpanel-card .card-body { padding: 1.2rem 1.2rem 1.4rem; }
-  .hpanel-card p { font-size: 0.93rem; }
-  .steps { grid-template-columns: 1fr; }
-  .step { padding: 1.4rem; }
-  .how { padding: 5rem 1.2rem; }
-  .brands { padding: 5rem 1.2rem; }
-  .promo { padding: 5rem 1.2rem; }
-  .promo-grid { grid-template-columns: 1fr; }
-  .cta { padding: 6rem 1.2rem; }
-  .footer { padding: 4rem 1.2rem 2rem; }
-  .footer-grid { grid-template-columns: 1fr; gap: 2rem; }
-  .scroll-hint { display: none; }
-}
 
 /* =========== PRICE-LIST CTA =========== */
 .price-cta {
@@ -1054,18 +1108,6 @@ h5 { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em; marg
 .price-modal-actions { display: flex; gap: 0.6rem; flex-wrap: wrap; }
 .price-modal-actions .btn { padding: 0.7rem 1.3rem; font-size: 0.92rem; }
 
-@media (max-width: 700px) {
-  .price-modal { padding: 0; }
-  .price-modal-window { max-height: 100vh; height: 100vh; border-radius: 0; }
-  .price-modal-head { padding: 1.4rem 1.2rem 1rem; }
-  .price-modal-head h3 { font-size: 1.3rem; }
-  .price-list { padding: 0.8rem 1.2rem 1rem; }
-  .price-group li { grid-template-columns: 1fr; gap: 0.3rem; padding: 0.7rem 0.3rem; }
-  .price-row-cost { font-size: 1rem; }
-  .price-modal-foot { padding: 1rem 1.2rem; flex-direction: column; align-items: stretch; }
-  .price-modal-foot .muted { max-width: none; }
-  .price-modal-actions .btn { flex: 1; justify-content: center; }
-}
 
 /* =========== PROMO CARDS (clickable) =========== */
 .promo-card {
@@ -1240,11 +1282,6 @@ h5 { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em; marg
 .info-gallery button:hover img { transform: scale(1.06); }
 .info-modal-body .muted.small { color: var(--muted); font-size: 0.85rem; margin-top: 1rem; }
 
-@media (max-width: 700px) {
-  .info-modal, .book-modal { padding: 0; }
-  .info-modal-window, .book-modal-window { max-height: 100vh; height: 100vh; border-radius: 0; }
-  .info-modal-body { padding: 1.6rem 1.2rem 1.4rem; }
-}
 
 /* =========== BOOKING MODAL =========== */
 .book-modal-grid {
@@ -1411,14 +1448,6 @@ h5 { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em; marg
 .oil-form input:focus,
 .oil-form select:focus { outline: none; border-color: var(--green); background: #fff; }
 
-@media (max-width: 800px) {
-  .book-modal-grid { grid-template-columns: 1fr; }
-  .book-aside { padding: 1.4rem 1.2rem; }
-  .book-aside h3 { font-size: 1.3rem; }
-  .book-aside-list { display: none; }
-  .book-form { padding: 1.4rem 1.2rem; }
-  .book-row { grid-template-columns: 1fr; gap: 0.8rem; }
-}
 
 /* =========== TRUST / ABOUT =========== */
 .trust {
@@ -1478,13 +1507,6 @@ h5 { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em; marg
 }
 .trust-card:hover .trust-link { gap: 0.6rem; }
 
-@media (max-width: 1100px) {
-  .trust-grid { grid-template-columns: repeat(2, 1fr); }
-}
-@media (max-width: 600px) {
-  .trust { padding: 4rem 1.2rem; }
-  .trust-grid { grid-template-columns: 1fr; }
-}
 
 /* =========== REVIEWS =========== */
 .reviews {
@@ -1624,12 +1646,6 @@ h5 { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em; marg
 .rev-arrow:hover { background: var(--green); color: #fff; border-color: var(--green); }
 .rev-arrow:active { transform: scale(0.95); }
 
-@media (max-width: 600px) {
-  .reviews { padding: 4rem 0; }
-  .reviews-head { padding: 0 1.2rem; }
-  .reviews-deck { padding: 0 1.2rem 1.6rem; }
-  .review { padding: 1.4rem 1.2rem 1rem; }
-}
 
 /* =========== FAQ =========== */
 .faq {
@@ -1689,11 +1705,6 @@ h5 { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em; marg
   to   { opacity: 1; transform: translateY(0); }
 }
 
-@media (max-width: 600px) {
-  .faq { padding: 4rem 1.2rem; }
-  .faq-item summary { padding: 1rem 1.1rem; font-size: 0.97rem; }
-  .faq-body { padding: 0 1.1rem 1.1rem; }
-}
 
 /* =========== LIGHTBOX =========== */
 .lightbox {
@@ -1892,13 +1903,6 @@ h5 { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em; marg
 .spot-pin svg { display: block; transition: transform .2s ease, filter .15s ease; transform-origin: bottom center; }
 .spot-pin-active svg { transform: scale(1.4); filter: drop-shadow(0 4px 10px rgba(0,0,0,0.35)); }
 
-@media (max-width: 900px) {
-  .map-modal { padding: 0; }
-  .map-modal-window { max-height: 100dvh; height: 100dvh; border-radius: 0; }
-  .map-modal-layout { grid-template-columns: 1fr; }
-  .map-area { display: none; }
-  .map-sidebar-head h3 { padding-right: 3rem; }
-}
 
 /* =========== SCROLLBAR =========== */
 html { scrollbar-color: var(--green) transparent; scrollbar-width: thin; }
@@ -1918,6 +1922,8 @@ html { scrollbar-color: var(--green) transparent; scrollbar-width: thin; }
 
 /* Character-by-character heading reveal */
 .line-wrap { display: block; }
+/* Keep each word's animated letters together so words never break mid-letter */
+.word { display: inline-block; white-space: nowrap; }
 .char {
   display: inline-block;
   opacity: 0;
@@ -1932,3 +1938,178 @@ html { scrollbar-color: var(--green) transparent; scrollbar-width: thin; }
 .hero .btn-primary:hover { background: #f3f3f3; }
 .hero .btn-outline { border-color: #fff; color: #fff; }
 .hero .btn-outline:hover { background: #fff; color: #111; }
+
+/* =========== MODALS — MOBILE (placed last so they win the cascade) =========== */
+@media (max-width: 768px) {
+  /* City */
+  .city-modal { padding: 0; }
+  .city-modal-window { max-width: 100%; max-height: 100dvh; height: 100dvh; border-radius: 0; }
+  .city-modal-close { width: 40px; height: 40px; }
+
+  /* Price */
+  .price-modal { padding: 0; }
+  .price-modal-window { max-width: 100%; max-height: 100dvh; height: 100dvh; border-radius: 0; }
+  .price-modal-close { width: 40px; height: 40px; }
+  .price-modal-head { padding: 1.4rem 1.2rem 1rem; }
+  .price-modal-head h3 { font-size: 1.3rem; }
+  .price-list { padding: 0.8rem 1.2rem 1rem; }
+  .price-group li { grid-template-columns: 1fr; gap: 0.3rem; padding: 0.7rem 0.3rem; }
+  .price-row-cost { font-size: 1rem; }
+  .price-modal-foot { padding: 1rem 1.2rem; flex-direction: column; align-items: stretch; }
+  .price-modal-foot .muted { max-width: none; }
+  .price-modal-actions .btn { flex: 1; justify-content: center; }
+
+  /* Info + Booking */
+  .info-modal, .book-modal { padding: 0; }
+  .info-modal-window, .book-modal-window { max-width: 100%; max-height: 100dvh; height: 100dvh; border-radius: 0; }
+  .info-modal-close { width: 40px; height: 40px; }
+  .info-modal-body { padding: 1.6rem 1.2rem 1.4rem; }
+  .book-modal-grid { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+  .book-aside { padding: 1.2rem; }
+  .book-aside h3 { font-size: 1.2rem; }
+  .book-aside-list { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; margin: 0.4rem 0 0; font-size: 0.82rem; }
+  .book-aside-foot { display: none; }
+  .book-form { padding: 1.2rem; }
+  .book-row { grid-template-columns: 1fr; gap: 0.8rem; }
+
+  /* Map — list on top, map below (was hidden before) */
+  .map-modal { padding: 0; }
+  .map-modal-window { max-width: 100%; max-height: 100dvh; height: 100dvh; border-radius: 0; }
+  .map-modal-close { width: 40px; height: 40px; }
+  .map-modal-layout { grid-template-columns: 1fr; grid-template-rows: minmax(0, 45dvh) minmax(0, 1fr); }
+  .map-sidebar { border-right: none; border-bottom: 1px solid var(--line); }
+  .map-area { display: block; min-height: 0; }
+  .map-sidebar-head h3 { padding-right: 3rem; }
+}
+
+@media (max-width: 360px) {
+  .book-aside-list { grid-template-columns: 1fr; }
+}
+
+/* =========================================================================
+   RESPONSIVE — moved to end so mobile overrides win the cascade over
+   late-defined component base styles (trust, reviews, faq, modals).
+   ========================================================================= */
+/* =========== RESPONSIVE (1024 / 768 / 480 / 360) =========== */
+
+/* ---- Tablet: nav → burger, sетки 2-col ---- */
+@media (max-width: 1024px) {
+  .nav { display: none; }
+  .burger { display: flex; }
+  .header { padding: 0.8rem 1.5rem; gap: 0.8rem; }
+  .stats { grid-template-columns: repeat(2, 1fr); padding: 4rem 1.5rem; gap: 1.5rem; }
+  .steps { grid-template-columns: repeat(2, 1fr); }
+  .promo-grid { grid-template-columns: repeat(3, 1fr); }
+  .trust-grid { grid-template-columns: repeat(2, 1fr); }
+  .footer-grid { grid-template-columns: 1fr 1fr; }
+  .stations { grid-template-columns: minmax(0, 1fr); gap: 3rem; padding: 5rem 1.5rem; }
+  .stations-left { min-width: 0; max-width: 100%; }
+  .stations-left p { max-width: 100%; }
+  .stations-right { position: relative; left: auto; right: auto; top: auto; bottom: auto; display: block; min-width: 0; width: 100%; max-width: 100%; overflow: hidden; }
+  .stations-right #stationList { width: 100%; max-width: 100%; overflow: hidden; }
+  .station-list { grid-template-columns: 1fr; }
+  .stn-ticker-wrap {
+    width: 100%; max-width: 100%; overflow: hidden;
+    mask-image: linear-gradient(90deg, transparent 0%, #000 5%, #000 95%, transparent 100%);
+    -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 5%, #000 95%, transparent 100%);
+  }
+}
+
+/* ---- Телефоны/портрет планшета: 1-col, mobile nav, модалки fullscreen ---- */
+@media (max-width: 768px) {
+  .header { padding: 0.7rem 1rem; }
+  .cta-group { display: none; }
+  .logo img { height: 34px; }
+  .city-picker { padding: 0.5rem 0.7rem; font-size: 0.82rem; min-height: 44px; }
+  .city-picker .city-name { max-width: 110px; overflow: hidden; text-overflow: ellipsis; }
+  .mobile-cta { display: flex; }
+  body { padding-bottom: calc(70px + env(safe-area-inset-bottom)); }
+  .hero { padding: 7rem 1.2rem 3rem; min-height: auto; }
+  .hero-video-wrap { position: absolute; z-index: 0; }
+  .hero-content { max-width: 100%; }
+  .hero h1 { font-size: clamp(2rem, 9vw, 2.8rem); }
+  .hero .lead { font-size: 0.98rem; }
+  .badge { font-size: 0.78rem; }
+  .stat { padding: 1.2rem; border-radius: 14px; background: rgba(255,255,255,0.04); }
+  .hero-actions { flex-direction: column; }
+  .hero-actions .btn { width: 100%; min-height: 48px; }
+  /* Нативный scroll-snap для услуг */
+  .hscroll-wrap { height: auto; }
+  .hscroll-pin { position: relative; height: auto; overflow: visible; }
+  .hscroll-track {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    padding: 2rem 1.2rem;
+    gap: 1.2rem;
+    scrollbar-width: none;
+    will-change: auto;
+  }
+  .hscroll-track::-webkit-scrollbar { display: none; }
+  .hpanel {
+    flex: 0 0 auto;
+    width: min(82vw, 340px);
+    height: auto;
+    min-height: 360px;
+    scroll-snap-align: center;
+  }
+  .hpanel-intro { padding: 2rem 1.6rem; }
+  .hpanel-intro h2 { font-size: 1.5rem; margin-bottom: 1rem; }
+  .hpanel-card .card-body { padding: 1.2rem 1.2rem 1.4rem; }
+  .hpanel-card p { font-size: 0.93rem; }
+  .hpanel-end { padding: 2rem 1.6rem; }
+  .steps { grid-template-columns: 1fr; }
+  .step { padding: 1.4rem; }
+  .how { padding: 5rem 1.2rem; }
+  .brands { padding: 5rem 1.2rem; }
+  .promo { padding: 5rem 1.2rem; }
+  .promo-grid { grid-template-columns: repeat(2, 1fr); }
+  .price-cta { padding: 3rem 1.2rem; }
+  .price-cta-card { grid-template-columns: 1fr; padding: 1.8rem 1.4rem; border-radius: 20px; }
+  .price-cta-text { max-width: 100%; }
+  .price-cta-text h2 { font-size: clamp(1.4rem, 5.5vw, 1.9rem); }
+  .price-cta-text p { font-size: 0.95rem; }
+  .price-cta-actions .btn { width: 100%; min-height: 48px; }
+  .cta { padding: 6rem 1.2rem; }
+  .footer { padding: 4rem 1.2rem 2rem; }
+  .footer-grid { grid-template-columns: 1fr; gap: 2rem; }
+  .scroll-hint { display: none; }
+  .reviews-deck { max-width: 100%; padding: 0 1.2rem 2rem; }
+  .trust { padding: 4rem 1.2rem; }
+  .trust-grid { grid-template-columns: 1fr; gap: 0.9rem; }
+  .trust-card { padding: 1.4rem 1.2rem; }
+  .trust-card h3 { font-size: 1.1rem; }
+}
+
+/* ---- Телефон: финальные 1-col, типографика ---- */
+@media (max-width: 480px) {
+  .stats { grid-template-columns: 1fr; padding: 3.2rem 1.2rem; gap: 1.3rem; }
+  .promo-grid { grid-template-columns: 1fr; }
+  .reviews { padding: 4rem 0; }
+  .reviews-head { padding: 0 1.2rem; }
+  .review { padding: 1.4rem 1.2rem 1rem; }
+  .faq { padding: 4rem 1.2rem; }
+  .faq-item summary { padding: 1rem 1.1rem; font-size: 0.97rem; }
+  .faq-body { padding: 0 1.1rem 1.1rem; }
+  .brand-row span { font-size: 1.3rem; }
+  .hpanel { min-height: 320px; }
+}
+
+/* ---- Узкие (320–360px): страховка overflow ---- */
+@media (max-width: 360px) {
+  .hero h1 { font-size: clamp(1.7rem, 9vw, 2.2rem); }
+  h2 { font-size: clamp(1.5rem, 7vw, 2rem); }
+  .city-picker .city-name { max-width: 80px; }
+  .hpanel { width: min(90vw, 300px); }
+  .book-aside-list { grid-template-columns: 1fr; }
+  /* Last-resort: a single word wider than a tiny screen may break rather than overflow */
+  .word { white-space: normal; word-break: break-word; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .brand-row { animation-play-state: paused; }
+  .stn-track { animation-play-state: paused; }
+  .mobile-menu-panel { transition: none; }
+  .mobile-menu-backdrop { transition: none; }
+}

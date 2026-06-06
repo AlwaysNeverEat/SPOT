@@ -1,6 +1,6 @@
 /* СТО SPOT — interactivity (parallax, horizontal scroll, counters, reveal) */
 (() => {
-  const isMobile = () => window.matchMedia('(max-width: 760px)').matches;
+  const isMobile = () => window.matchMedia('(max-width: 768px)').matches;
 
   /* ---------- Header on scroll ---------- */
   const header = document.getElementById('header');
@@ -88,19 +88,27 @@
     const processNodes = (container, nodes, ref) => {
       nodes.forEach(node => {
         if (node.nodeType === Node.TEXT_NODE) {
-          [...node.textContent].forEach(ch => {
-            if (ch === ' ') {
-              // Plain text node — preserves word-wrap, spaces don't need animation
-              container.appendChild(document.createTextNode(' '));
-              ref.i++;
-            } else {
+          // Split on spaces but keep them: chars of a word go inside a .word
+          // wrapper (inline-block, nowrap) so a word never breaks mid-letter;
+          // the space between words stays a real text node = breakable.
+          const tokens = node.textContent.split(/(\s+)/);
+          tokens.forEach(token => {
+            if (token === '') return;
+            if (/^\s+$/.test(token)) {
+              container.appendChild(document.createTextNode(token));
+              return;
+            }
+            const word = document.createElement('span');
+            word.className = 'word';
+            [...token].forEach(ch => {
               const s = document.createElement('span');
               s.className = 'char';
               s.textContent = ch;
               s.style.transitionDelay = `${ref.i * 30}ms`;
-              container.appendChild(s);
+              word.appendChild(s);
               ref.i++;
-            }
+            });
+            container.appendChild(word);
           });
         } else if (node.nodeType === Node.ELEMENT_NODE) {
           const el = document.createElement(node.tagName);
@@ -162,14 +170,49 @@
     });
   });
 
-  /* ---------- Mobile burger (toggle CTAs visibility) ---------- */
+  /* ---------- Mobile menu ---------- */
   const burger = document.getElementById('burger');
-  if (burger) {
-    burger.addEventListener('click', () => {
-      const cta = document.querySelector('.cta-group');
-      if (cta) cta.style.display = cta.style.display === 'flex' ? '' : 'flex';
+  const mobileMenu = document.getElementById('mobileMenu');
+  const mobileMenuBackdrop = document.getElementById('mobileMenuBackdrop');
+  const mobileMenuClose = document.getElementById('mobileMenuClose');
+
+  const openMobileMenu = () => {
+    if (!mobileMenu) return;
+    mobileMenu.classList.add('is-open');
+    mobileMenu.setAttribute('aria-hidden', 'false');
+    burger && burger.classList.add('is-open');
+    burger && burger.setAttribute('aria-expanded', 'true');
+    document.body.classList.add('menu-open');
+  };
+
+  const closeMobileMenu = () => {
+    if (!mobileMenu) return;
+    mobileMenu.classList.remove('is-open');
+    mobileMenu.setAttribute('aria-hidden', 'true');
+    burger && burger.classList.remove('is-open');
+    burger && burger.setAttribute('aria-expanded', 'false');
+    document.body.classList.remove('menu-open');
+  };
+
+  if (burger) burger.addEventListener('click', () => {
+    mobileMenu && mobileMenu.classList.contains('is-open') ? closeMobileMenu() : openMobileMenu();
+  });
+  if (mobileMenuBackdrop) mobileMenuBackdrop.addEventListener('click', closeMobileMenu);
+  if (mobileMenuClose) mobileMenuClose.addEventListener('click', closeMobileMenu);
+
+  if (mobileMenu) {
+    mobileMenu.querySelectorAll('a[href^="#"]').forEach(a => {
+      a.addEventListener('click', closeMobileMenu);
+    });
+    mobileMenu.addEventListener('click', (e) => {
+      const actionable = e.target.closest('[data-open-booking],[data-open-history],[data-open-city],[data-open-map],[data-open-info],[data-open-oilpicker]');
+      if (actionable) closeMobileMenu();
     });
   }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && mobileMenu && mobileMenu.classList.contains('is-open')) closeMobileMenu();
+  });
 
   /* ---------- City picker ---------- */
   const CITIES = [
@@ -301,7 +344,7 @@
   };
 
   const STORAGE_KEY = 'spot:selectedCity';
-  const cityNameEls = [document.getElementById('cityName'), document.getElementById('cityNameFooter')].filter(Boolean);
+  const cityNameEls = [document.getElementById('cityName'), document.getElementById('cityNameFooter'), document.getElementById('mobileMenuCityName')].filter(Boolean);
   const phoneTextEls = () => document.querySelectorAll('.js-phone');
   const phoneLinkEls = () => document.querySelectorAll('.js-phone-link');
   const cityLocEls = () => document.querySelectorAll('.js-city-loc');
@@ -986,8 +1029,17 @@
     if (!mapModal) return;
     renderMapList();
     openModalEl(mapModal);
-    setTimeout(initMap, 80);
+    setTimeout(() => {
+      initMap();
+      if (mapReady && leafletMap) leafletMap.invalidateSize();
+    }, 120);
   };
+
+  window.addEventListener('resize', () => {
+    if (mapReady && leafletMap && mapModal && mapModal.classList.contains('is-open')) {
+      leafletMap.invalidateSize();
+    }
+  });
   const closeMapModal = () => closeModalEl(mapModal);
 
   if (mapStationListEl) {
