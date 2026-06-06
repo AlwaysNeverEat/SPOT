@@ -2065,6 +2065,12 @@ html { scrollbar-color: var(--green) transparent; scrollbar-width: thin; }
   .brands { padding: 5rem 1.2rem; }
   .promo { padding: 5rem 1.2rem; }
   .promo-grid { grid-template-columns: repeat(2, 1fr); }
+  .price-cta { padding: 3rem 1.2rem; }
+  .price-cta-card { grid-template-columns: 1fr; padding: 1.8rem 1.4rem; border-radius: 20px; }
+  .price-cta-text { max-width: 100%; }
+  .price-cta-text h2 { font-size: clamp(1.4rem, 5.5vw, 1.9rem); }
+  .price-cta-text p { font-size: 0.95rem; }
+  .price-cta-actions .btn { width: 100%; min-height: 48px; }
   .cta { padding: 6rem 1.2rem; }
   .footer { padding: 4rem 1.2rem 2rem; }
   .footer-grid { grid-template-columns: 1fr; gap: 2rem; }
