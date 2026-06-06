@@ -916,101 +916,124 @@
     });
   }
 
-  /* ---------- Cars feed slider (infinite loop) ---------- */
+  /* ---------- Cars feed (3D coverflow) ---------- */
   const carsTrack = document.getElementById('carsTrack');
   if (carsTrack) {
+    const stage = carsTrack.closest('.cars-stage');
     const viewport = carsTrack.closest('.cars-viewport');
-    const prevBtn = viewport && viewport.querySelector('.cars-arrow-prev');
-    const nextBtn = viewport && viewport.querySelector('.cars-arrow-next');
+    const prevBtn = stage && stage.querySelector('.cars-arrow-prev');
+    const nextBtn = stage && stage.querySelector('.cars-arrow-next');
 
-    /* duplicate the set on both sides so the track loops seamlessly */
-    const originals = Array.from(carsTrack.children);
-    const n = originals.length;
-    const head = document.createDocumentFragment();
-    const tail = document.createDocumentFragment();
-    originals.forEach(c => { head.appendChild(c.cloneNode(true)); tail.appendChild(c.cloneNode(true)); });
-    carsTrack.insertBefore(head, carsTrack.firstChild);
-    carsTrack.appendChild(tail);
+    const cards = Array.from(carsTrack.children);
+    const n = cards.length;
+    let active = 0;
 
-    const cardStep = () => {
-      const card = carsTrack.querySelector('.car-card');
-      const gap = parseFloat(getComputedStyle(carsTrack).columnGap) || 0;
-      return (card ? card.offsetWidth : carsTrack.clientWidth * 0.8) + gap;
+    /* inject the per-card autoplay timer (shown only on the active card) */
+    cards.forEach(card => {
+      const t = document.createElement('div');
+      t.className = 'car-card-timer';
+      t.innerHTML = '<i></i>';
+      card.appendChild(t);
+    });
+    const activeFill = () => cards[active].querySelector('.car-card-timer i');
+
+    /* layout config scales with viewport width */
+    let cfg = { cardW: 300, spread: 220, depth: 185, rot: 26, visible: 2 };
+    const computeCfg = () => {
+      const vw = window.innerWidth;
+      if (vw <= 560) cfg = { cardW: Math.min(240, vw * 0.62), spread: Math.min(240, vw * 0.62) * 0.64, depth: 90, rot: 13, visible: 1 };
+      else if (vw <= 980) cfg = { cardW: 280, spread: 200, depth: 150, rot: 22, visible: 2 };
+      else cfg = { cardW: 300, spread: 220, depth: 185, rot: 26, visible: 2 };
     };
-    let setWidth = cardStep() * n;
 
-    /* park the viewport on the middle copy */
-    const recenter = () => { setWidth = cardStep() * n; carsTrack.scrollLeft = setWidth; };
-    recenter();
-    window.addEventListener('resize', recenter);
+    /* position every card in 3D relative to the active one (shortest-path wrap = infinite) */
+    const render = () => {
+      cards.forEach((card, i) => {
+        let r = i - active;
+        if (r > n / 2) r -= n;
+        if (r < -n / 2) r += n;
+        const a = Math.abs(r);
+        const inView = a <= cfg.visible;
+        const sign = Math.sign(r);
+        const tx = r * cfg.spread;
+        const tz = -a * cfg.depth;
+        const ry = -sign * cfg.rot;
+        const sc = Math.max(0.55, 1 - a * 0.16);
+        card.style.transform =
+          `translate(-50%, -50%) translateX(${tx}px) translateZ(${tz}px) rotateY(${ry}deg) scale(${sc})`;
+        card.style.zIndex = String(100 - a);
+        card.style.opacity = inView ? (a === 0 ? '1' : a === 1 ? '0.82' : '0.45') : '0';
+        card.style.pointerEvents = inView ? 'auto' : 'none';
+        card.style.transition = inView
+          ? 'transform .6s cubic-bezier(.22,1,.36,1), opacity .6s ease'
+          : 'opacity .3s ease';
+        card.classList.toggle('is-active', r === 0);
+      });
+    };
 
-    /* whenever we drift into a clone, jump one set back/forward — identical
-       content makes the jump invisible, so the carousel never hits an end */
-    let wrapping = false;
-    carsTrack.addEventListener('scroll', () => {
-      if (wrapping) return;
-      const x = carsTrack.scrollLeft;
-      if (x >= setWidth * 2) { wrapping = true; carsTrack.scrollLeft = x - setWidth; wrapping = false; }
-      else if (x < setWidth) { wrapping = true; carsTrack.scrollLeft = x + setWidth; wrapping = false; }
-    }, { passive: true });
+    /* size the stage to the tallest card, then lay everything out */
+    const relayout = () => {
+      computeCfg();
+      cards.forEach(c => { c.style.width = cfg.cardW + 'px'; });
+      let maxH = 0;
+      cards.forEach(c => { maxH = Math.max(maxH, c.offsetHeight); });
+      carsTrack.style.height = maxH + 'px';
+      render();
+    };
 
-    /* autoplay state (shared with the controls below) */
-    const bar = document.getElementById('carsProgress');
-    let progress = 0, hovering = false, touching = false;
-    const resetProgress = () => { progress = 0; if (bar) bar.style.width = '0%'; };
+    let progress = 0, hovering = false, pressing = false;
+    const resetProgress = () => { progress = 0; const f = activeFill(); if (f) f.style.width = '0%'; };
 
-    prevBtn && prevBtn.addEventListener('click', () => { carsTrack.scrollBy({ left: -cardStep(), behavior: 'smooth' }); resetProgress(); });
-    nextBtn && nextBtn.addEventListener('click', () => { carsTrack.scrollBy({ left: cardStep(), behavior: 'smooth' }); resetProgress(); });
+    const go = (dir) => { active = ((active + dir) % n + n) % n; resetProgress(); render(); };
+    const goTo = (i) => { if (i !== active) { active = ((i % n) + n) % n; resetProgress(); render(); } };
 
-    /* drag-to-scroll on desktop (incremental, so it plays nice with wrapping) */
-    let down = false, lastX = 0, downX = 0, moved = false;
-    carsTrack.addEventListener('pointerdown', (e) => {
-      if (e.pointerType === 'touch') return; // native touch swipe handles this
-      down = true; moved = false;
-      lastX = downX = e.clientX;
+    prevBtn && prevBtn.addEventListener('click', () => go(-1));
+    nextBtn && nextBtn.addEventListener('click', () => go(1));
+
+    /* click a side card to bring it to the centre; the active card keeps its «Выбрать» */
+    cards.forEach((card, i) => {
+      card.addEventListener('click', (e) => {
+        let r = i - active; if (r > n / 2) r -= n; if (r < -n / 2) r += n;
+        if (r !== 0) { e.preventDefault(); e.stopPropagation(); goTo(i); }
+      });
     });
+
+    /* drag / swipe to change the active card (mouse + touch via pointer events) */
+    let startX = 0, swiped = false;
+    carsTrack.addEventListener('pointerdown', (e) => { pressing = true; swiped = false; startX = e.clientX; });
     carsTrack.addEventListener('pointermove', (e) => {
-      if (!down) return;
-      const dx = e.clientX - lastX;
-      lastX = e.clientX;
-      if (Math.abs(e.clientX - downX) > 4) {
-        moved = true;
-        carsTrack.classList.add('is-dragging');
-        carsTrack.setPointerCapture(e.pointerId);
-      }
-      carsTrack.scrollLeft -= dx;
+      if (!pressing || swiped) return;
+      const dx = e.clientX - startX;
+      if (Math.abs(dx) > 55) { swiped = true; go(dx < 0 ? 1 : -1); }
     });
-    const endDrag = () => { if (down && moved) resetProgress(); down = false; carsTrack.classList.remove('is-dragging'); };
-    carsTrack.addEventListener('pointerup', endDrag);
-    carsTrack.addEventListener('pointercancel', endDrag);
-    carsTrack.addEventListener('pointerleave', endDrag);
-    /* swallow click that ends a drag so «Выбрать» doesn't fire on a swipe */
+    const release = () => { pressing = false; };
+    carsTrack.addEventListener('pointerup', release);
+    carsTrack.addEventListener('pointercancel', release);
+    carsTrack.addEventListener('pointerleave', release);
+    /* swallow the click that ends a swipe so «Выбрать» doesn't fire */
     carsTrack.addEventListener('click', (e) => {
-      if (moved) { e.preventDefault(); e.stopPropagation(); moved = false; }
+      if (swiped) { e.preventDefault(); e.stopPropagation(); swiped = false; }
     }, true);
 
-    /* autoplay: green bar fills, then advances one card; pauses on hover / touch / drag */
+    /* autoplay — the active card's timer fills, then advances; pauses on hover / press */
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     viewport && viewport.addEventListener('mouseenter', () => { hovering = true; });
     viewport && viewport.addEventListener('mouseleave', () => { hovering = false; });
-    carsTrack.addEventListener('touchstart', () => { touching = true; }, { passive: true });
-    carsTrack.addEventListener('touchend', () => { touching = false; resetProgress(); }, { passive: true });
 
-    if (reduceMotion) {
-      if (bar) bar.parentElement.style.display = 'none';
-    } else {
+    relayout();
+    window.addEventListener('resize', relayout);
+
+    if (!reduceMotion) {
       const DURATION = 4200; // ms per card
       let last = 0;
       const tick = (ts) => {
         const dt = last ? ts - last : 0;
         last = ts;
-        if (!(hovering || touching || down || document.hidden)) {
+        if (!(hovering || pressing || document.hidden)) {
           progress += dt / DURATION;
-          if (progress >= 1) {
-            progress = 0;
-            carsTrack.scrollBy({ left: cardStep(), behavior: 'smooth' });
-          }
-          if (bar) bar.style.width = (progress * 100).toFixed(2) + '%';
+          if (progress >= 1) { progress = 0; go(1); }
+          const f = activeFill();
+          if (f) f.style.width = (progress * 100).toFixed(2) + '%';
         }
         requestAnimationFrame(tick);
       };
