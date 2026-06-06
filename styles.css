@@ -670,6 +670,23 @@ body.menu-open { overflow: hidden; }
 .cars-arrow-next { right: -10px; }
 .cars-arrow[disabled] { opacity: 0; pointer-events: none; }
 
+/* autoplay progress bar */
+.cars-progress {
+  max-width: 1200px;
+  height: 4px;
+  margin: 0.6rem auto 0;
+  border-radius: 4px;
+  background: var(--line);
+  overflow: hidden;
+}
+.cars-progress-bar {
+  display: block;
+  height: 100%;
+  width: 0;
+  border-radius: 4px;
+  background: var(--green);
+}
+
 @media (max-width: 768px) {
   .cars-arrow { display: none; }
   .car-card { flex-basis: 78vw; }

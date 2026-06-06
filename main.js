@@ -954,8 +954,13 @@
       else if (x < setWidth) { wrapping = true; carsTrack.scrollLeft = x + setWidth; wrapping = false; }
     }, { passive: true });
 
-    prevBtn && prevBtn.addEventListener('click', () => carsTrack.scrollBy({ left: -cardStep(), behavior: 'smooth' }));
-    nextBtn && nextBtn.addEventListener('click', () => carsTrack.scrollBy({ left: cardStep(), behavior: 'smooth' }));
+    /* autoplay state (shared with the controls below) */
+    const bar = document.getElementById('carsProgress');
+    let progress = 0, hovering = false, touching = false;
+    const resetProgress = () => { progress = 0; if (bar) bar.style.width = '0%'; };
+
+    prevBtn && prevBtn.addEventListener('click', () => { carsTrack.scrollBy({ left: -cardStep(), behavior: 'smooth' }); resetProgress(); });
+    nextBtn && nextBtn.addEventListener('click', () => { carsTrack.scrollBy({ left: cardStep(), behavior: 'smooth' }); resetProgress(); });
 
     /* drag-to-scroll on desktop (incremental, so it plays nice with wrapping) */
     let down = false, lastX = 0, downX = 0, moved = false;
@@ -975,7 +980,7 @@
       }
       carsTrack.scrollLeft -= dx;
     });
-    const endDrag = () => { down = false; carsTrack.classList.remove('is-dragging'); };
+    const endDrag = () => { if (down && moved) resetProgress(); down = false; carsTrack.classList.remove('is-dragging'); };
     carsTrack.addEventListener('pointerup', endDrag);
     carsTrack.addEventListener('pointercancel', endDrag);
     carsTrack.addEventListener('pointerleave', endDrag);
@@ -983,6 +988,35 @@
     carsTrack.addEventListener('click', (e) => {
       if (moved) { e.preventDefault(); e.stopPropagation(); moved = false; }
     }, true);
+
+    /* autoplay: green bar fills, then advances one card; pauses on hover / touch / drag */
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    viewport && viewport.addEventListener('mouseenter', () => { hovering = true; });
+    viewport && viewport.addEventListener('mouseleave', () => { hovering = false; });
+    carsTrack.addEventListener('touchstart', () => { touching = true; }, { passive: true });
+    carsTrack.addEventListener('touchend', () => { touching = false; resetProgress(); }, { passive: true });
+
+    if (reduceMotion) {
+      if (bar) bar.parentElement.style.display = 'none';
+    } else {
+      const DURATION = 4200; // ms per card
+      let last = 0;
+      const tick = (ts) => {
+        const dt = last ? ts - last : 0;
+        last = ts;
+        if (!(hovering || touching || down || document.hidden)) {
+          progress += dt / DURATION;
+          if (progress >= 1) {
+            progress = 0;
+            carsTrack.scrollBy({ left: cardStep(), behavior: 'smooth' });
+          }
+          if (bar) bar.style.width = (progress * 100).toFixed(2) + '%';
+        }
+        requestAnimationFrame(tick);
+      };
+      document.addEventListener('visibilitychange', () => { last = 0; });
+      requestAnimationFrame(tick);
+    }
   }
 
   /* ---------- Map modal ---------- */
