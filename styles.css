@@ -825,10 +825,17 @@ body.menu-open { overflow: hidden; }
   .promo-grid { grid-template-columns: repeat(3, 1fr); }
   .trust-grid { grid-template-columns: repeat(2, 1fr); }
   .footer-grid { grid-template-columns: 1fr 1fr; }
-  .stations { grid-template-columns: 1fr; gap: 3rem; padding: 5rem 1.5rem; }
-  .stations-right { position: relative; left: auto; right: auto; top: auto; bottom: auto; }
+  .stations { grid-template-columns: minmax(0, 1fr); gap: 3rem; padding: 5rem 1.5rem; }
+  .stations-left { min-width: 0; max-width: 100%; }
+  .stations-left p { max-width: 100%; }
+  .stations-right { position: relative; left: auto; right: auto; top: auto; bottom: auto; display: block; min-width: 0; width: 100%; max-width: 100%; overflow: hidden; }
+  .stations-right #stationList { width: 100%; max-width: 100%; overflow: hidden; }
   .station-list { grid-template-columns: 1fr; }
-  .stn-ticker-wrap { max-width: 100%; overflow: hidden; }
+  .stn-ticker-wrap {
+    width: 100%; max-width: 100%; overflow: hidden;
+    mask-image: linear-gradient(90deg, transparent 0%, #000 5%, #000 95%, transparent 100%);
+    -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 5%, #000 95%, transparent 100%);
+  }
 }
 
 /* ---- Телефоны/портрет планшета: 1-col, mobile nav, модалки fullscreen ---- */
@@ -886,41 +893,6 @@ body.menu-open { overflow: hidden; }
   .footer-grid { grid-template-columns: 1fr; gap: 2rem; }
   .scroll-hint { display: none; }
   .reviews-deck { max-width: 100%; padding: 0 1.2rem 2rem; }
-  /* Модалки fullscreen */
-  .city-modal { padding: 0; }
-  .city-modal-window { max-width: 100%; max-height: 100dvh; height: 100dvh; border-radius: 0; }
-  .city-modal-close { width: 40px; height: 40px; }
-  .price-modal { padding: 0; }
-  .price-modal-window { max-height: 100dvh; height: 100dvh; border-radius: 0; }
-  .price-modal-close { width: 40px; height: 40px; }
-  .price-modal-head { padding: 1.4rem 1.2rem 1rem; position: sticky; top: 0; background: linear-gradient(135deg, #fffaea 0%, #ffffff 70%); z-index: 2; }
-  .price-modal-head h3 { font-size: 1.3rem; }
-  .price-list { padding: 0.8rem 1.2rem 1rem; }
-  .price-group li { grid-template-columns: 1fr; gap: 0.3rem; padding: 0.7rem 0.3rem; }
-  .price-row-cost { font-size: 1rem; }
-  .price-modal-foot { padding: 1rem 1.2rem; flex-direction: column; align-items: stretch; }
-  .price-modal-foot .muted { max-width: none; }
-  .price-modal-actions .btn { flex: 1; justify-content: center; }
-  .info-modal { padding: 0; }
-  .book-modal { padding: 0; }
-  .info-modal-window { max-height: 100dvh; height: 100dvh; border-radius: 0; }
-  .book-modal-window { max-height: 100dvh; height: 100dvh; border-radius: 0; }
-  .info-modal-close { width: 40px; height: 40px; }
-  .info-modal-body { padding: 1.6rem 1.2rem 1.4rem; }
-  .book-modal-grid { grid-template-columns: 1fr; }
-  .book-aside { padding: 1.2rem; }
-  .book-aside h3 { font-size: 1.2rem; }
-  .book-aside-list { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; font-size: 0.82rem; }
-  .book-aside-foot { display: none; }
-  .book-form { padding: 1.2rem; }
-  .book-row { grid-template-columns: 1fr; gap: 0.8rem; }
-  .map-modal { padding: 0; }
-  .map-modal-window { max-height: 100dvh; height: 100dvh; border-radius: 0; }
-  .map-modal-close { width: 40px; height: 40px; }
-  .map-modal-layout { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
-  .map-sidebar { max-height: 50dvh; border-right: none; border-bottom: 1px solid var(--line); overflow-y: auto; }
-  .map-area { display: block; min-height: 50dvh; }
-  .map-sidebar-head h3 { padding-right: 3rem; }
 }
 
 /* ---- Телефон: финальные 1-col, типографика ---- */
@@ -2072,3 +2044,50 @@ html { scrollbar-color: var(--green) transparent; scrollbar-width: thin; }
 .hero .btn-primary:hover { background: #f3f3f3; }
 .hero .btn-outline { border-color: #fff; color: #fff; }
 .hero .btn-outline:hover { background: #fff; color: #111; }
+
+/* =========== MODALS — MOBILE (placed last so they win the cascade) =========== */
+@media (max-width: 768px) {
+  /* City */
+  .city-modal { padding: 0; }
+  .city-modal-window { max-width: 100%; max-height: 100dvh; height: 100dvh; border-radius: 0; }
+  .city-modal-close { width: 40px; height: 40px; }
+
+  /* Price */
+  .price-modal { padding: 0; }
+  .price-modal-window { max-width: 100%; max-height: 100dvh; height: 100dvh; border-radius: 0; }
+  .price-modal-close { width: 40px; height: 40px; }
+  .price-modal-head { padding: 1.4rem 1.2rem 1rem; }
+  .price-modal-head h3 { font-size: 1.3rem; }
+  .price-list { padding: 0.8rem 1.2rem 1rem; }
+  .price-group li { grid-template-columns: 1fr; gap: 0.3rem; padding: 0.7rem 0.3rem; }
+  .price-row-cost { font-size: 1rem; }
+  .price-modal-foot { padding: 1rem 1.2rem; flex-direction: column; align-items: stretch; }
+  .price-modal-foot .muted { max-width: none; }
+  .price-modal-actions .btn { flex: 1; justify-content: center; }
+
+  /* Info + Booking */
+  .info-modal, .book-modal { padding: 0; }
+  .info-modal-window, .book-modal-window { max-width: 100%; max-height: 100dvh; height: 100dvh; border-radius: 0; }
+  .info-modal-close { width: 40px; height: 40px; }
+  .info-modal-body { padding: 1.6rem 1.2rem 1.4rem; }
+  .book-modal-grid { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+  .book-aside { padding: 1.2rem; }
+  .book-aside h3 { font-size: 1.2rem; }
+  .book-aside-list { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; margin: 0.4rem 0 0; font-size: 0.82rem; }
+  .book-aside-foot { display: none; }
+  .book-form { padding: 1.2rem; }
+  .book-row { grid-template-columns: 1fr; gap: 0.8rem; }
+
+  /* Map — list on top, map below (was hidden before) */
+  .map-modal { padding: 0; }
+  .map-modal-window { max-width: 100%; max-height: 100dvh; height: 100dvh; border-radius: 0; }
+  .map-modal-close { width: 40px; height: 40px; }
+  .map-modal-layout { grid-template-columns: 1fr; grid-template-rows: minmax(0, 45dvh) minmax(0, 1fr); }
+  .map-sidebar { border-right: none; border-bottom: 1px solid var(--line); }
+  .map-area { display: block; min-height: 0; }
+  .map-sidebar-head h3 { padding-right: 3rem; }
+}
+
+@media (max-width: 360px) {
+  .book-aside-list { grid-template-columns: 1fr; }
+}
