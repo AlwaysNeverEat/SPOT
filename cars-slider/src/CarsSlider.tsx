@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, CSSProperties } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence, MotionConfig } from 'motion/react';
 import { ChevronLeft, ChevronRight, Pause, Play, Check, ArrowRight } from 'lucide-react';
 import { cars } from './cars';
 
@@ -10,24 +10,14 @@ const LINE = 'var(--line, #e7e7e3)';
 const DURATION = 4000; // ms per card
 
 const N = cars.length;
-const reduceMotion =
-  typeof window !== 'undefined' &&
-  window.matchMedia &&
-  window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-const slideVariants = reduceMotion
-  ? {
-      enter: { opacity: 0, x: 0, rotateY: 0, scale: 1 },
-      center: { opacity: 1, x: 0, rotateY: 0, scale: 1, transition: { duration: 0.25 } },
-      exit: { opacity: 0, x: 0, rotateY: 0, scale: 1, transition: { duration: 0.2 } },
-    }
-  : {
-      enter: (dir: number) => ({
-        x: dir > 0 ? 600 : -600,
-        rotateY: dir > 0 ? 40 : -40,
-        opacity: 0,
-        scale: 0.8,
-      }),
+const slideVariants = {
+  enter: (dir: number) => ({
+    x: dir > 0 ? 600 : -600,
+    rotateY: dir > 0 ? 40 : -40,
+    opacity: 0,
+    scale: 0.8,
+  }),
       center: {
         x: 0,
         rotateY: 0,
@@ -102,6 +92,7 @@ export function CarsSlider() {
   const car = cars[index];
 
   return (
+    <MotionConfig reducedMotion="never">
     <div
       style={styles.wrap}
       onMouseEnter={() => setHover(true)}
@@ -213,6 +204,7 @@ export function CarsSlider() {
         </div>
       </div>
     </div>
+    </MotionConfig>
   );
 }
 
@@ -244,7 +236,7 @@ const styles: Record<string, CSSProperties> = {
     position: 'relative',
     textAlign: 'left',
   },
-  imgWrap: { position: 'relative', width: '100%', aspectRatio: '7 / 4', overflow: 'hidden', background: 'var(--bg-soft, #f3f4f1)' },
+  imgWrap: { position: 'relative', width: '100%', aspectRatio: '7 / 4', overflow: 'hidden', background: '#fff' },
   img: { width: '100%', height: '100%', objectFit: 'cover', display: 'block' },
   imgShade: { position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.45), transparent 55%)' },
   body: { padding: '1.8rem 1.8rem 2rem' },
