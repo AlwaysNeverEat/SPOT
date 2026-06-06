@@ -567,6 +567,238 @@
     if (!document.querySelector('.is-open')) unlockBody();
   };
 
+  /* ---------- Catalog modal (масла) ---------- */
+  const catalogModal = document.getElementById('catalogModal');
+  if (catalogModal) {
+    const cGrid = document.getElementById('catalogGrid');
+    const cSearch = document.getElementById('catalogSearch');
+    const cSort = document.getElementById('catalogSort');
+    const cEmpty = document.getElementById('catalogEmpty');
+    const cLoading = document.getElementById('catalogLoading');
+    const cCount = document.getElementById('catalogCount');
+    const cReset = document.getElementById('catalogReset');
+    const cFilters = document.getElementById('catalogFilters');
+    const cFiltersToggle = document.getElementById('catalogFiltersToggle');
+    const cDetail = document.getElementById('catalogDetail');
+    const cDetailBody = document.getElementById('catalogDetailBody');
+    const cBack = document.getElementById('catalogBack');
+
+    let CATALOG = null;
+    let catalogLoaded = false;
+    let shown = [];
+    const FILTER_KEYS = ['brand', 'viscosity', 'volume', 'type'];
+    const active = { brand: new Set(), viscosity: new Set(), volume: new Set(), type: new Set() };
+
+    const escHtml = (s) => String(s == null ? '' : s).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+    const escAttr = (s) => escHtml(s).replace(/"/g, '&quot;');
+    const norm = (s) => String(s || '').toLowerCase().replace(/[\s-]/g, '');
+
+    const phoneNow = () => {
+      try {
+        const c = CITIES[savedId];
+        if (c) return { phone: c.phone, tel: c.tel };
+      } catch (_) {}
+      return { phone: '+7 (812) 603-44-80', tel: '+78126034480' };
+    };
+
+    const uniqueSorted = (key) => {
+      const vals = [...new Set(CATALOG.map((i) => i[key]).filter(Boolean))];
+      if (key === 'volume') return vals.sort((a, b) => parseFloat(a) - parseFloat(b));
+      if (key === 'viscosity') return vals.sort();
+      return vals.sort((a, b) => a.localeCompare(b, 'ru'));
+    };
+
+    const buildFilters = () => {
+      FILTER_KEYS.forEach((key) => {
+        const box = catalogModal.querySelector(`[data-chips="${key}"]`);
+        if (!box) return;
+        const vals = uniqueSorted(key);
+        const group = box.closest('.catalog-filter-group');
+        if (!vals.length) { if (group) group.hidden = true; return; }
+        box.innerHTML = vals
+          .map((v) => `<button type="button" class="catalog-chip" data-key="${key}" data-val="${escAttr(v)}">${escHtml(v)}</button>`)
+          .join('');
+      });
+    };
+
+    const itemMatches = (item) => {
+      for (const key of FILTER_KEYS) {
+        if (active[key].size && !active[key].has(item[key])) return false;
+      }
+      const q = norm(cSearch.value);
+      if (q) {
+        const hay = norm(`${item.title} ${item.brand} ${item.viscosity} ${item.volume} ${item.type}`);
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    };
+
+    const sortItems = (arr) => {
+      const v = cSort.value;
+      const a = arr.slice();
+      if (v === 'price_asc') a.sort((x, y) => (x.price || 1e9) - (y.price || 1e9));
+      else if (v === 'price_desc') a.sort((x, y) => (y.price || 0) - (x.price || 0));
+      else if (v === 'title') a.sort((x, y) => x.title.localeCompare(y.title, 'ru'));
+      return a;
+    };
+
+    const perLitre = (item) => /литр/i.test(item.priceText || '');
+
+    const cardHtml = (item, idx) => {
+      const badges = [];
+      if (item.brand) badges.push(`<span class="catalog-badge brand">${escHtml(item.brand)}</span>`);
+      if (item.viscosity) badges.push(`<span class="catalog-badge">${escHtml(item.viscosity)}</span>`);
+      if (item.volume) badges.push(`<span class="catalog-badge">${escHtml(item.volume)}</span>`);
+      return `<div class="catalog-card" role="button" tabindex="0" data-idx="${idx}">
+        <span class="catalog-card-img"><img src="${escAttr(item.image)}" alt="${escAttr(item.title)}" loading="lazy" /></span>
+        <span class="catalog-card-body">
+          <span class="catalog-card-badges">${badges.join('')}</span>
+          <span class="catalog-card-title">${escHtml(item.title)}</span>
+          <span class="catalog-card-price">${item.price ? `${item.price} ₽` : 'Уточняйте'}${item.price && perLitre(item) ? '<small> /литр</small>' : ''}</span>
+        </span>
+      </div>`;
+    };
+
+    const render = () => {
+      if (!CATALOG) return;
+      shown = sortItems(CATALOG.filter(itemMatches));
+      cGrid.innerHTML = shown.map((it, i) => cardHtml(it, i)).join('');
+      cEmpty.hidden = shown.length > 0;
+      cGrid.hidden = shown.length === 0;
+      cCount.textContent = `${shown.length} из ${CATALOG.length}`;
+      const anyFilter = FILTER_KEYS.some((k) => active[k].size) || cSearch.value.trim();
+      cReset.hidden = !anyFilter;
+    };
+
+    const openDetail = (item) => {
+      const ph = phoneNow();
+      const specs = [
+        ['Бренд', item.brand],
+        ['Вязкость', item.viscosity],
+        ['Объём', item.volume],
+        ['Тип', item.type],
+      ].filter(([, v]) => v);
+      cDetailBody.innerHTML = `
+        <div class="catalog-detail-grid">
+          <div class="catalog-detail-img"><img src="${escAttr(item.image)}" alt="${escAttr(item.title)}" /></div>
+          <div class="catalog-detail-info">
+            <h3>${escHtml(item.title)}</h3>
+            <div class="catalog-detail-badges">
+              ${item.brand ? `<span class="catalog-badge brand">${escHtml(item.brand)}</span>` : ''}
+              ${item.viscosity ? `<span class="catalog-badge">${escHtml(item.viscosity)}</span>` : ''}
+              ${item.volume ? `<span class="catalog-badge">${escHtml(item.volume)}</span>` : ''}
+            </div>
+            ${item.price ? `<div class="catalog-detail-price">${item.price} ₽${perLitre(item) ? '<small> / литр</small>' : ''}</div>` : ''}
+            <div class="catalog-detail-note">При покупке масла у нас — замена масла и фильтра бесплатно.</div>
+            <dl class="catalog-detail-specs">
+              ${specs.map(([k, v]) => `<div class="catalog-spec"><dt>${k}</dt><dd>${escHtml(v)}</dd></div>`).join('')}
+            </dl>
+            ${item.description ? `<p class="catalog-detail-desc">${escHtml(item.description)}</p>` : ''}
+            <div class="catalog-detail-actions">
+              <button type="button" class="btn btn-primary" data-open-booking>Записаться на замену</button>
+              <a href="tel:${escAttr(ph.tel)}" class="btn btn-outline">${escHtml(ph.phone)}</a>
+            </div>
+          </div>
+        </div>`;
+      cDetail.hidden = false;
+      cDetail.scrollTop = 0;
+    };
+
+    const closeDetail = () => { cDetail.hidden = true; };
+
+    const loadCatalog = async () => {
+      if (catalogLoaded) return;
+      catalogLoaded = true;
+      try {
+        const res = await fetch('data/oils.json', { cache: 'no-cache' });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const json = await res.json();
+        CATALOG = json.items || [];
+        buildFilters();
+        cLoading.hidden = true;
+        render();
+      } catch (e) {
+        catalogLoaded = false;
+        cLoading.textContent = 'Не удалось загрузить каталог. Попробуйте обновить страницу.';
+      }
+    };
+
+    const openCatalog = () => {
+      closeDetail();
+      openModalEl(catalogModal);
+      loadCatalog();
+      setTimeout(() => cSearch && cSearch.focus(), 80);
+    };
+    const closeCatalog = () => {
+      closeModalEl(catalogModal);
+      cFilters.classList.remove('is-open');
+      if (cFiltersToggle) cFiltersToggle.setAttribute('aria-expanded', 'false');
+    };
+
+    // debounce поиска
+    let searchTimer = null;
+    cSearch.addEventListener('input', () => {
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(render, 120);
+    });
+    cSort.addEventListener('change', render);
+
+    // фильтры-чипсы
+    cFilters.addEventListener('click', (e) => {
+      const chip = e.target.closest('.catalog-chip');
+      if (!chip) return;
+      const { key, val } = chip.dataset;
+      if (active[key].has(val)) { active[key].delete(val); chip.classList.remove('is-active'); }
+      else { active[key].add(val); chip.classList.add('is-active'); }
+      render();
+    });
+    cReset.addEventListener('click', () => {
+      FILTER_KEYS.forEach((k) => active[k].clear());
+      catalogModal.querySelectorAll('.catalog-chip.is-active').forEach((c) => c.classList.remove('is-active'));
+      cSearch.value = '';
+      render();
+    });
+
+    if (cFiltersToggle) {
+      cFiltersToggle.addEventListener('click', () => {
+        const open = cFilters.classList.toggle('is-open');
+        cFiltersToggle.setAttribute('aria-expanded', String(open));
+      });
+    }
+
+    // клик по карточке → деталь
+    cGrid.addEventListener('click', (e) => {
+      const card = e.target.closest('.catalog-card');
+      if (!card) return;
+      const item = shown[+card.dataset.idx];
+      if (item) openDetail(item);
+    });
+    cGrid.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      const card = e.target.closest('.catalog-card');
+      if (!card) return;
+      e.preventDefault();
+      const item = shown[+card.dataset.idx];
+      if (item) openDetail(item);
+    });
+    cBack.addEventListener('click', closeDetail);
+
+    // открытие / закрытие
+    document.addEventListener('click', (e) => {
+      if (e.target.closest('[data-open-catalog]')) {
+        e.preventDefault();
+        openCatalog();
+      } else if (e.target.closest('[data-close-catalog]')) {
+        closeCatalog();
+      }
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape' || !catalogModal.classList.contains('is-open')) return;
+      if (!cDetail.hidden) closeDetail();
+      else closeCatalog();
+    });
+  }
+
   /* ---------- Info modal (promo/warranty/photos/franchise/work) ---------- */
   const infoModal = document.getElementById('infoModal');
   const infoBody = document.getElementById('infoModalBody');
