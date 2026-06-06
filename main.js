@@ -88,19 +88,27 @@
     const processNodes = (container, nodes, ref) => {
       nodes.forEach(node => {
         if (node.nodeType === Node.TEXT_NODE) {
-          [...node.textContent].forEach(ch => {
-            if (ch === ' ') {
-              // Plain text node — preserves word-wrap, spaces don't need animation
-              container.appendChild(document.createTextNode(' '));
-              ref.i++;
-            } else {
+          // Split on spaces but keep them: chars of a word go inside a .word
+          // wrapper (inline-block, nowrap) so a word never breaks mid-letter;
+          // the space between words stays a real text node = breakable.
+          const tokens = node.textContent.split(/(\s+)/);
+          tokens.forEach(token => {
+            if (token === '') return;
+            if (/^\s+$/.test(token)) {
+              container.appendChild(document.createTextNode(token));
+              return;
+            }
+            const word = document.createElement('span');
+            word.className = 'word';
+            [...token].forEach(ch => {
               const s = document.createElement('span');
               s.className = 'char';
               s.textContent = ch;
               s.style.transitionDelay = `${ref.i * 30}ms`;
-              container.appendChild(s);
+              word.appendChild(s);
               ref.i++;
-            }
+            });
+            container.appendChild(word);
           });
         } else if (node.nodeType === Node.ELEMENT_NODE) {
           const el = document.createElement(node.tagName);

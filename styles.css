@@ -23,9 +23,9 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
-/* Break long words only in block text, not in headings/UI elements */
-p, li, dt, dd, td, th, blockquote, label, figcaption { overflow-wrap: break-word; }
-h1, h2, h3, h4, h5, h6 { overflow-wrap: normal; word-break: normal; hyphens: none; }
+/* Break a word only when it genuinely can't fit; never break mid-word
+   unnecessarily, never hyphenate. Safe for both body text and headings. */
+* { overflow-wrap: break-word; word-break: normal; hyphens: none; }
 
 html { scroll-behavior: smooth; }
 
@@ -817,120 +817,6 @@ body.menu-open { overflow: hidden; }
 .mobile-cta .btn { flex: 1; padding: 0.85rem; font-size: 0.9rem; min-height: 48px; }
 .btn-ghost-mobile { background: var(--bg-soft); color: var(--ink); border: 1.5px solid var(--line); }
 
-/* =========== RESPONSIVE (1024 / 768 / 480 / 360) =========== */
-
-/* ---- Tablet: nav → burger, sетки 2-col ---- */
-@media (max-width: 1024px) {
-  .nav { display: none; }
-  .burger { display: flex; }
-  .header { padding: 0.8rem 1.5rem; gap: 0.8rem; }
-  .stats { grid-template-columns: repeat(2, 1fr); padding: 4rem 1.5rem; gap: 1.5rem; }
-  .steps { grid-template-columns: repeat(2, 1fr); }
-  .promo-grid { grid-template-columns: repeat(3, 1fr); }
-  .trust-grid { grid-template-columns: repeat(2, 1fr); }
-  .footer-grid { grid-template-columns: 1fr 1fr; }
-  .stations { grid-template-columns: minmax(0, 1fr); gap: 3rem; padding: 5rem 1.5rem; }
-  .stations-left { min-width: 0; max-width: 100%; }
-  .stations-left p { max-width: 100%; }
-  .stations-right { position: relative; left: auto; right: auto; top: auto; bottom: auto; display: block; min-width: 0; width: 100%; max-width: 100%; overflow: hidden; }
-  .stations-right #stationList { width: 100%; max-width: 100%; overflow: hidden; }
-  .station-list { grid-template-columns: 1fr; }
-  .stn-ticker-wrap {
-    width: 100%; max-width: 100%; overflow: hidden;
-    mask-image: linear-gradient(90deg, transparent 0%, #000 5%, #000 95%, transparent 100%);
-    -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 5%, #000 95%, transparent 100%);
-  }
-}
-
-/* ---- Телефоны/портрет планшета: 1-col, mobile nav, модалки fullscreen ---- */
-@media (max-width: 768px) {
-  .header { padding: 0.7rem 1rem; }
-  .cta-group { display: none; }
-  .logo img { height: 34px; }
-  .city-picker { padding: 0.5rem 0.7rem; font-size: 0.82rem; min-height: 44px; }
-  .city-picker .city-name { max-width: 110px; overflow: hidden; text-overflow: ellipsis; }
-  .mobile-cta { display: flex; }
-  body { padding-bottom: calc(70px + env(safe-area-inset-bottom)); }
-  .hero { padding: 7rem 1.2rem 3rem; min-height: auto; }
-  .hero-video-wrap { position: absolute; z-index: 0; }
-  .hero-content { max-width: 100%; }
-  .hero h1 { font-size: clamp(2rem, 9vw, 2.8rem); }
-  .hero .lead { font-size: 0.98rem; }
-  .badge { font-size: 0.78rem; }
-  .stat { padding: 1.2rem; border-radius: 14px; background: rgba(255,255,255,0.04); }
-  .hero-actions { flex-direction: column; }
-  .hero-actions .btn { width: 100%; min-height: 48px; }
-  /* Нативный scroll-snap для услуг */
-  .hscroll-wrap { height: auto; }
-  .hscroll-pin { position: relative; height: auto; overflow: visible; }
-  .hscroll-track {
-    display: flex;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    -webkit-overflow-scrolling: touch;
-    padding: 2rem 1.2rem;
-    gap: 1.2rem;
-    scrollbar-width: none;
-    will-change: auto;
-  }
-  .hscroll-track::-webkit-scrollbar { display: none; }
-  .hpanel {
-    flex: 0 0 auto;
-    width: min(82vw, 340px);
-    height: auto;
-    min-height: 360px;
-    scroll-snap-align: center;
-  }
-  .hpanel-intro { padding: 2rem 1.6rem; }
-  .hpanel-intro h2 { font-size: 1.5rem; margin-bottom: 1rem; }
-  .hpanel-card .card-body { padding: 1.2rem 1.2rem 1.4rem; }
-  .hpanel-card p { font-size: 0.93rem; }
-  .hpanel-end { padding: 2rem 1.6rem; }
-  .steps { grid-template-columns: 1fr; }
-  .step { padding: 1.4rem; }
-  .how { padding: 5rem 1.2rem; }
-  .brands { padding: 5rem 1.2rem; }
-  .promo { padding: 5rem 1.2rem; }
-  .promo-grid { grid-template-columns: repeat(2, 1fr); }
-  .cta { padding: 6rem 1.2rem; }
-  .footer { padding: 4rem 1.2rem 2rem; }
-  .footer-grid { grid-template-columns: 1fr; gap: 2rem; }
-  .scroll-hint { display: none; }
-  .reviews-deck { max-width: 100%; padding: 0 1.2rem 2rem; }
-  .trust { padding: 4rem 1.2rem; }
-  .trust-grid { grid-template-columns: 1fr; gap: 0.9rem; }
-  .trust-card { padding: 1.4rem 1.2rem; }
-  .trust-card h3 { font-size: 1.1rem; }
-}
-
-/* ---- Телефон: финальные 1-col, типографика ---- */
-@media (max-width: 480px) {
-  .stats { grid-template-columns: 1fr; padding: 3.2rem 1.2rem; gap: 1.3rem; }
-  .promo-grid { grid-template-columns: 1fr; }
-  .reviews { padding: 4rem 0; }
-  .reviews-head { padding: 0 1.2rem; }
-  .review { padding: 1.4rem 1.2rem 1rem; }
-  .faq { padding: 4rem 1.2rem; }
-  .faq-item summary { padding: 1rem 1.1rem; font-size: 0.97rem; }
-  .faq-body { padding: 0 1.1rem 1.1rem; }
-  .brand-row span { font-size: 1.3rem; }
-  .hpanel { min-height: 320px; }
-}
-
-/* ---- Узкие (320–360px): страховка overflow ---- */
-@media (max-width: 360px) {
-  .hero h1 { font-size: clamp(1.7rem, 9vw, 2.2rem); }
-  .city-picker .city-name { max-width: 80px; }
-  .hpanel { width: min(90vw, 300px); }
-  .book-aside-list { grid-template-columns: 1fr; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .brand-row { animation-play-state: paused; }
-  .stn-track { animation-play-state: paused; }
-  .mobile-menu-panel { transition: none; }
-  .mobile-menu-backdrop { transition: none; }
-}
 
 /* =========== PRICE-LIST CTA =========== */
 .price-cta {
@@ -2036,6 +1922,8 @@ html { scrollbar-color: var(--green) transparent; scrollbar-width: thin; }
 
 /* Character-by-character heading reveal */
 .line-wrap { display: block; }
+/* Keep each word's animated letters together so words never break mid-letter */
+.word { display: inline-block; white-space: nowrap; }
 .char {
   display: inline-block;
   opacity: 0;
@@ -2096,4 +1984,126 @@ html { scrollbar-color: var(--green) transparent; scrollbar-width: thin; }
 
 @media (max-width: 360px) {
   .book-aside-list { grid-template-columns: 1fr; }
+}
+
+/* =========================================================================
+   RESPONSIVE — moved to end so mobile overrides win the cascade over
+   late-defined component base styles (trust, reviews, faq, modals).
+   ========================================================================= */
+/* =========== RESPONSIVE (1024 / 768 / 480 / 360) =========== */
+
+/* ---- Tablet: nav → burger, sетки 2-col ---- */
+@media (max-width: 1024px) {
+  .nav { display: none; }
+  .burger { display: flex; }
+  .header { padding: 0.8rem 1.5rem; gap: 0.8rem; }
+  .stats { grid-template-columns: repeat(2, 1fr); padding: 4rem 1.5rem; gap: 1.5rem; }
+  .steps { grid-template-columns: repeat(2, 1fr); }
+  .promo-grid { grid-template-columns: repeat(3, 1fr); }
+  .trust-grid { grid-template-columns: repeat(2, 1fr); }
+  .footer-grid { grid-template-columns: 1fr 1fr; }
+  .stations { grid-template-columns: minmax(0, 1fr); gap: 3rem; padding: 5rem 1.5rem; }
+  .stations-left { min-width: 0; max-width: 100%; }
+  .stations-left p { max-width: 100%; }
+  .stations-right { position: relative; left: auto; right: auto; top: auto; bottom: auto; display: block; min-width: 0; width: 100%; max-width: 100%; overflow: hidden; }
+  .stations-right #stationList { width: 100%; max-width: 100%; overflow: hidden; }
+  .station-list { grid-template-columns: 1fr; }
+  .stn-ticker-wrap {
+    width: 100%; max-width: 100%; overflow: hidden;
+    mask-image: linear-gradient(90deg, transparent 0%, #000 5%, #000 95%, transparent 100%);
+    -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 5%, #000 95%, transparent 100%);
+  }
+}
+
+/* ---- Телефоны/портрет планшета: 1-col, mobile nav, модалки fullscreen ---- */
+@media (max-width: 768px) {
+  .header { padding: 0.7rem 1rem; }
+  .cta-group { display: none; }
+  .logo img { height: 34px; }
+  .city-picker { padding: 0.5rem 0.7rem; font-size: 0.82rem; min-height: 44px; }
+  .city-picker .city-name { max-width: 110px; overflow: hidden; text-overflow: ellipsis; }
+  .mobile-cta { display: flex; }
+  body { padding-bottom: calc(70px + env(safe-area-inset-bottom)); }
+  .hero { padding: 7rem 1.2rem 3rem; min-height: auto; }
+  .hero-video-wrap { position: absolute; z-index: 0; }
+  .hero-content { max-width: 100%; }
+  .hero h1 { font-size: clamp(2rem, 9vw, 2.8rem); }
+  .hero .lead { font-size: 0.98rem; }
+  .badge { font-size: 0.78rem; }
+  .stat { padding: 1.2rem; border-radius: 14px; background: rgba(255,255,255,0.04); }
+  .hero-actions { flex-direction: column; }
+  .hero-actions .btn { width: 100%; min-height: 48px; }
+  /* Нативный scroll-snap для услуг */
+  .hscroll-wrap { height: auto; }
+  .hscroll-pin { position: relative; height: auto; overflow: visible; }
+  .hscroll-track {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    padding: 2rem 1.2rem;
+    gap: 1.2rem;
+    scrollbar-width: none;
+    will-change: auto;
+  }
+  .hscroll-track::-webkit-scrollbar { display: none; }
+  .hpanel {
+    flex: 0 0 auto;
+    width: min(82vw, 340px);
+    height: auto;
+    min-height: 360px;
+    scroll-snap-align: center;
+  }
+  .hpanel-intro { padding: 2rem 1.6rem; }
+  .hpanel-intro h2 { font-size: 1.5rem; margin-bottom: 1rem; }
+  .hpanel-card .card-body { padding: 1.2rem 1.2rem 1.4rem; }
+  .hpanel-card p { font-size: 0.93rem; }
+  .hpanel-end { padding: 2rem 1.6rem; }
+  .steps { grid-template-columns: 1fr; }
+  .step { padding: 1.4rem; }
+  .how { padding: 5rem 1.2rem; }
+  .brands { padding: 5rem 1.2rem; }
+  .promo { padding: 5rem 1.2rem; }
+  .promo-grid { grid-template-columns: repeat(2, 1fr); }
+  .cta { padding: 6rem 1.2rem; }
+  .footer { padding: 4rem 1.2rem 2rem; }
+  .footer-grid { grid-template-columns: 1fr; gap: 2rem; }
+  .scroll-hint { display: none; }
+  .reviews-deck { max-width: 100%; padding: 0 1.2rem 2rem; }
+  .trust { padding: 4rem 1.2rem; }
+  .trust-grid { grid-template-columns: 1fr; gap: 0.9rem; }
+  .trust-card { padding: 1.4rem 1.2rem; }
+  .trust-card h3 { font-size: 1.1rem; }
+}
+
+/* ---- Телефон: финальные 1-col, типографика ---- */
+@media (max-width: 480px) {
+  .stats { grid-template-columns: 1fr; padding: 3.2rem 1.2rem; gap: 1.3rem; }
+  .promo-grid { grid-template-columns: 1fr; }
+  .reviews { padding: 4rem 0; }
+  .reviews-head { padding: 0 1.2rem; }
+  .review { padding: 1.4rem 1.2rem 1rem; }
+  .faq { padding: 4rem 1.2rem; }
+  .faq-item summary { padding: 1rem 1.1rem; font-size: 0.97rem; }
+  .faq-body { padding: 0 1.1rem 1.1rem; }
+  .brand-row span { font-size: 1.3rem; }
+  .hpanel { min-height: 320px; }
+}
+
+/* ---- Узкие (320–360px): страховка overflow ---- */
+@media (max-width: 360px) {
+  .hero h1 { font-size: clamp(1.7rem, 9vw, 2.2rem); }
+  h2 { font-size: clamp(1.5rem, 7vw, 2rem); }
+  .city-picker .city-name { max-width: 80px; }
+  .hpanel { width: min(90vw, 300px); }
+  .book-aside-list { grid-template-columns: 1fr; }
+  /* Last-resort: a single word wider than a tiny screen may break rather than overflow */
+  .word { white-space: normal; word-break: break-word; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .brand-row { animation-play-state: paused; }
+  .stn-track { animation-play-state: paused; }
+  .mobile-menu-panel { transition: none; }
+  .mobile-menu-backdrop { transition: none; }
 }
