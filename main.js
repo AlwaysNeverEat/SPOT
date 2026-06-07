@@ -154,7 +154,97 @@
       });
     }, { threshold: 0.15 });
     document.querySelectorAll('.line-reveal, .reveal').forEach(el => revealObs.observe(el));
+
+    setupMarkerCircle();
   }, 0);
+
+  /* ---------- Hand-drawn red marker circle (draw-in + idle "boil") ---------- */
+  function setupMarkerCircle() {
+    const host = document.querySelector('.mark-circle');
+    if (!host || host.querySelector('.mark-circle__svg')) return;
+
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const uid = 'markBoil-' + Math.random().toString(36).slice(2, 8);
+
+    // Rough oval with a top lead-in line that overshoots/crosses on the right,
+    // mimicking a quick "circle this" pen gesture.
+    const D = 'M 286,50 C 200,40 96,42 44,52 C 8,60 20,92 74,103 ' +
+              'C 165,119 255,116 302,96 C 336,80 322,54 238,50';
+
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('class', 'mark-circle__svg');
+    svg.setAttribute('viewBox', '0 30 340 100');
+    svg.setAttribute('preserveAspectRatio', 'none');
+    svg.setAttribute('aria-hidden', 'true');
+
+    const path = document.createElementNS(svgNS, 'path');
+    path.setAttribute('class', 'mark-circle__path');
+    path.setAttribute('d', D);
+
+    let turb = null;
+    if (!reduce) {
+      const defs = document.createElementNS(svgNS, 'defs');
+      const filter = document.createElementNS(svgNS, 'filter');
+      filter.setAttribute('id', uid);
+      filter.setAttribute('x', '-30%');
+      filter.setAttribute('y', '-30%');
+      filter.setAttribute('width', '160%');
+      filter.setAttribute('height', '160%');
+
+      turb = document.createElementNS(svgNS, 'feTurbulence');
+      turb.setAttribute('type', 'fractalNoise');
+      turb.setAttribute('baseFrequency', '0.018');
+      turb.setAttribute('numOctaves', '2');
+      turb.setAttribute('seed', '1');
+      turb.setAttribute('result', 'noise');
+
+      const disp = document.createElementNS(svgNS, 'feDisplacementMap');
+      disp.setAttribute('in', 'SourceGraphic');
+      disp.setAttribute('in2', 'noise');
+      disp.setAttribute('scale', '3');
+      disp.setAttribute('xChannelSelector', 'R');
+      disp.setAttribute('yChannelSelector', 'G');
+
+      filter.appendChild(turb);
+      filter.appendChild(disp);
+      defs.appendChild(filter);
+      svg.appendChild(defs);
+      path.setAttribute('filter', 'url(#' + uid + ')');
+    }
+
+    svg.appendChild(path);
+    host.appendChild(svg);
+
+    // Set dash length from the actual geometry so the draw-in is exact.
+    const len = Math.ceil(path.getTotalLength());
+    host.style.setProperty('--len', len);
+
+    if (reduce) { host.classList.add('is-drawn'); return; }
+
+    let boilRaf = 0;
+    const startBoil = () => {
+      if (!turb || boilRaf) return;
+      let seed = 1, last = 0;
+      const tick = (t) => {
+        if (t - last > 90) { seed = (seed % 24) + 1; turb.setAttribute('seed', seed); last = t; }
+        boilRaf = requestAnimationFrame(tick);
+      };
+      boilRaf = requestAnimationFrame(tick);
+    };
+
+    // Trigger draw-in only when the word sits in the central band of the screen.
+    const centerObs = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          host.classList.add('is-drawn');
+          path.addEventListener('transitionend', startBoil, { once: true });
+          centerObs.disconnect();
+        }
+      });
+    }, { rootMargin: '-45% 0px -45% 0px', threshold: 0 });
+    centerObs.observe(host);
+  }
 
   /* ---------- Smooth-scroll polish for in-page links ---------- */
   document.querySelectorAll('a[href^="#"]').forEach(a => {

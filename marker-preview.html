@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Marker circle — превью</title>
+<style>
+  body{
+    margin:0; min-height:100vh; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:2.5rem;
+    background:#fafafa; color:#1a1a1a;
+    font-family:'Inter',system-ui,-apple-system,sans-serif;
+  }
+  h2{ font-size:clamp(1.6rem,4vw,2.6rem); font-weight:800; margin:0; text-align:center; }
+
+  /* === то же, что пойдёт в styles.css === */
+  .mark-circle{
+    --marker-red:#e8362c;
+    position:relative; display:inline-block; white-space:nowrap; isolation:isolate;
+  }
+  .mark-circle__svg{
+    position:absolute; left:50%; top:52%;
+    transform:translate(-50%,-50%) rotate(-1.2deg);
+    width:126%; height:188%; overflow:visible; pointer-events:none; z-index:-1;
+  }
+  .mark-circle__path{
+    fill:none; stroke:var(--marker-red); stroke-width:4.5;
+    stroke-linecap:round; stroke-linejoin:round;
+    stroke-dasharray:var(--len,1000); stroke-dashoffset:var(--len,1000);
+  }
+  .mark-circle.is-drawn .mark-circle__path{
+    transition:stroke-dashoffset .9s cubic-bezier(.65,.05,.25,1);
+    stroke-dashoffset:0;
+  }
+
+  button{
+    font:inherit; padding:.7rem 1.4rem; border-radius:10px; border:1px solid #e7e7e3;
+    background:#fff; cursor:pointer;
+  }
+</style>
+</head>
+<body>
+  <h2>Работаем только с <span class="mark-circle">проверенными</span> производителями</h2>
+  <button id="replay">↻ Проиграть заново</button>
+
+<script>
+(() => {
+  const host = document.querySelector('.mark-circle');
+  const svgNS='http://www.w3.org/2000/svg';
+  const D='M 286,50 C 200,40 96,42 44,52 C 8,60 20,92 74,103 '+
+          'C 165,119 255,116 302,96 C 336,80 322,54 238,50';
+
+  const svg=document.createElementNS(svgNS,'svg');
+  svg.setAttribute('class','mark-circle__svg');
+  svg.setAttribute('viewBox','0 30 340 100');
+  svg.setAttribute('preserveAspectRatio','none');
+  svg.setAttribute('aria-hidden','true');
+
+  const defs=document.createElementNS(svgNS,'defs');
+  const filter=document.createElementNS(svgNS,'filter');
+  filter.setAttribute('id','boil');
+  filter.setAttribute('x','-30%'); filter.setAttribute('y','-30%');
+  filter.setAttribute('width','160%'); filter.setAttribute('height','160%');
+  const turb=document.createElementNS(svgNS,'feTurbulence');
+  turb.setAttribute('type','fractalNoise'); turb.setAttribute('baseFrequency','0.018');
+  turb.setAttribute('numOctaves','2'); turb.setAttribute('seed','1'); turb.setAttribute('result','noise');
+  const disp=document.createElementNS(svgNS,'feDisplacementMap');
+  disp.setAttribute('in','SourceGraphic'); disp.setAttribute('in2','noise');
+  disp.setAttribute('scale','3'); disp.setAttribute('xChannelSelector','R'); disp.setAttribute('yChannelSelector','G');
+  filter.appendChild(turb); filter.appendChild(disp); defs.appendChild(filter); svg.appendChild(defs);
+
+  const path=document.createElementNS(svgNS,'path');
+  path.setAttribute('class','mark-circle__path');
+  path.setAttribute('d',D);
+  path.setAttribute('filter','url(#boil)');
+  svg.appendChild(path); host.appendChild(svg);
+
+  host.style.setProperty('--len', Math.ceil(path.getTotalLength()));
+
+  let boilRaf=0;
+  function startBoil(){
+    if(boilRaf) return;
+    let seed=1,last=0;
+    const tick=(t)=>{ if(t-last>90){seed=(seed%24)+1; turb.setAttribute('seed',seed); last=t;} boilRaf=requestAnimationFrame(tick); };
+    boilRaf=requestAnimationFrame(tick);
+  }
+  function play(){
+    cancelAnimationFrame(boilRaf); boilRaf=0;
+    host.classList.remove('is-drawn');
+    void path.getBoundingClientRect();
+    requestAnimationFrame(()=>{
+      host.classList.add('is-drawn');
+      path.addEventListener('transitionend', startBoil, {once:true});
+    });
+  }
+  document.getElementById('replay').addEventListener('click', play);
+  play();
+})();
+</script>
+</body>
+</html>
