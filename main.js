@@ -198,7 +198,7 @@
     const svgNS = 'http://www.w3.org/2000/svg';
     const svg = document.createElementNS(svgNS, 'svg');
     svg.setAttribute('class', 'mark-circle__svg');
-    svg.setAttribute('viewBox', '0 30 340 100');
+    svg.setAttribute('viewBox', '18 38 306 80');
     svg.setAttribute('preserveAspectRatio', 'none');
     svg.setAttribute('aria-hidden', 'true');
 

@@ -565,10 +565,11 @@ body.menu-open { overflow: hidden; }
 .mark-circle__svg {
   position: absolute;
   left: 50%;
-  top: 52%;
+  top: 50%;
+  /* Size relative to the word: wider than the text, height tied to font-size. */
+  width: 128%;
+  height: 1.55em;
   transform: translate(-50%, -50%) rotate(-1.2deg);
-  width: 126%;
-  height: 188%;
   overflow: visible;
   pointer-events: none;
   z-index: -1;
