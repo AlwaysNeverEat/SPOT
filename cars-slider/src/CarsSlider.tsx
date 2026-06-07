@@ -93,11 +93,7 @@ export function CarsSlider() {
 
   return (
     <MotionConfig reducedMotion="never">
-    <div
-      style={styles.wrap}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-    >
+    <div style={styles.wrap}>
       <div style={styles.stage}>
         <AnimatePresence initial={false} custom={direction} mode="wait">
           <motion.div
@@ -115,6 +111,8 @@ export function CarsSlider() {
               if (info.offset.x < -80) go(1);
               else if (info.offset.x > 80) go(-1);
             }}
+            onMouseEnter={() => setHover(true)}
+            onMouseLeave={() => setHover(false)}
             style={{ transformStyle: 'preserve-3d', cursor: 'grab', width: 'min(420px, calc(100vw - 90px))' }}
           >
             <div style={styles.card}>
