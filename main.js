@@ -576,9 +576,11 @@
     const cEmpty = document.getElementById('catalogEmpty');
     const cLoading = document.getElementById('catalogLoading');
     const cCount = document.getElementById('catalogCount');
+    const cFound = document.getElementById('catalogFound');
     const cReset = document.getElementById('catalogReset');
     const cFilters = document.getElementById('catalogFilters');
     const cFiltersToggle = document.getElementById('catalogFiltersToggle');
+    const cFiltersBadge = document.getElementById('catalogFiltersBadge');
     const cDetail = document.getElementById('catalogDetail');
     const cDetailBody = document.getElementById('catalogDetailBody');
     const cBack = document.getElementById('catalogBack');
@@ -681,7 +683,10 @@
         <span class="catalog-card-body">
           <span class="catalog-card-badges">${badges.join('')}</span>
           <span class="catalog-card-title">${escHtml(item.title)}</span>
-          <span class="catalog-card-price">${item.price ? `${item.price} ₽` : 'Уточняйте'}${item.price && perLitre(item) ? '<small> /литр</small>' : ''}</span>
+          <span class="catalog-card-foot">
+            <span class="catalog-card-price">${item.price ? `${item.price} ₽` : 'Уточняйте'}${item.price && perLitre(item) ? '<small> /литр</small>' : ''}</span>
+            <span class="catalog-card-go" aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>
+          </span>
         </span>
       </div>`;
     };
@@ -693,8 +698,19 @@
       cEmpty.hidden = shown.length > 0;
       cGrid.hidden = shown.length === 0;
       cCount.textContent = `${shown.length} из ${CATALOG.length}`;
-      const anyFilter = ALL_KEYS.some((k) => active[k].size) || cSearch.value.trim();
+      if (cFound) cFound.innerHTML = `Найдено <b>${shown.length}</b> ${plural(shown.length, 'масло', 'масла', 'масел')}`;
+      const activeCount = ALL_KEYS.reduce((n, k) => n + active[k].size, 0);
+      const anyFilter = activeCount > 0 || cSearch.value.trim();
       cReset.hidden = !anyFilter;
+      if (cFiltersBadge) { cFiltersBadge.hidden = activeCount === 0; cFiltersBadge.textContent = activeCount; }
+      if (cFiltersToggle) cFiltersToggle.classList.toggle('is-active', activeCount > 0);
+    };
+
+    const plural = (n, one, few, many) => {
+      const m10 = n % 10, m100 = n % 100;
+      if (m10 === 1 && m100 !== 11) return one;
+      if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return few;
+      return many;
     };
 
     const openDetail = (item) => {
@@ -704,35 +720,45 @@
         ['Вязкость', item.viscosity],
         ['Объём', item.volume],
         ['Тип', item.type],
-        ['Допуски', (item.approvals || []).join(', ')],
       ].filter(([, v]) => v);
+      const approvals = item.approvals || [];
       cDetailBody.innerHTML = `
-        <div class="catalog-detail-grid">
-          <div class="catalog-detail-img"><img src="${escAttr(item.image)}" alt="${escAttr(item.title)}" /></div>
-          <div class="catalog-detail-info">
-            <h3>${escHtml(item.title)}</h3>
-            <div class="catalog-detail-badges">
-              ${item.brand ? `<span class="catalog-badge brand">${escHtml(item.brand)}</span>` : ''}
-              ${item.viscosity ? `<span class="catalog-badge">${escHtml(item.viscosity)}</span>` : ''}
-              ${item.volume ? `<span class="catalog-badge">${escHtml(item.volume)}</span>` : ''}
-            </div>
-            ${item.price ? `<div class="catalog-detail-price">${item.price} ₽${perLitre(item) ? '<small> / литр</small>' : ''}</div>` : ''}
-            <div class="catalog-detail-note">При покупке масла у нас — замена масла и фильтра бесплатно.</div>
-            <dl class="catalog-detail-specs">
-              ${specs.map(([k, v]) => `<div class="catalog-spec"><dt>${k}</dt><dd>${escHtml(v)}</dd></div>`).join('')}
-            </dl>
-            ${item.description ? `<p class="catalog-detail-desc">${escHtml(item.description)}</p>` : ''}
-            <div class="catalog-detail-actions">
-              <button type="button" class="btn btn-primary" data-open-booking>Записаться на замену</button>
-              <a href="tel:${escAttr(ph.tel)}" class="btn btn-outline">${escHtml(ph.phone)}</a>
-            </div>
+        <div class="catalog-detail-img"><img src="${escAttr(item.image)}" alt="${escAttr(item.title)}" /></div>
+        <div class="catalog-detail-info">
+          <h3>${escHtml(item.title)}</h3>
+          <div class="catalog-detail-badges">
+            ${item.brand ? `<span class="catalog-badge brand">${escHtml(item.brand)}</span>` : ''}
+            ${item.viscosity ? `<span class="catalog-badge">${escHtml(item.viscosity)}</span>` : ''}
+            ${item.volume ? `<span class="catalog-badge">${escHtml(item.volume)}</span>` : ''}
+          </div>
+          ${item.price ? `<div class="catalog-detail-price">${item.price} ₽${perLitre(item) ? '<small> / литр</small>' : ''}</div>` : ''}
+          <div class="catalog-detail-note">При покупке масла у нас — замена масла и фильтра бесплатно.</div>
+          <div class="catalog-detail-section">
+            <h4>Характеристики</h4>
+            <dl>${specs.map(([k, v]) => `<div class="catalog-spec"><dt>${k}</dt><dd>${escHtml(v)}</dd></div>`).join('')}</dl>
+          </div>
+          ${approvals.length ? `<div class="catalog-detail-section">
+            <h4>Допуски и спецификации</h4>
+            <div class="catalog-approval-tags">${approvals.map((a) => `<span class="catalog-approval-tag">${escHtml(a)}</span>`).join('')}</div>
+          </div>` : ''}
+          ${item.description ? `<div class="catalog-detail-section"><h4>Описание</h4><p class="catalog-detail-desc">${escHtml(item.description)}</p></div>` : ''}
+          <div class="catalog-detail-actions">
+            <button type="button" class="btn btn-primary" data-open-booking>Записаться на замену</button>
+            <a href="tel:${escAttr(ph.tel)}" class="btn btn-outline">${escHtml(ph.phone)}</a>
           </div>
         </div>`;
+      cDetailBody.scrollTop = 0;
       cDetail.hidden = false;
-      cDetail.scrollTop = 0;
+      cDetail.setAttribute('aria-hidden', 'false');
+      requestAnimationFrame(() => cDetail.classList.add('is-open'));
     };
 
-    const closeDetail = () => { cDetail.hidden = true; };
+    const closeDetail = () => {
+      cDetail.classList.remove('is-open');
+      cDetail.setAttribute('aria-hidden', 'true');
+      cGrid.querySelectorAll('.catalog-card.is-selected').forEach((c) => c.classList.remove('is-selected'));
+      setTimeout(() => { if (!cDetail.classList.contains('is-open')) cDetail.hidden = true; }, 360);
+    };
 
     const loadCatalog = async () => {
       if (catalogLoaded) return;
@@ -761,7 +787,10 @@
     };
 
     const openCatalog = () => {
-      closeDetail();
+      // мгновенно прячем боковую панель товара (без анимации) при открытии
+      cDetail.classList.remove('is-open');
+      cDetail.hidden = true;
+      cDetail.setAttribute('aria-hidden', 'true');
       openModalEl(catalogModal);
       loadCatalog();
       setTimeout(() => cSearch && cSearch.focus(), 80);
@@ -780,15 +809,8 @@
     });
     cSort.addEventListener('change', render);
 
-    // фильтры-чипсы + сворачивание групп
+    // фильтры-чипсы
     cFilters.addEventListener('click', (e) => {
-      const head = e.target.closest('.catalog-filter-h');
-      if (head) {
-        const group = head.closest('.catalog-filter-group');
-        const collapsed = group.classList.toggle('is-collapsed');
-        head.setAttribute('aria-expanded', String(!collapsed));
-        return;
-      }
       const chip = e.target.closest('.catalog-chip');
       if (!chip) return;
       const { key, val } = chip.dataset;
@@ -826,19 +848,23 @@
     }
 
     // клик по карточке → деталь
+    const selectCard = (card) => {
+      const item = shown[+card.dataset.idx];
+      if (!item) return;
+      cGrid.querySelectorAll('.catalog-card.is-selected').forEach((c) => c.classList.remove('is-selected'));
+      card.classList.add('is-selected');
+      openDetail(item);
+    };
     cGrid.addEventListener('click', (e) => {
       const card = e.target.closest('.catalog-card');
-      if (!card) return;
-      const item = shown[+card.dataset.idx];
-      if (item) openDetail(item);
+      if (card) selectCard(card);
     });
     cGrid.addEventListener('keydown', (e) => {
       if (e.key !== 'Enter' && e.key !== ' ') return;
       const card = e.target.closest('.catalog-card');
       if (!card) return;
       e.preventDefault();
-      const item = shown[+card.dataset.idx];
-      if (item) openDetail(item);
+      selectCard(card);
     });
     cBack.addEventListener('click', closeDetail);
 

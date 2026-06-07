@@ -573,67 +573,76 @@
         <span class="catalog-count" id="catalogCount"></span>
       </div>
       <div class="catalog-search-row">
-        <svg class="catalog-search-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input type="search" class="catalog-search" id="catalogSearch" placeholder="Поиск: бренд, вязкость 5W-40, объём…" autocomplete="off" />
+        <div class="catalog-search-wrap">
+          <svg class="catalog-search-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="search" class="catalog-search" id="catalogSearch" placeholder="Поиск: бренд, вязкость 5W-40, допуск A3/B4…" autocomplete="off" />
+        </div>
+        <button type="button" class="catalog-filters-btn" id="catalogFiltersToggle" aria-expanded="false" aria-controls="catalogFilters">
+          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="6" x2="20" y2="6"/><line x1="7" y1="12" x2="17" y2="12"/><line x1="10" y1="18" x2="14" y2="18"/></svg>
+          <span>Фильтры</span>
+          <span class="catalog-filters-badge" id="catalogFiltersBadge" hidden>0</span>
+        </button>
+      </div>
+
+      <!-- Выдвижная панель фильтров -->
+      <div class="catalog-filters" id="catalogFilters">
+        <div class="catalog-filters-inner">
+          <div class="catalog-filter-row" data-filter="brand">
+            <span class="catalog-filter-label">Бренд</span>
+            <div class="catalog-chips" data-chips="brand"></div>
+          </div>
+          <div class="catalog-filter-row" data-filter="viscosity">
+            <span class="catalog-filter-label">Вязкость</span>
+            <div class="catalog-chips" data-chips="viscosity"></div>
+          </div>
+          <div class="catalog-filter-row" data-filter="volume">
+            <span class="catalog-filter-label">Объём</span>
+            <div class="catalog-chips" data-chips="volume"></div>
+          </div>
+          <div class="catalog-filter-row" data-filter="type">
+            <span class="catalog-filter-label">Тип</span>
+            <div class="catalog-chips" data-chips="type"></div>
+          </div>
+          <div class="catalog-filter-row catalog-filter-row--approvals" data-filter="approvals">
+            <span class="catalog-filter-label">Допуски<span class="catalog-filter-badge" data-approvals-count></span></span>
+            <div class="catalog-approvals">
+              <div class="catalog-approvals-search">
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="search" id="catalogApprovalsSearch" placeholder="Найти допуск: A3/B4, VW 502…" autocomplete="off" />
+              </div>
+              <div class="catalog-chips catalog-chips-approvals" data-chips="approvals"></div>
+            </div>
+          </div>
+          <div class="catalog-filters-foot">
+            <button type="button" class="catalog-reset" id="catalogReset" hidden>Сбросить фильтры</button>
+          </div>
+        </div>
       </div>
     </header>
 
-    <!-- Список + фильтры -->
-    <div class="catalog-body" id="catalogBody">
-      <aside class="catalog-filters" id="catalogFilters">
-        <div class="catalog-filter-group" data-filter="brand">
-          <button type="button" class="catalog-filter-h" aria-expanded="true">Бренд<svg class="catalog-filter-chevron" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button>
-          <div class="catalog-chips" data-chips="brand"></div>
-        </div>
-        <div class="catalog-filter-group" data-filter="viscosity">
-          <button type="button" class="catalog-filter-h" aria-expanded="true">Вязкость<svg class="catalog-filter-chevron" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button>
-          <div class="catalog-chips" data-chips="viscosity"></div>
-        </div>
-        <div class="catalog-filter-group" data-filter="volume">
-          <button type="button" class="catalog-filter-h" aria-expanded="true">Объём<svg class="catalog-filter-chevron" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button>
-          <div class="catalog-chips" data-chips="volume"></div>
-        </div>
-        <div class="catalog-filter-group" data-filter="type">
-          <button type="button" class="catalog-filter-h" aria-expanded="true">Тип<svg class="catalog-filter-chevron" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button>
-          <div class="catalog-chips" data-chips="type"></div>
-        </div>
-        <div class="catalog-filter-group is-collapsed" data-filter="approvals">
-          <button type="button" class="catalog-filter-h" aria-expanded="false">Допуски<span class="catalog-filter-badge" data-approvals-count></span><svg class="catalog-filter-chevron" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button>
-          <div class="catalog-approvals-search">
-            <input type="search" id="catalogApprovalsSearch" placeholder="Фильтр допусков: A3/B4…" autocomplete="off" />
-          </div>
-          <div class="catalog-chips catalog-chips-scroll" data-chips="approvals"></div>
-        </div>
-        <button type="button" class="catalog-reset" id="catalogReset" hidden>Сбросить фильтры</button>
-      </aside>
-
-      <div class="catalog-main">
-        <div class="catalog-toolbar">
-          <button type="button" class="catalog-filters-toggle" id="catalogFiltersToggle" aria-expanded="false">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="6" x2="20" y2="6"/><line x1="7" y1="12" x2="17" y2="12"/><line x1="10" y1="18" x2="14" y2="18"/></svg>
-            Фильтры
-          </button>
-          <label class="catalog-sort">
-            <span>Сортировка</span>
-            <select id="catalogSort">
-              <option value="default">по умолчанию</option>
-              <option value="price_asc">цена ↑</option>
-              <option value="price_desc">цена ↓</option>
-              <option value="title">название А–Я</option>
-            </select>
-          </label>
-        </div>
-        <div class="catalog-grid" id="catalogGrid"></div>
-        <div class="catalog-empty" id="catalogEmpty" hidden>
-          <strong>Ничего не нашлось</strong>
-          <span>Попробуйте изменить запрос или сбросить фильтры.</span>
-        </div>
-        <div class="catalog-loading" id="catalogLoading">Загружаем каталог…</div>
+    <div class="catalog-main">
+      <div class="catalog-toolbar">
+        <span class="catalog-found" id="catalogFound"></span>
+        <label class="catalog-sort">
+          <span>Сортировка</span>
+          <select id="catalogSort">
+            <option value="default">по умолчанию</option>
+            <option value="price_asc">цена ↑</option>
+            <option value="price_desc">цена ↓</option>
+            <option value="title">название А–Я</option>
+          </select>
+        </label>
       </div>
+      <div class="catalog-grid" id="catalogGrid"></div>
+      <div class="catalog-empty" id="catalogEmpty" hidden>
+        <strong>Ничего не нашлось</strong>
+        <span>Попробуйте изменить запрос или сбросить фильтры.</span>
+      </div>
+      <div class="catalog-loading" id="catalogLoading">Загружаем каталог…</div>
     </div>
 
-    <!-- Детальная карточка товара -->
-    <div class="catalog-detail" id="catalogDetail" hidden>
+    <!-- Боковая панель товара (выезжает справа) -->
+    <div class="catalog-detail" id="catalogDetail" hidden aria-hidden="true">
       <button type="button" class="catalog-back" id="catalogBack">
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
         Назад к каталогу
