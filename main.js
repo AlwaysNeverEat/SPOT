@@ -218,21 +218,18 @@
     let boilRaf = 0;
     const startBoil = () => {
       if (boilRaf) return;
-      // Solid line during the boil so morphing geometry never shows dash gaps.
-      path.style.strokeDasharray = 'none';
-      const DUR = 520;          // ms to travel between two variants
-      const FRAME = 1000 / 12;  // throttle to ~12fps for the hand-drawn cadence
-      let idx = 0, t0 = null, lastFrame = 0;
-      const ease = (t) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
+      // Discrete frame-by-frame "boil": hard-swap the WHOLE oval to a random
+      // variant at a slow rate (~3fps) so the line just twitches now and then,
+      // alive but not cinematic. No tweening = no smooth, lifeless morph.
+      const INTERVAL = 320;
+      let cur = 0, last = -1e9;
       const tick = (ts) => {
-        if (t0 == null) t0 = lastFrame = ts;
-        if (ts - lastFrame >= FRAME) {
-          lastFrame = ts;
-          const e = ease(Math.min((ts - t0) / DUR, 1));
-          const a = variants[idx], b = variants[(idx + 1) % variants.length];
-          path.setAttribute('d', toD(a.map((v, i) => v + (b[i] - v) * e)));
+        if (ts - last >= INTERVAL) {
+          last = ts;
+          let n; do { n = Math.floor(Math.random() * variants.length); } while (n === cur);
+          cur = n;
+          path.setAttribute('d', toD(variants[cur]));
         }
-        if (ts - t0 >= DUR) { t0 = ts; idx = (idx + 1) % variants.length; }
         boilRaf = requestAnimationFrame(tick);
       };
       boilRaf = requestAnimationFrame(tick);
@@ -243,7 +240,9 @@
       entries.forEach(e => {
         if (e.isIntersecting) {
           host.classList.add('is-drawn');
-          path.addEventListener('transitionend', startBoil, { once: true });
+          startBoil();   // twitch from the very first stroke, not after it
+          // Go solid once fully drawn so swaps never leave a dash gap.
+          path.addEventListener('transitionend', () => { path.style.strokeDasharray = 'none'; }, { once: true });
           centerObs.disconnect();
         }
       });

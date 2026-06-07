@@ -75,14 +75,10 @@
   let boilRaf=0;
   function startBoil(){
     if(boilRaf) return;
-    path.style.strokeDasharray='none';
-    const DUR=520, FRAME=1000/12;
-    let idx=0,t0=null,lastFrame=0;
-    const ease=(t)=>(t<0.5?2*t*t:1-Math.pow(-2*t+2,2)/2);
+    const INTERVAL=320;
+    let cur=0,last=-1e9;
     const tick=(ts)=>{
-      if(t0==null)t0=lastFrame=ts;
-      if(ts-lastFrame>=FRAME){lastFrame=ts;const e=ease(Math.min((ts-t0)/DUR,1));const a=variants[idx],b=variants[(idx+1)%variants.length];path.setAttribute('d',toD(a.map((v,i)=>v+(b[i]-v)*e)));}
-      if(ts-t0>=DUR){t0=ts;idx=(idx+1)%variants.length;}
+      if(ts-last>=INTERVAL){last=ts;let n;do{n=Math.floor(Math.random()*variants.length);}while(n===cur);cur=n;path.setAttribute('d',toD(variants[cur]));}
       boilRaf=requestAnimationFrame(tick);
     };
     boilRaf=requestAnimationFrame(tick);
@@ -94,7 +90,8 @@
     void path.getBoundingClientRect();
     requestAnimationFrame(()=>{
       host.classList.add('is-drawn');
-      path.addEventListener('transitionend', startBoil, {once:true});
+      startBoil();
+      path.addEventListener('transitionend', ()=>{ path.style.strokeDasharray='none'; }, {once:true});
     });
   }
   document.getElementById('replay').addEventListener('click', play);
