@@ -47,8 +47,17 @@
 (() => {
   const host = document.querySelector('.mark-circle');
   const svgNS='http://www.w3.org/2000/svg';
-  const D='M 286,50 C 200,40 96,42 44,52 C 8,60 20,92 74,103 '+
-          'C 165,119 255,116 302,96 C 336,80 322,54 238,50';
+
+  const BASE=[286,50,200,40,96,42,44,52,8,60,20,92,74,103,165,119,255,116,302,96,336,80,322,54,238,50];
+  const toD=(p)=>`M ${p[0]},${p[1]} C ${p[2]},${p[3]} ${p[4]},${p[5]} ${p[6]},${p[7]} `+
+    `C ${p[8]},${p[9]} ${p[10]},${p[11]} ${p[12]},${p[13]} `+
+    `C ${p[14]},${p[15]} ${p[16]},${p[17]} ${p[18]},${p[19]} `+
+    `C ${p[20]},${p[21]} ${p[22]},${p[23]} ${p[24]},${p[25]}`;
+
+  const CX=172,CY=80;
+  const rnd=(s)=>{const x=Math.sin(s*127.1+311.7)*43758.5453; return (x-Math.floor(x))*2-1;};
+  const variant=(amp,sx,sy)=>BASE.map((v,i)=>{const isX=i%2===0;const c=isX?CX:CY;const s=isX?sx:sy;return c+(v-c)*s+rnd(i+amp*100)*amp;});
+  const variants=[BASE.slice(),variant(2.6,1.020,0.975),variant(3.0,0.984,1.028),variant(2.2,1.012,0.992)];
 
   const svg=document.createElementNS(svgNS,'svg');
   svg.setAttribute('class','mark-circle__svg');
@@ -56,23 +65,9 @@
   svg.setAttribute('preserveAspectRatio','none');
   svg.setAttribute('aria-hidden','true');
 
-  const defs=document.createElementNS(svgNS,'defs');
-  const filter=document.createElementNS(svgNS,'filter');
-  filter.setAttribute('id','boil');
-  filter.setAttribute('x','-30%'); filter.setAttribute('y','-30%');
-  filter.setAttribute('width','160%'); filter.setAttribute('height','160%');
-  const turb=document.createElementNS(svgNS,'feTurbulence');
-  turb.setAttribute('type','fractalNoise'); turb.setAttribute('baseFrequency','0.018');
-  turb.setAttribute('numOctaves','2'); turb.setAttribute('seed','1'); turb.setAttribute('result','noise');
-  const disp=document.createElementNS(svgNS,'feDisplacementMap');
-  disp.setAttribute('in','SourceGraphic'); disp.setAttribute('in2','noise');
-  disp.setAttribute('scale','3'); disp.setAttribute('xChannelSelector','R'); disp.setAttribute('yChannelSelector','G');
-  filter.appendChild(turb); filter.appendChild(disp); defs.appendChild(filter); svg.appendChild(defs);
-
   const path=document.createElementNS(svgNS,'path');
   path.setAttribute('class','mark-circle__path');
-  path.setAttribute('d',D);
-  path.setAttribute('filter','url(#boil)');
+  path.setAttribute('d',toD(BASE));
   svg.appendChild(path); host.appendChild(svg);
 
   host.style.setProperty('--len', Math.ceil(path.getTotalLength()));
@@ -80,12 +75,21 @@
   let boilRaf=0;
   function startBoil(){
     if(boilRaf) return;
-    let seed=1,last=0;
-    const tick=(t)=>{ if(t-last>90){seed=(seed%24)+1; turb.setAttribute('seed',seed); last=t;} boilRaf=requestAnimationFrame(tick); };
+    path.style.strokeDasharray='none';
+    const DUR=520, FRAME=1000/12;
+    let idx=0,t0=null,lastFrame=0;
+    const ease=(t)=>(t<0.5?2*t*t:1-Math.pow(-2*t+2,2)/2);
+    const tick=(ts)=>{
+      if(t0==null)t0=lastFrame=ts;
+      if(ts-lastFrame>=FRAME){lastFrame=ts;const e=ease(Math.min((ts-t0)/DUR,1));const a=variants[idx],b=variants[(idx+1)%variants.length];path.setAttribute('d',toD(a.map((v,i)=>v+(b[i]-v)*e)));}
+      if(ts-t0>=DUR){t0=ts;idx=(idx+1)%variants.length;}
+      boilRaf=requestAnimationFrame(tick);
+    };
     boilRaf=requestAnimationFrame(tick);
   }
   function play(){
     cancelAnimationFrame(boilRaf); boilRaf=0;
+    path.style.strokeDasharray=''; path.setAttribute('d',toD(BASE));
     host.classList.remove('is-drawn');
     void path.getBoundingClientRect();
     requestAnimationFrame(()=>{

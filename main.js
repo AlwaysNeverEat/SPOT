@@ -164,12 +164,36 @@
     if (!host || host.querySelector('.mark-circle__svg')) return;
 
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const uid = 'markBoil-' + Math.random().toString(36).slice(2, 8);
 
-    // Rough oval with a top lead-in line that overshoots/crosses on the right,
+    // Rough oval as a flat list of points (1 move-to + 4 cubic segments = 13
+    // points / 26 numbers). A top lead-in line overshoots/crosses on the right,
     // mimicking a quick "circle this" pen gesture.
-    const D = 'M 286,50 C 200,40 96,42 44,52 C 8,60 20,92 74,103 ' +
-              'C 165,119 255,116 302,96 C 336,80 322,54 238,50';
+    const BASE = [286, 50, 200, 40, 96, 42, 44, 52, 8, 60, 20, 92, 74, 103,
+                  165, 119, 255, 116, 302, 96, 336, 80, 322, 54, 238, 50];
+    const toD = (p) =>
+      `M ${p[0]},${p[1]} C ${p[2]},${p[3]} ${p[4]},${p[5]} ${p[6]},${p[7]} ` +
+      `C ${p[8]},${p[9]} ${p[10]},${p[11]} ${p[12]},${p[13]} ` +
+      `C ${p[14]},${p[15]} ${p[16]},${p[17]} ${p[18]},${p[19]} ` +
+      `C ${p[20]},${p[21]} ${p[22]},${p[23]} ${p[24]},${p[25]}`;
+
+    // Build a slightly different whole-oval variant: a small global stretch
+    // about the centre plus a tiny per-point wobble. Cycling between a few of
+    // these gives a hand-drawn "line boil" where the WHOLE line breathes /
+    // stretches, instead of each segment jittering on its own.
+    const CX = 172, CY = 80;
+    const rnd = (s) => { const x = Math.sin(s * 127.1 + 311.7) * 43758.5453; return (x - Math.floor(x)) * 2 - 1; };
+    const variant = (amp, sx, sy) => BASE.map((v, i) => {
+      const isX = i % 2 === 0;
+      const c = isX ? CX : CY;
+      const s = isX ? sx : sy;
+      return c + (v - c) * s + rnd(i + amp * 100) * amp;
+    });
+    const variants = [
+      BASE.slice(),
+      variant(2.6, 1.020, 0.975),
+      variant(3.0, 0.984, 1.028),
+      variant(2.2, 1.012, 0.992)
+    ];
 
     const svgNS = 'http://www.w3.org/2000/svg';
     const svg = document.createElementNS(svgNS, 'svg');
@@ -180,38 +204,7 @@
 
     const path = document.createElementNS(svgNS, 'path');
     path.setAttribute('class', 'mark-circle__path');
-    path.setAttribute('d', D);
-
-    let turb = null;
-    if (!reduce) {
-      const defs = document.createElementNS(svgNS, 'defs');
-      const filter = document.createElementNS(svgNS, 'filter');
-      filter.setAttribute('id', uid);
-      filter.setAttribute('x', '-30%');
-      filter.setAttribute('y', '-30%');
-      filter.setAttribute('width', '160%');
-      filter.setAttribute('height', '160%');
-
-      turb = document.createElementNS(svgNS, 'feTurbulence');
-      turb.setAttribute('type', 'fractalNoise');
-      turb.setAttribute('baseFrequency', '0.018');
-      turb.setAttribute('numOctaves', '2');
-      turb.setAttribute('seed', '1');
-      turb.setAttribute('result', 'noise');
-
-      const disp = document.createElementNS(svgNS, 'feDisplacementMap');
-      disp.setAttribute('in', 'SourceGraphic');
-      disp.setAttribute('in2', 'noise');
-      disp.setAttribute('scale', '3');
-      disp.setAttribute('xChannelSelector', 'R');
-      disp.setAttribute('yChannelSelector', 'G');
-
-      filter.appendChild(turb);
-      filter.appendChild(disp);
-      defs.appendChild(filter);
-      svg.appendChild(defs);
-      path.setAttribute('filter', 'url(#' + uid + ')');
-    }
+    path.setAttribute('d', toD(BASE));
 
     svg.appendChild(path);
     host.appendChild(svg);
@@ -224,10 +217,22 @@
 
     let boilRaf = 0;
     const startBoil = () => {
-      if (!turb || boilRaf) return;
-      let seed = 1, last = 0;
-      const tick = (t) => {
-        if (t - last > 90) { seed = (seed % 24) + 1; turb.setAttribute('seed', seed); last = t; }
+      if (boilRaf) return;
+      // Solid line during the boil so morphing geometry never shows dash gaps.
+      path.style.strokeDasharray = 'none';
+      const DUR = 520;          // ms to travel between two variants
+      const FRAME = 1000 / 12;  // throttle to ~12fps for the hand-drawn cadence
+      let idx = 0, t0 = null, lastFrame = 0;
+      const ease = (t) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
+      const tick = (ts) => {
+        if (t0 == null) t0 = lastFrame = ts;
+        if (ts - lastFrame >= FRAME) {
+          lastFrame = ts;
+          const e = ease(Math.min((ts - t0) / DUR, 1));
+          const a = variants[idx], b = variants[(idx + 1) % variants.length];
+          path.setAttribute('d', toD(a.map((v, i) => v + (b[i] - v) * e)));
+        }
+        if (ts - t0 >= DUR) { t0 = ts; idx = (idx + 1) % variants.length; }
         boilRaf = requestAnimationFrame(tick);
       };
       boilRaf = requestAnimationFrame(tick);
