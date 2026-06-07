@@ -582,20 +582,27 @@
     <div class="catalog-body" id="catalogBody">
       <aside class="catalog-filters" id="catalogFilters">
         <div class="catalog-filter-group" data-filter="brand">
-          <h4>Бренд</h4>
+          <button type="button" class="catalog-filter-h" aria-expanded="true">Бренд<svg class="catalog-filter-chevron" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button>
           <div class="catalog-chips" data-chips="brand"></div>
         </div>
         <div class="catalog-filter-group" data-filter="viscosity">
-          <h4>Вязкость</h4>
+          <button type="button" class="catalog-filter-h" aria-expanded="true">Вязкость<svg class="catalog-filter-chevron" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button>
           <div class="catalog-chips" data-chips="viscosity"></div>
         </div>
         <div class="catalog-filter-group" data-filter="volume">
-          <h4>Объём</h4>
+          <button type="button" class="catalog-filter-h" aria-expanded="true">Объём<svg class="catalog-filter-chevron" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button>
           <div class="catalog-chips" data-chips="volume"></div>
         </div>
         <div class="catalog-filter-group" data-filter="type">
-          <h4>Тип</h4>
+          <button type="button" class="catalog-filter-h" aria-expanded="true">Тип<svg class="catalog-filter-chevron" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button>
           <div class="catalog-chips" data-chips="type"></div>
+        </div>
+        <div class="catalog-filter-group is-collapsed" data-filter="approvals">
+          <button type="button" class="catalog-filter-h" aria-expanded="false">Допуски<span class="catalog-filter-badge" data-approvals-count></span><svg class="catalog-filter-chevron" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button>
+          <div class="catalog-approvals-search">
+            <input type="search" id="catalogApprovalsSearch" placeholder="Фильтр допусков: A3/B4…" autocomplete="off" />
+          </div>
+          <div class="catalog-chips catalog-chips-scroll" data-chips="approvals"></div>
         </div>
         <button type="button" class="catalog-reset" id="catalogReset" hidden>Сбросить фильтры</button>
       </aside>

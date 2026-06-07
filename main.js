@@ -582,12 +582,15 @@
     const cDetail = document.getElementById('catalogDetail');
     const cDetailBody = document.getElementById('catalogDetailBody');
     const cBack = document.getElementById('catalogBack');
+    const cApprovalsSearch = document.getElementById('catalogApprovalsSearch');
 
     let CATALOG = null;
     let catalogLoaded = false;
     let shown = [];
-    const FILTER_KEYS = ['brand', 'viscosity', 'volume', 'type'];
-    const active = { brand: new Set(), viscosity: new Set(), volume: new Set(), type: new Set() };
+    // Скалярные фасеты (одно значение у товара) + approvals (массив допусков).
+    const SCALAR_KEYS = ['brand', 'viscosity', 'volume', 'type'];
+    const ALL_KEYS = [...SCALAR_KEYS, 'approvals'];
+    const active = { brand: new Set(), viscosity: new Set(), volume: new Set(), type: new Set(), approvals: new Set() };
 
     const escHtml = (s) => String(s == null ? '' : s).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
     const escAttr = (s) => escHtml(s).replace(/"/g, '&quot;');
@@ -608,26 +611,50 @@
       return vals.sort((a, b) => a.localeCompare(b, 'ru'));
     };
 
+    // Допуски — массив у товара: собираем уникальные и сортируем по частоте (частые сверху).
+    const approvalsByFreq = () => {
+      const freq = new Map();
+      CATALOG.forEach((i) => (i.approvals || []).forEach((a) => freq.set(a, (freq.get(a) || 0) + 1)));
+      return [...freq.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'ru')).map((e) => e[0]);
+    };
+
+    const chipHtml = (key, v) =>
+      `<button type="button" class="catalog-chip" data-key="${key}" data-val="${escAttr(v)}">${escHtml(v)}</button>`;
+
     const buildFilters = () => {
-      FILTER_KEYS.forEach((key) => {
+      SCALAR_KEYS.forEach((key) => {
         const box = catalogModal.querySelector(`[data-chips="${key}"]`);
         if (!box) return;
         const vals = uniqueSorted(key);
         const group = box.closest('.catalog-filter-group');
         if (!vals.length) { if (group) group.hidden = true; return; }
-        box.innerHTML = vals
-          .map((v) => `<button type="button" class="catalog-chip" data-key="${key}" data-val="${escAttr(v)}">${escHtml(v)}</button>`)
-          .join('');
+        box.innerHTML = vals.map((v) => chipHtml(key, v)).join('');
       });
+      // Допуски
+      const aBox = catalogModal.querySelector('[data-chips="approvals"]');
+      if (aBox) {
+        const vals = approvalsByFreq();
+        const group = aBox.closest('.catalog-filter-group');
+        if (!vals.length) { if (group) group.hidden = true; }
+        else {
+          aBox.innerHTML = vals.map((v) => chipHtml('approvals', v)).join('');
+          const badge = catalogModal.querySelector('[data-approvals-count]');
+          if (badge) badge.textContent = vals.length;
+        }
+      }
     };
 
     const itemMatches = (item) => {
-      for (const key of FILTER_KEYS) {
+      for (const key of SCALAR_KEYS) {
         if (active[key].size && !active[key].has(item[key])) return false;
+      }
+      if (active.approvals.size) {
+        const aps = item.approvals || [];
+        if (!aps.some((a) => active.approvals.has(a))) return false;
       }
       const q = norm(cSearch.value);
       if (q) {
-        const hay = norm(`${item.title} ${item.brand} ${item.viscosity} ${item.volume} ${item.type}`);
+        const hay = norm(`${item.title} ${item.brand} ${item.viscosity} ${item.volume} ${item.type} ${(item.approvals || []).join(' ')}`);
         if (!hay.includes(q)) return false;
       }
       return true;
@@ -666,7 +693,7 @@
       cEmpty.hidden = shown.length > 0;
       cGrid.hidden = shown.length === 0;
       cCount.textContent = `${shown.length} из ${CATALOG.length}`;
-      const anyFilter = FILTER_KEYS.some((k) => active[k].size) || cSearch.value.trim();
+      const anyFilter = ALL_KEYS.some((k) => active[k].size) || cSearch.value.trim();
       cReset.hidden = !anyFilter;
     };
 
@@ -677,6 +704,7 @@
         ['Вязкость', item.viscosity],
         ['Объём', item.volume],
         ['Тип', item.type],
+        ['Допуски', (item.approvals || []).join(', ')],
       ].filter(([, v]) => v);
       cDetailBody.innerHTML = `
         <div class="catalog-detail-grid">
@@ -752,8 +780,15 @@
     });
     cSort.addEventListener('change', render);
 
-    // фильтры-чипсы
+    // фильтры-чипсы + сворачивание групп
     cFilters.addEventListener('click', (e) => {
+      const head = e.target.closest('.catalog-filter-h');
+      if (head) {
+        const group = head.closest('.catalog-filter-group');
+        const collapsed = group.classList.toggle('is-collapsed');
+        head.setAttribute('aria-expanded', String(!collapsed));
+        return;
+      }
       const chip = e.target.closest('.catalog-chip');
       if (!chip) return;
       const { key, val } = chip.dataset;
@@ -761,10 +796,25 @@
       else { active[key].add(val); chip.classList.add('is-active'); }
       render();
     });
+
+    // мини-поиск по чипсам допусков (просто прячет нерелевантные чипсы)
+    if (cApprovalsSearch) {
+      cApprovalsSearch.addEventListener('input', () => {
+        const q = norm(cApprovalsSearch.value);
+        catalogModal.querySelectorAll('[data-chips="approvals"] .catalog-chip').forEach((c) => {
+          c.classList.toggle('is-hidden', q && !norm(c.dataset.val).includes(q));
+        });
+      });
+    }
+
     cReset.addEventListener('click', () => {
-      FILTER_KEYS.forEach((k) => active[k].clear());
+      ALL_KEYS.forEach((k) => active[k].clear());
       catalogModal.querySelectorAll('.catalog-chip.is-active').forEach((c) => c.classList.remove('is-active'));
       cSearch.value = '';
+      if (cApprovalsSearch) {
+        cApprovalsSearch.value = '';
+        catalogModal.querySelectorAll('.catalog-chip.is-hidden').forEach((c) => c.classList.remove('is-hidden'));
+      }
       render();
     });
 

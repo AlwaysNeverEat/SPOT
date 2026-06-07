@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-06T20:14:58.666Z",
+  "generatedAt": "2026-06-07T04:59:45.826Z",
   "source": "https://zamena-masla-spot.ru/catalog/motornye",
   "category": "motornye",
   "count": 64,
@@ -12,6 +12,9 @@
       "viscosity": "10W-40",
       "volume": "60 л",
       "type": "",
+      "approvals": [
+        "МВ 229.1"
+      ],
       "price": 850,
       "priceText": "850 ₽/литр",
       "prices": [
@@ -32,6 +35,16 @@
       "viscosity": "5W-40",
       "volume": "205 л",
       "type": "Синтетическое",
+      "approvals": [
+        "MB 229.5",
+        "VW 502.00/505.00",
+        "Renault RN 0700 / 0710",
+        "BMW LL-01",
+        "Porsche A40",
+        "PSA B71 2296",
+        "GM-LL-B-025",
+        "ОАО «АВТОВАЗ»"
+      ],
       "price": 850,
       "priceText": "850 ₽/литр",
       "prices": [
@@ -52,6 +65,9 @@
       "viscosity": "5W-30",
       "volume": "60 л",
       "type": "",
+      "approvals": [
+        "VW 500.00"
+      ],
       "price": 950,
       "priceText": "950 ₽/литр",
       "prices": [
@@ -72,6 +88,9 @@
       "viscosity": "5W-40",
       "volume": "60 л",
       "type": "",
+      "approvals": [
+        "VW 500.00"
+      ],
       "price": 950,
       "priceText": "950 ₽/литр",
       "prices": [
@@ -92,6 +111,15 @@
       "viscosity": "5W-30",
       "volume": "205 л",
       "type": "Синтетическое",
+      "approvals": [
+        "MB 229.5",
+        "VW 502.00",
+        "VW 505.00",
+        "BMW LL01",
+        "RN 0700",
+        "GM LL-A/B-025",
+        "FIAT 9.55535-G"
+      ],
       "price": 1200,
       "priceText": "1200 ₽/литр",
       "prices": [
@@ -112,6 +140,9 @@
       "viscosity": "10W-40",
       "volume": "4 л",
       "type": "",
+      "approvals": [
+        "MB 229.1"
+      ],
       "price": 1200,
       "priceText": "1200 ₽/литр",
       "prices": [
@@ -132,6 +163,15 @@
       "viscosity": "5W-40",
       "volume": "205 л",
       "type": "",
+      "approvals": [
+        "MB 229.5",
+        "VW 502.00",
+        "VW 505.00",
+        "RN 700",
+        "RN 710",
+        "LL-B-025",
+        "PORSCHE A40"
+      ],
       "price": 1200,
       "priceText": "1200 ₽/литр",
       "prices": [
@@ -152,6 +192,7 @@
       "viscosity": "5W-30",
       "volume": "",
       "type": "",
+      "approvals": [],
       "price": 1300,
       "priceText": "1300 ₽/литр",
       "prices": [
@@ -172,6 +213,19 @@
       "viscosity": "5W-30",
       "volume": "",
       "type": "",
+      "approvals": [
+        "VW 502.00",
+        "VW 505.00",
+        "MB 226.5",
+        "MB 229.5",
+        "MB 229.3",
+        "RN 0700",
+        "RN 0710",
+        "GM-LL-B-025",
+        "PORSCHE A40",
+        "LL-01",
+        "GM Dexos 2"
+      ],
       "price": 1300,
       "priceText": "1300 ₽/литр",
       "prices": [
@@ -192,6 +246,19 @@
       "viscosity": "5W-40",
       "volume": "",
       "type": "",
+      "approvals": [
+        "VW 502.00",
+        "VW 505.00",
+        "MB 226.5",
+        "MB 229.5",
+        "MB 229.3",
+        "RN 0700",
+        "RN 0710",
+        "GM-LL-B-025",
+        "PORSCHE A40",
+        "LL-01",
+        "GM Dexos 2"
+      ],
       "price": 1300,
       "priceText": "1300 ₽/литр",
       "prices": [
@@ -212,6 +279,19 @@
       "viscosity": "5W-40",
       "volume": "",
       "type": "",
+      "approvals": [
+        "VW 502.00",
+        "VW 505.00",
+        "MB 226.5",
+        "MB 229.5",
+        "MB 229.3",
+        "RN 0700",
+        "RN 0710",
+        "GM-LL-B-025",
+        "PORSCHE A40",
+        "LL-01",
+        "GM Dexos 2"
+      ],
       "price": 1300,
       "priceText": "1300 ₽/литр",
       "prices": [
@@ -232,6 +312,7 @@
       "viscosity": "5W-40",
       "volume": "4 л",
       "type": "",
+      "approvals": [],
       "price": 1400,
       "priceText": "1400 ₽/литр",
       "prices": [
@@ -252,6 +333,7 @@
       "viscosity": "5W-30",
       "volume": "",
       "type": "",
+      "approvals": [],
       "price": 1500,
       "priceText": "1500 ₽/литр",
       "prices": [
@@ -272,6 +354,10 @@
       "viscosity": "5W-30",
       "volume": "60 л",
       "type": "Синтетическое",
+      "approvals": [
+        "FORD WSS-M2C-913-A/B/C/D",
+        "Land Rover – ST JLR.03.5003"
+      ],
       "price": 1500,
       "priceText": "1500 ₽/литр",
       "prices": [
@@ -292,6 +378,10 @@
       "viscosity": "5W-30",
       "volume": "",
       "type": "",
+      "approvals": [
+        "FORD WSS-M2C-913-A/B/C/D",
+        "Land Rover – ST JLR.03.5003"
+      ],
       "price": 1500,
       "priceText": "1500 ₽/литр",
       "prices": [
@@ -312,6 +402,9 @@
       "viscosity": "0W-20",
       "volume": "",
       "type": "",
+      "approvals": [
+        "c5"
+      ],
       "price": 1550,
       "priceText": "1550 ₽/литр",
       "prices": [
@@ -332,6 +425,9 @@
       "viscosity": "5W-30",
       "volume": "5 л",
       "type": "Синтетическое",
+      "approvals": [
+        "RENAULT RN0700"
+      ],
       "price": 1600,
       "priceText": "1600 ₽/литр",
       "prices": [
@@ -352,6 +448,14 @@
       "viscosity": "5W-30",
       "volume": "5 л",
       "type": "",
+      "approvals": [
+        "GM-LL-A-025",
+        "GM-LL-B-025",
+        "BMW LL-04",
+        "VW 502.00/505.00/505.01",
+        "MB 229.51",
+        "GM Dexos 2"
+      ],
       "price": 1600,
       "priceText": "1600 ₽/литр",
       "prices": [
@@ -372,6 +476,7 @@
       "viscosity": "5W-40",
       "volume": "",
       "type": "",
+      "approvals": [],
       "price": 1600,
       "priceText": "1600 ₽/литр",
       "prices": [
@@ -392,6 +497,7 @@
       "viscosity": "5W-30",
       "volume": "",
       "type": "",
+      "approvals": [],
       "price": 1600,
       "priceText": "1600 ₽/литр",
       "prices": [
@@ -412,6 +518,15 @@
       "viscosity": "5W-30",
       "volume": "60 л",
       "type": "",
+      "approvals": [
+        "VW 504.00",
+        "507.00",
+        "MB 229.3",
+        "RN 0700",
+        "RN 0710",
+        "AVTOVAZ",
+        "GM Dexos 2"
+      ],
       "price": 1600,
       "priceText": "1600 ₽/литр",
       "prices": [
@@ -432,6 +547,14 @@
       "viscosity": "5W-40",
       "volume": "",
       "type": "",
+      "approvals": [
+        "VW 504.00/507.00",
+        "MB 229.3",
+        "RN 0700",
+        "RN 0710",
+        "AVTOVAZ",
+        "GM Dexos 2"
+      ],
       "price": 1600,
       "priceText": "1600 ₽/литр",
       "prices": [
@@ -452,6 +575,10 @@
       "viscosity": "5W-30",
       "volume": "60 л",
       "type": "",
+      "approvals": [
+        "FORD WSS-M2C-913-A/B/C",
+        "RN 0700"
+      ],
       "price": 1600,
       "priceText": "1600 ₽/литр",
       "prices": [
@@ -472,6 +599,17 @@
       "viscosity": "5W-40",
       "volume": "208 л",
       "type": "",
+      "approvals": [
+        "API SN/CF",
+        "ACEA A3/B4",
+        "МВ 229.5",
+        "VW 502 00/505 00",
+        "RENAULT RN 0700/0710",
+        "PORSCHE А40",
+        "PSA B71 2296",
+        "FIAT 9.55535-Z2",
+        "OPEL GM LL-A/B-025"
+      ],
       "price": 1700,
       "priceText": "1700 ₽/литр",
       "prices": [
@@ -492,6 +630,7 @@
       "viscosity": "5W-40",
       "volume": "",
       "type": "",
+      "approvals": [],
       "price": 1700,
       "priceText": "1700 ₽/литр",
       "prices": [
@@ -512,6 +651,7 @@
       "viscosity": "5W-30",
       "volume": "",
       "type": "",
+      "approvals": [],
       "price": 1700,
       "priceText": "1700 ₽/литр",
       "prices": [
@@ -532,6 +672,14 @@
       "viscosity": "5W-30",
       "volume": "208 л",
       "type": "Синтетическое",
+      "approvals": [
+        "MB 229.51",
+        "VW 504.00",
+        "VW 507.00",
+        "BMW LL 04",
+        "Porsche C30",
+        "GM Dexos 2"
+      ],
       "price": 1700,
       "priceText": "1700 ₽/литр",
       "prices": [
@@ -552,6 +700,7 @@
       "viscosity": "0W-20",
       "volume": "",
       "type": "",
+      "approvals": [],
       "price": 1700,
       "priceText": "1700 ₽/литр",
       "prices": [
@@ -572,6 +721,10 @@
       "viscosity": "5W-30",
       "volume": "4 л",
       "type": "Синтетическое",
+      "approvals": [
+        "Ford WSS-M2C 913-C",
+        "Ford WSS-M2C 913-D1"
+      ],
       "price": 1800,
       "priceText": "1800 ₽/литр",
       "prices": [
@@ -592,6 +745,11 @@
       "viscosity": "5W-30",
       "volume": "209 л",
       "type": "",
+      "approvals": [
+        "MB 229.51",
+        "BMW LL04",
+        "GM Dexos 2"
+      ],
       "price": 1800,
       "priceText": "1800 ₽/литр",
       "prices": [
@@ -612,6 +770,25 @@
       "viscosity": "5W-40",
       "volume": "208 л",
       "type": "Синтетическое",
+      "approvals": [
+        "API CF",
+        "SJ",
+        "SL",
+        "SM",
+        "SN",
+        "ACEA A3/B3",
+        "A3/B4",
+        "AAE Group B6",
+        "АвтоВАЗ LADA cars",
+        "FIAT 9.55535-M2",
+        "Porsche A40",
+        "Renault RN0700",
+        "RN0710",
+        "VW 502 00",
+        "505 00",
+        "Peugeot Citroen Automobiles B71 2296",
+        "MB 229.3."
+      ],
       "price": 1800,
       "priceText": "1800 ₽/литр",
       "prices": [
@@ -632,6 +809,7 @@
       "viscosity": "5W-30",
       "volume": "",
       "type": "",
+      "approvals": [],
       "price": 1800,
       "priceText": "1800 ₽/литр",
       "prices": [
@@ -652,6 +830,12 @@
       "viscosity": "5W-30",
       "volume": "",
       "type": "",
+      "approvals": [
+        "MB 229.5",
+        "LL-01",
+        "RN 0700/0710",
+        "VW 502.00/505.00"
+      ],
       "price": 1800,
       "priceText": "1800 ₽/литр",
       "prices": [
@@ -672,6 +856,7 @@
       "viscosity": "5W-30",
       "volume": "",
       "type": "",
+      "approvals": [],
       "price": 1800,
       "priceText": "1800 ₽/литр",
       "prices": [
@@ -692,6 +877,14 @@
       "viscosity": "5W-40",
       "volume": "",
       "type": "",
+      "approvals": [
+        "VW 502.00/505.00",
+        "MB 229.5/229.3",
+        "BMW LL-01",
+        "RN 0700/0710",
+        "PSA B71 2296",
+        "Porsche A40"
+      ],
       "price": 1850,
       "priceText": "1850 ₽/литр",
       "prices": [
@@ -712,6 +905,13 @@
       "viscosity": "5W-40",
       "volume": "",
       "type": "",
+      "approvals": [
+        "MB 229.5",
+        "VW 502.00/505.00",
+        "BMW LL-01",
+        "RN 0700/0710",
+        "PSA B71 2296"
+      ],
       "price": 1850,
       "priceText": "1850 ₽/литр",
       "prices": [
@@ -732,6 +932,13 @@
       "viscosity": "5W-40",
       "volume": "",
       "type": "",
+      "approvals": [
+        "MB 229.5",
+        "VW 502.00/505.00",
+        "BMW LL-01",
+        "RN 0700/0710",
+        "PSA B71 2296"
+      ],
       "price": 1850,
       "priceText": "1850 ₽/литр",
       "prices": [
@@ -752,6 +959,15 @@
       "viscosity": "5W-30",
       "volume": "208 л",
       "type": "Синтетическое",
+      "approvals": [
+        "BMW LL-04",
+        "VW 504.00",
+        "VW 507.00",
+        "Porsche C30",
+        "MB-229.31",
+        "MB-229.51",
+        "GM Dexos 2"
+      ],
       "price": 1950,
       "priceText": "1950 ₽/литр",
       "prices": [
@@ -772,6 +988,16 @@
       "viscosity": "0W-20",
       "volume": "",
       "type": "Синтетическое",
+      "approvals": [
+        "MB 229.71",
+        "VW 508.00",
+        "VW 509.00",
+        "Land Rover - ST JLR.03.5006",
+        "Land Rover - ST JLR.51.5122",
+        "Volvo VCC RBS0-2AE",
+        "Ford WSS-M2C 947-B1",
+        "Porsche C20"
+      ],
       "price": 1950,
       "priceText": "1950 ₽/литр",
       "prices": [
@@ -792,6 +1018,16 @@
       "viscosity": "0W-20",
       "volume": "",
       "type": "Синтетическое",
+      "approvals": [
+        "MB 229.71",
+        "VW 508.00",
+        "VW 509.00",
+        "Land Rover - ST JLR.03.5006",
+        "Land Rover - ST JLR.51.5122",
+        "Volvo VCC RBS0-2AE",
+        "Ford WSS-M2C 947-B1",
+        "Porsche C20"
+      ],
       "price": 1950,
       "priceText": "1950 ₽/литр",
       "prices": [
@@ -812,6 +1048,7 @@
       "viscosity": "5W-30",
       "volume": "",
       "type": "",
+      "approvals": [],
       "price": 2000,
       "priceText": "2000 ₽/литр",
       "prices": [
@@ -832,6 +1069,14 @@
       "viscosity": "5W-30",
       "volume": "60 л",
       "type": "",
+      "approvals": [
+        "MB 229.51",
+        "VW 502.00",
+        "VW 505.00",
+        "VW 505.01",
+        "GM Dexos 2б BMW LL 04",
+        "FORD WSS-M2C917-A"
+      ],
       "price": 2000,
       "priceText": "2000 ₽/литр",
       "prices": [
@@ -852,6 +1097,17 @@
       "viscosity": "0W-40",
       "volume": "4 л",
       "type": "Синтетическое",
+      "approvals": [
+        "MB 229.3",
+        "MB 229.5",
+        "VW 502.00",
+        "VW 505.00",
+        "VW 503.01",
+        "GM-LLB-025",
+        "PORSHE A40",
+        "FIAT 9.55535-Z2",
+        "FIAT 9.55535-N2"
+      ],
       "price": 2000,
       "priceText": "2000 ₽/литр",
       "prices": [
@@ -872,6 +1128,12 @@
       "viscosity": "5W-30",
       "volume": "60 л",
       "type": "Синтетическое",
+      "approvals": [
+        "Ford WSS-M2C913-D",
+        "Jaguar",
+        "Land Rover STJLR.03.5003",
+        "Fiat 9.55535-G1"
+      ],
       "price": 2000,
       "priceText": "2000 ₽/литр",
       "prices": [
@@ -892,6 +1154,17 @@
       "viscosity": "5W-40",
       "volume": "60 л",
       "type": "Синтетическое",
+      "approvals": [
+        "BMW LL04",
+        "FORD WSS-M2C-917A",
+        "GM-LL-A-025",
+        "MB 229.51",
+        "GM Dexos 2",
+        "RENAULT RN 0710",
+        "RENAULT RN 0700",
+        "VW 502.00",
+        "VW 505.01"
+      ],
       "price": 2000,
       "priceText": "2000 ₽/литр",
       "prices": [
@@ -912,6 +1185,11 @@
       "viscosity": "5W-30",
       "volume": "5 л",
       "type": "Синтетическое",
+      "approvals": [
+        "FORD WSS-M2C913-D",
+        "JAGUAR STJLR.03.5003",
+        "RN0700"
+      ],
       "price": 2000,
       "priceText": "2000 ₽/литр",
       "prices": [
@@ -932,6 +1210,15 @@
       "viscosity": "5W-30",
       "volume": "205 л",
       "type": "Синтетическое",
+      "approvals": [
+        "MB 229.51",
+        "VW 502.00",
+        "VW 505.00",
+        "VW 505.01",
+        "BMW LL 04",
+        "FORD WSS-M2C917-A",
+        "GM Dexos 2"
+      ],
       "price": 2000,
       "priceText": "2000 ₽/литр",
       "prices": [
@@ -952,6 +1239,7 @@
       "viscosity": "5W-40",
       "volume": "60 л",
       "type": "Синтетическое",
+      "approvals": [],
       "price": 2100,
       "priceText": "2100 ₽/литр",
       "prices": [
@@ -972,6 +1260,13 @@
       "viscosity": "5W-40",
       "volume": "60 л",
       "type": "Синтетическое",
+      "approvals": [
+        "BMW LL 98",
+        "MB 229.3",
+        "Porsche A40",
+        "VW 502.00",
+        "VW 505.00"
+      ],
       "price": 2100,
       "priceText": "2100 ₽/литр",
       "prices": [
@@ -992,6 +1287,17 @@
       "viscosity": "5W-40",
       "volume": "60 л",
       "type": "",
+      "approvals": [
+        "Great Wall Motors",
+        "HAVAL",
+        "LL-01",
+        "Fiat 9.55535-Z2/9.55535-H2/9.55535-N2",
+        "MB 229.5",
+        "Porsche A40",
+        "RN 0700/RN 0710",
+        "VW 502 00/505 00",
+        "GM-LL-B025"
+      ],
       "price": 2200,
       "priceText": "2200 ₽/литр",
       "prices": [
@@ -1012,6 +1318,13 @@
       "viscosity": "5W-40",
       "volume": "",
       "type": "Синтетическое",
+      "approvals": [
+        "Porsche A40",
+        "BMW LL -01",
+        "MB 229.3",
+        "229.5",
+        "VW 502.00/505.00"
+      ],
       "price": 2250,
       "priceText": "2250 ₽/литр",
       "prices": [
@@ -1032,6 +1345,7 @@
       "viscosity": "5W-40",
       "volume": "",
       "type": "",
+      "approvals": [],
       "price": 2250,
       "priceText": "2250 ₽/литр",
       "prices": [
@@ -1052,6 +1366,10 @@
       "viscosity": "5W-30",
       "volume": "",
       "type": "Синтетическое",
+      "approvals": [
+        "SN",
+        "GF-5"
+      ],
       "price": 2250,
       "priceText": "2250 ₽/литр",
       "prices": [
@@ -1072,6 +1390,7 @@
       "viscosity": "5W-30",
       "volume": "",
       "type": "",
+      "approvals": [],
       "price": 2250,
       "priceText": "2250 ₽/литр",
       "prices": [
@@ -1092,6 +1411,10 @@
       "viscosity": "5W-40",
       "volume": "",
       "type": "",
+      "approvals": [
+        "А3/В3",
+        "А3/В4"
+      ],
       "price": 2250,
       "priceText": "2250 ₽/литр",
       "prices": [
@@ -1112,6 +1435,18 @@
       "viscosity": "5W-30",
       "volume": "5 л",
       "type": "Синтетическое",
+      "approvals": [
+        "FIAT 9.55535-Z2",
+        "FIAT 9.55535-H2",
+        "FIAT 9.55535-N2",
+        "MB 229.5",
+        "PORSHE A40",
+        "RENAULT RN 0700",
+        "RENAULT RN 0710",
+        "VW 502.00",
+        "VW 505.00",
+        "GM-LL-B025"
+      ],
       "price": 2300,
       "priceText": "2300 ₽/литр",
       "prices": [
@@ -1132,6 +1467,20 @@
       "viscosity": "5W-40",
       "volume": "60 л",
       "type": "Синтетическое",
+      "approvals": [
+        "LL-04",
+        "Ford WSS-M2C-917-A",
+        "MB-229.31",
+        "VW 502.00",
+        "VW 505.00",
+        "VW 505.01",
+        "Fiat 9.55535-S2",
+        "Fiat 9.55535-H2",
+        "Fiat 9.55535-M2",
+        "Porsche A40",
+        "RN 0700",
+        "RN 0710"
+      ],
       "price": 2300,
       "priceText": "2300 ₽/литр",
       "prices": [
@@ -1152,6 +1501,16 @@
       "viscosity": "5W-30",
       "volume": "4 л",
       "type": "Синтетическое",
+      "approvals": [
+        "BMW LL-04",
+        "VW 504.00",
+        "VW 507.00",
+        "Porsche C30",
+        "MS-11106",
+        "B71 2290",
+        "B71 2297",
+        "GM Dexos 2"
+      ],
       "price": 2350,
       "priceText": "2350 ₽/литр",
       "prices": [
@@ -1172,6 +1531,14 @@
       "viscosity": "5W-30",
       "volume": "60 л",
       "type": "Синтетическое",
+      "approvals": [
+        "BMW LL04",
+        "MB 229.51",
+        "GM Dexos 2",
+        "VW 504.00",
+        "VW 507.00",
+        "PORSHE C30"
+      ],
       "price": 2400,
       "priceText": "2400 ₽/литр",
       "prices": [
@@ -1192,6 +1559,20 @@
       "viscosity": "5W-30",
       "volume": "60 л",
       "type": "Синтетическое",
+      "approvals": [
+        "MB-229.51",
+        "GM Dexos 2",
+        "MB-229.52",
+        "MB-229.31",
+        "BMW LL-04",
+        "VW 502.00",
+        "VW 505.00",
+        "VW 505.01",
+        "Ford WSS-M2C 917-A",
+        "dexos2",
+        "GM LL-A-025",
+        "GM LL-B-025"
+      ],
       "price": 2400,
       "priceText": "2400 ₽/литр",
       "prices": [
@@ -1212,6 +1593,7 @@
       "viscosity": "5W-30",
       "volume": "5 л",
       "type": "",
+      "approvals": [],
       "price": 2400,
       "priceText": "2400 ₽/литр",
       "prices": [
@@ -1232,6 +1614,7 @@
       "viscosity": "5W-30",
       "volume": "",
       "type": "",
+      "approvals": [],
       "price": 2400,
       "priceText": "2400 ₽/литр",
       "prices": [
@@ -1252,6 +1635,7 @@
       "viscosity": "",
       "volume": "",
       "type": "",
+      "approvals": [],
       "price": 4680,
       "priceText": "4680 ₽/литр",
       "prices": [
@@ -1272,6 +1656,7 @@
       "viscosity": "",
       "volume": "",
       "type": "",
+      "approvals": [],
       "price": 5840,
       "priceText": "5840 ₽/литр",
       "prices": [

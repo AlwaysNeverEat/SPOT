@@ -111,6 +111,19 @@ function parseProduct(html) {
   const imgMatch = html.match(/card-content__img[^>]*\ssrc="([^"]+)"/);
   const image = imgMatch ? (imgMatch[1].startsWith('http') ? imgMatch[1] : ORIGIN + imgMatch[1]) : '';
 
+  // Блок «Характеристики»: пары имя→значение (Вязкость (SAE), Допуски, Производитель).
+  const specs = {};
+  const specRe = /content-mode__name">([^<]+)<\/span>\s*<span class="content-mode__value">([\s\S]*?)<\/span>/g;
+  let sm;
+  while ((sm = specRe.exec(html))) {
+    specs[decode(sm[1])] = decode(sm[2].replace(/<[^>]+>/g, ''));
+  }
+  // Допуски → массив (разбиваем по запятой/точке с запятой, чистим пустое).
+  const approvalsRaw = specs['Допуски'] || '';
+  const approvals = approvalsRaw
+    ? [...new Set(approvalsRaw.split(/[,;]+/).map((s) => s.trim()).filter((s) => s && s !== '-'))]
+    : [];
+
   return {
     priceText,
     price: priceNum ? +priceNum : null,
@@ -118,6 +131,9 @@ function parseProduct(html) {
     description,
     productDesc, // только продуктовый текст — для определения типа
     image,
+    approvals,
+    specViscosity: specs['Вязкость (SAE)'] || specs['Вязкость'] || '',
+    specManufacturer: specs['Производитель'] || '',
   };
 }
 
@@ -179,7 +195,7 @@ async function main() {
   const items = [];
   for (let i = 0; i < unique.length; i++) {
     const c = unique[i];
-    let det = { priceText: '', price: null, prices: [], description: '', image: '' };
+    let det = { priceText: '', price: null, prices: [], description: '', image: '', approvals: [], specViscosity: '', specManufacturer: '' };
     try {
       det = parseProduct(await get(`${ORIGIN}/catalog/product/${c.slug}`));
     } catch (e) {
@@ -189,10 +205,11 @@ async function main() {
       slug: c.slug,
       id: c.id,
       title: c.title,
-      brand: deriveBrand(c.title),
-      viscosity: deriveViscosity(c.title),
+      brand: deriveBrand(c.title) || det.specManufacturer,
+      viscosity: deriveViscosity(c.title) || deriveViscosity(det.specViscosity),
       volume: deriveVolume(c.title),
       type: deriveType(`${c.title} ${det.productDesc || ''}`),
+      approvals: det.approvals,
       price: det.price,
       priceText: det.priceText,
       prices: det.prices,
