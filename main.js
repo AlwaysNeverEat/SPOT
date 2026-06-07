@@ -567,6 +567,323 @@
     if (!document.querySelector('.is-open')) unlockBody();
   };
 
+  /* ---------- Catalog modal (масла) ---------- */
+  const catalogModal = document.getElementById('catalogModal');
+  if (catalogModal) {
+    const cGrid = document.getElementById('catalogGrid');
+    const cSearch = document.getElementById('catalogSearch');
+    const cSort = document.getElementById('catalogSort');
+    const cEmpty = document.getElementById('catalogEmpty');
+    const cLoading = document.getElementById('catalogLoading');
+    const cCount = document.getElementById('catalogCount');
+    const cFound = document.getElementById('catalogFound');
+    const cReset = document.getElementById('catalogReset');
+    const cFilters = document.getElementById('catalogFilters');
+    const cFiltersToggle = document.getElementById('catalogFiltersToggle');
+    const cFiltersBadge = document.getElementById('catalogFiltersBadge');
+    const cDetail = document.getElementById('catalogDetail');
+    const cDetailBody = document.getElementById('catalogDetailBody');
+    const cDetailClose = document.getElementById('catalogDetailClose');
+    const cApprovalsSearch = document.getElementById('catalogApprovalsSearch');
+
+    let CATALOG = null;
+    let catalogLoaded = false;
+    let shown = [];
+    // Скалярные фасеты (одно значение у товара) + approvals (массив допусков).
+    const SCALAR_KEYS = ['brand', 'viscosity', 'volume', 'type'];
+    const ALL_KEYS = [...SCALAR_KEYS, 'approvals'];
+    const active = { brand: new Set(), viscosity: new Set(), volume: new Set(), type: new Set(), approvals: new Set() };
+
+    const escHtml = (s) => String(s == null ? '' : s).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+    const escAttr = (s) => escHtml(s).replace(/"/g, '&quot;');
+    const norm = (s) => String(s || '').toLowerCase().replace(/[\s-]/g, '');
+
+    const phoneNow = () => {
+      try {
+        const c = CITIES[savedId];
+        if (c) return { phone: c.phone, tel: c.tel };
+      } catch (_) {}
+      return { phone: '+7 (812) 603-44-80', tel: '+78126034480' };
+    };
+
+    const uniqueSorted = (key) => {
+      const vals = [...new Set(CATALOG.map((i) => i[key]).filter(Boolean))];
+      if (key === 'volume') return vals.sort((a, b) => parseFloat(a) - parseFloat(b));
+      if (key === 'viscosity') return vals.sort();
+      return vals.sort((a, b) => a.localeCompare(b, 'ru'));
+    };
+
+    // Допуски — массив у товара: собираем уникальные и сортируем по частоте (частые сверху).
+    const approvalsByFreq = () => {
+      const freq = new Map();
+      CATALOG.forEach((i) => (i.approvals || []).forEach((a) => freq.set(a, (freq.get(a) || 0) + 1)));
+      return [...freq.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'ru')).map((e) => e[0]);
+    };
+
+    const chipHtml = (key, v) =>
+      `<button type="button" class="catalog-chip" data-key="${key}" data-val="${escAttr(v)}">${escHtml(v)}</button>`;
+
+    const buildFilters = () => {
+      SCALAR_KEYS.forEach((key) => {
+        const box = catalogModal.querySelector(`[data-chips="${key}"]`);
+        if (!box) return;
+        const vals = uniqueSorted(key);
+        const group = box.closest('.catalog-filter-group');
+        if (!vals.length) { if (group) group.hidden = true; return; }
+        box.innerHTML = vals.map((v) => chipHtml(key, v)).join('');
+      });
+      // Допуски
+      const aBox = catalogModal.querySelector('[data-chips="approvals"]');
+      if (aBox) {
+        const vals = approvalsByFreq();
+        const group = aBox.closest('.catalog-filter-group');
+        if (!vals.length) { if (group) group.hidden = true; }
+        else {
+          aBox.innerHTML = vals.map((v) => chipHtml('approvals', v)).join('');
+          const badge = catalogModal.querySelector('[data-approvals-count]');
+          if (badge) badge.textContent = vals.length;
+        }
+      }
+    };
+
+    const itemMatches = (item) => {
+      for (const key of SCALAR_KEYS) {
+        if (active[key].size && !active[key].has(item[key])) return false;
+      }
+      if (active.approvals.size) {
+        const aps = item.approvals || [];
+        if (!aps.some((a) => active.approvals.has(a))) return false;
+      }
+      const q = norm(cSearch.value);
+      if (q) {
+        const hay = norm(`${item.title} ${item.brand} ${item.viscosity} ${item.volume} ${item.type} ${(item.approvals || []).join(' ')}`);
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    };
+
+    const sortItems = (arr) => {
+      const v = cSort.value;
+      const a = arr.slice();
+      if (v === 'price_asc') a.sort((x, y) => (x.price || 1e9) - (y.price || 1e9));
+      else if (v === 'price_desc') a.sort((x, y) => (y.price || 0) - (x.price || 0));
+      else if (v === 'title') a.sort((x, y) => x.title.localeCompare(y.title, 'ru'));
+      return a;
+    };
+
+    const perLitre = (item) => /литр/i.test(item.priceText || '');
+
+    const cardHtml = (item, idx) => {
+      const badges = [];
+      if (item.brand) badges.push(`<span class="catalog-badge brand">${escHtml(item.brand)}</span>`);
+      if (item.viscosity) badges.push(`<span class="catalog-badge">${escHtml(item.viscosity)}</span>`);
+      if (item.volume) badges.push(`<span class="catalog-badge">${escHtml(item.volume)}</span>`);
+      return `<div class="catalog-card" role="button" tabindex="0" data-idx="${idx}">
+        <span class="catalog-card-img"><img src="${escAttr(item.image)}" alt="${escAttr(item.title)}" loading="lazy" /></span>
+        <span class="catalog-card-body">
+          <span class="catalog-card-badges">${badges.join('')}</span>
+          <span class="catalog-card-title">${escHtml(item.title)}</span>
+          <span class="catalog-card-foot">
+            <span class="catalog-card-price">${item.price ? `${item.price} ₽` : 'Уточняйте'}${item.price && perLitre(item) ? '<small> /литр</small>' : ''}</span>
+            <span class="catalog-card-go" aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>
+          </span>
+        </span>
+      </div>`;
+    };
+
+    const render = () => {
+      if (!CATALOG) return;
+      shown = sortItems(CATALOG.filter(itemMatches));
+      cGrid.innerHTML = shown.map((it, i) => cardHtml(it, i)).join('');
+      cEmpty.hidden = shown.length > 0;
+      cGrid.hidden = shown.length === 0;
+      cCount.textContent = `${shown.length} из ${CATALOG.length}`;
+      if (cFound) cFound.innerHTML = `Найдено <b>${shown.length}</b> ${plural(shown.length, 'масло', 'масла', 'масел')}`;
+      const activeCount = ALL_KEYS.reduce((n, k) => n + active[k].size, 0);
+      const anyFilter = activeCount > 0 || cSearch.value.trim();
+      cReset.hidden = !anyFilter;
+      if (cFiltersBadge) { cFiltersBadge.hidden = activeCount === 0; cFiltersBadge.textContent = activeCount; }
+      if (cFiltersToggle) cFiltersToggle.classList.toggle('is-active', activeCount > 0);
+    };
+
+    const plural = (n, one, few, many) => {
+      const m10 = n % 10, m100 = n % 100;
+      if (m10 === 1 && m100 !== 11) return one;
+      if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return few;
+      return many;
+    };
+
+    const openDetail = (item) => {
+      const ph = phoneNow();
+      const specs = [
+        ['Бренд', item.brand],
+        ['Вязкость', item.viscosity],
+        ['Объём', item.volume],
+        ['Тип', item.type],
+      ].filter(([, v]) => v);
+      const approvals = item.approvals || [];
+      cDetailBody.innerHTML = `
+        <div class="catalog-detail-img"><img src="${escAttr(item.image)}" alt="${escAttr(item.title)}" /></div>
+        <div class="catalog-detail-info">
+          <h3>${escHtml(item.title)}</h3>
+          <div class="catalog-detail-badges">
+            ${item.brand ? `<span class="catalog-badge brand">${escHtml(item.brand)}</span>` : ''}
+            ${item.viscosity ? `<span class="catalog-badge">${escHtml(item.viscosity)}</span>` : ''}
+            ${item.volume ? `<span class="catalog-badge">${escHtml(item.volume)}</span>` : ''}
+          </div>
+          ${item.price ? `<div class="catalog-detail-price">${item.price} ₽${perLitre(item) ? '<small> / литр</small>' : ''}</div>` : ''}
+          <div class="catalog-detail-note">При покупке масла у нас — замена масла и фильтра бесплатно.</div>
+          <div class="catalog-detail-section">
+            <h4>Характеристики</h4>
+            <dl>${specs.map(([k, v]) => `<div class="catalog-spec"><dt>${k}</dt><dd>${escHtml(v)}</dd></div>`).join('')}</dl>
+          </div>
+          ${approvals.length ? `<div class="catalog-detail-section">
+            <h4>Допуски и спецификации</h4>
+            <div class="catalog-approval-tags">${approvals.map((a) => `<span class="catalog-approval-tag">${escHtml(a)}</span>`).join('')}</div>
+          </div>` : ''}
+          ${item.description ? `<div class="catalog-detail-section"><h4>Описание</h4><p class="catalog-detail-desc">${escHtml(item.description)}</p></div>` : ''}
+          <div class="catalog-detail-actions">
+            <button type="button" class="btn btn-primary" data-open-booking>Записаться на замену</button>
+            <a href="tel:${escAttr(ph.tel)}" class="btn btn-outline">${escHtml(ph.phone)}</a>
+          </div>
+        </div>`;
+      cDetailBody.scrollTop = 0;
+      cDetail.hidden = false;
+      cDetail.setAttribute('aria-hidden', 'false');
+      requestAnimationFrame(() => cDetail.classList.add('is-open'));
+    };
+
+    const closeDetail = () => {
+      cDetail.classList.remove('is-open');
+      cDetail.setAttribute('aria-hidden', 'true');
+      cGrid.querySelectorAll('.catalog-card.is-selected').forEach((c) => c.classList.remove('is-selected'));
+      setTimeout(() => { if (!cDetail.classList.contains('is-open')) cDetail.hidden = true; }, 360);
+    };
+
+    const loadCatalog = async () => {
+      if (catalogLoaded) return;
+      catalogLoaded = true;
+      const apply = (data) => {
+        CATALOG = (data && data.items) || [];
+        buildFilters();
+        cLoading.hidden = true;
+        render();
+      };
+      // Данные подключаем тегом <script> (data/oils.js → window.__SPOT_OILS__),
+      // чтобы каталог работал и при открытии index.html напрямую по file://,
+      // где fetch() локального JSON блокируется браузером.
+      if (window.__SPOT_OILS__) { apply(window.__SPOT_OILS__); return; }
+      const script = document.createElement('script');
+      script.src = 'data/oils.js';
+      script.onload = () => {
+        if (window.__SPOT_OILS__) apply(window.__SPOT_OILS__);
+        else { catalogLoaded = false; cLoading.textContent = 'Не удалось загрузить каталог. Попробуйте обновить страницу.'; }
+      };
+      script.onerror = () => {
+        catalogLoaded = false;
+        cLoading.textContent = 'Не удалось загрузить каталог. Попробуйте обновить страницу.';
+      };
+      document.head.appendChild(script);
+    };
+
+    const openCatalog = () => {
+      // мгновенно прячем боковую панель товара (без анимации) при открытии
+      cDetail.classList.remove('is-open');
+      cDetail.hidden = true;
+      cDetail.setAttribute('aria-hidden', 'true');
+      openModalEl(catalogModal);
+      loadCatalog();
+      setTimeout(() => cSearch && cSearch.focus(), 80);
+    };
+    const closeCatalog = () => {
+      closeModalEl(catalogModal);
+      cFilters.classList.remove('is-open');
+      if (cFiltersToggle) cFiltersToggle.setAttribute('aria-expanded', 'false');
+    };
+
+    // debounce поиска
+    let searchTimer = null;
+    cSearch.addEventListener('input', () => {
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(render, 120);
+    });
+    cSort.addEventListener('change', render);
+
+    // фильтры-чипсы
+    cFilters.addEventListener('click', (e) => {
+      const chip = e.target.closest('.catalog-chip');
+      if (!chip) return;
+      const { key, val } = chip.dataset;
+      if (active[key].has(val)) { active[key].delete(val); chip.classList.remove('is-active'); }
+      else { active[key].add(val); chip.classList.add('is-active'); }
+      render();
+    });
+
+    // мини-поиск по чипсам допусков (просто прячет нерелевантные чипсы)
+    if (cApprovalsSearch) {
+      cApprovalsSearch.addEventListener('input', () => {
+        const q = norm(cApprovalsSearch.value);
+        catalogModal.querySelectorAll('[data-chips="approvals"] .catalog-chip').forEach((c) => {
+          c.classList.toggle('is-hidden', q && !norm(c.dataset.val).includes(q));
+        });
+      });
+    }
+
+    cReset.addEventListener('click', () => {
+      ALL_KEYS.forEach((k) => active[k].clear());
+      catalogModal.querySelectorAll('.catalog-chip.is-active').forEach((c) => c.classList.remove('is-active'));
+      cSearch.value = '';
+      if (cApprovalsSearch) {
+        cApprovalsSearch.value = '';
+        catalogModal.querySelectorAll('.catalog-chip.is-hidden').forEach((c) => c.classList.remove('is-hidden'));
+      }
+      render();
+    });
+
+    if (cFiltersToggle) {
+      cFiltersToggle.addEventListener('click', () => {
+        const open = cFilters.classList.toggle('is-open');
+        cFiltersToggle.setAttribute('aria-expanded', String(open));
+      });
+    }
+
+    // клик по карточке → деталь
+    const selectCard = (card) => {
+      const item = shown[+card.dataset.idx];
+      if (!item) return;
+      cGrid.querySelectorAll('.catalog-card.is-selected').forEach((c) => c.classList.remove('is-selected'));
+      card.classList.add('is-selected');
+      openDetail(item);
+    };
+    cGrid.addEventListener('click', (e) => {
+      const card = e.target.closest('.catalog-card');
+      if (card) selectCard(card);
+    });
+    cGrid.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      const card = e.target.closest('.catalog-card');
+      if (!card) return;
+      e.preventDefault();
+      selectCard(card);
+    });
+    cDetailClose.addEventListener('click', closeDetail);
+
+    // открытие / закрытие
+    document.addEventListener('click', (e) => {
+      if (e.target.closest('[data-open-catalog]')) {
+        e.preventDefault();
+        openCatalog();
+      } else if (e.target.closest('[data-close-catalog]')) {
+        closeCatalog();
+      }
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape' || !catalogModal.classList.contains('is-open')) return;
+      if (!cDetail.hidden) closeDetail();
+      else closeCatalog();
+    });
+  }
+
   /* ---------- Info modal (promo/warranty/photos/franchise/work) ---------- */
   const infoModal = document.getElementById('infoModal');
   const infoBody = document.getElementById('infoModalBody');

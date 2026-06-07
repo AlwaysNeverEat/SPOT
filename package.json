@@ -1,0 +1,11 @@
+{
+  "name": "spot-landing",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Лендинг СТО SPOT — статический сайт + скрапер каталога масел",
+  "type": "module",
+  "scripts": {
+    "scrape": "node scripts/scrape-catalog.mjs",
+    "serve": "python3 -m http.server 8080"
+  }
+}
