@@ -1178,6 +1178,8 @@ body.menu-open { overflow: hidden; }
   align-items: start; padding: 0.6rem 0;
 }
 .catalog-filter-row + .catalog-filter-row { border-top: 1px solid var(--line); }
+/* Допуски: метка-разделитель на своей строке, поиск и таблетки — ниже */
+.catalog-filter-row--approvals { grid-template-columns: 1fr; gap: 0.55rem; }
 .catalog-filter-label {
   font-size: 0.78rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
   color: var(--muted); padding-top: 0.4rem; display: flex; align-items: center; gap: 0.4rem;
@@ -1277,18 +1279,20 @@ body.menu-open { overflow: hidden; }
 /* --- detail = right drawer --- */
 .catalog-detail {
   position: absolute; top: 0; right: 0; bottom: 0; width: 460px; max-width: 92%;
-  background: #fff; z-index: 8; display: flex; flex-direction: column;
+  background: #fff; z-index: 10; display: flex; flex-direction: column;
   box-shadow: -24px 0 60px rgba(13,13,13,0.16);
   transform: translateX(100%); transition: transform .35s cubic-bezier(.2,.8,.3,1);
 }
 .catalog-detail.is-open { transform: translateX(0); }
-.catalog-back {
-  display: inline-flex; align-items: center; gap: 0.4rem; font: inherit; font-size: 0.9rem;
-  font-weight: 600; color: var(--ink); background: none; border: none; cursor: pointer;
-  padding: 1.2rem 1.6rem 0.8rem; flex-shrink: 0;
+/* крестик карточки — там же, где крестик каталога, но поверх него */
+.catalog-detail-close {
+  position: absolute; top: 1rem; right: 1rem; width: 36px; height: 36px;
+  border: none; background: var(--bg-soft); border-radius: 50%;
+  font-size: 1.4rem; line-height: 1; cursor: pointer; color: var(--ink);
+  transition: background .2s, color .2s; z-index: 10;
 }
-.catalog-back:hover { color: var(--green); }
-.catalog-detail-body { overflow-y: auto; padding: 0 1.6rem 1.6rem; }
+.catalog-detail-close:hover { background: var(--ink); color: #fff; }
+.catalog-detail-body { overflow-y: auto; padding: 3.4rem 1.6rem 1.6rem; }
 .catalog-detail-img {
   background: #f6f6f4; border-radius: var(--radius-sm); aspect-ratio: 1 / 1;
   display: flex; align-items: center; justify-content: center; padding: 1.5rem; margin-bottom: 1.2rem;

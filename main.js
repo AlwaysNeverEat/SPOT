@@ -583,7 +583,7 @@
     const cFiltersBadge = document.getElementById('catalogFiltersBadge');
     const cDetail = document.getElementById('catalogDetail');
     const cDetailBody = document.getElementById('catalogDetailBody');
-    const cBack = document.getElementById('catalogBack');
+    const cDetailClose = document.getElementById('catalogDetailClose');
     const cApprovalsSearch = document.getElementById('catalogApprovalsSearch');
 
     let CATALOG = null;
@@ -866,7 +866,7 @@
       e.preventDefault();
       selectCard(card);
     });
-    cBack.addEventListener('click', closeDetail);
+    cDetailClose.addEventListener('click', closeDetail);
 
     // открытие / закрытие
     document.addEventListener('click', (e) => {
