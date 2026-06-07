@@ -556,7 +556,7 @@ body.menu-open { overflow: hidden; }
 
 /* --- Hand-drawn red marker circle around "проверенными" --- */
 .mark-circle {
-  --marker-red: #e8362c;
+  --marker-color: var(--green);
   position: relative;
   display: inline-block;
   white-space: nowrap;
@@ -575,7 +575,7 @@ body.menu-open { overflow: hidden; }
 }
 .mark-circle__path {
   fill: none;
-  stroke: var(--marker-red);
+  stroke: var(--marker-color);
   stroke-width: 4.5;
   stroke-linecap: round;
   stroke-linejoin: round;
