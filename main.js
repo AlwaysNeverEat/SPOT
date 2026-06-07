@@ -213,6 +213,18 @@
     const len = Math.ceil(path.getTotalLength());
     host.style.setProperty('--len', len);
 
+    // Measure the real word box (resolution-independent) and size the oval to
+    // the word width plus a font-relative clearance, so the stroke never
+    // touches the glyphs. Recompute on resize and once webfonts have loaded.
+    const fitOval = () => {
+      const fs = parseFloat(getComputedStyle(host).fontSize) || 16;
+      const w = host.getBoundingClientRect().width;
+      svg.style.width = (w + fs * 1.3) + 'px'; // ~0.65em clearance on each side
+    };
+    fitOval();
+    window.addEventListener('resize', fitOval, { passive: true });
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitOval);
+
     if (reduce) { host.classList.add('is-drawn'); return; }
 
     let boilRaf = 0;
