@@ -570,6 +570,7 @@ body.menu-open { overflow: hidden; }
      fallback. Height is tied to font-size so it scales at any resolution. */
   width: 130%;
   height: 1.5em;
+  max-width: none; /* override global `svg { max-width: 100% }` that clamped it */
   transform: translate(-50%, -50%) rotate(-1.2deg);
   overflow: visible;
   pointer-events: none;
