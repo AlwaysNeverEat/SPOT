@@ -219,7 +219,8 @@
     const fitOval = () => {
       const fs = parseFloat(getComputedStyle(host).fontSize) || 16;
       const w = host.getBoundingClientRect().width;
-      svg.style.width = (w + fs * 1.3) + 'px'; // ~0.65em clearance on each side
+      svg.style.width = (w + fs * 2.8) + 'px'; // ~1.4em clearance each side so the
+                                               // pointy oval ends clear the word
     };
     fitOval();
     window.addEventListener('resize', fitOval, { passive: true });
