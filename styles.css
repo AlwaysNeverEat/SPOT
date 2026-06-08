@@ -569,7 +569,7 @@ body.menu-open { overflow: hidden; }
   /* Width is measured precisely in JS (word width + clearance); this is just a
      fallback. Height is tied to font-size so it scales at any resolution. */
   width: 130%;
-  height: 2em;
+  height: 1.9em;
   transform: translate(-50%, -50%) rotate(-1.2deg);
   overflow: visible;
   pointer-events: none;

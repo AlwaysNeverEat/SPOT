@@ -165,11 +165,12 @@
 
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    // Rough oval as a flat list of points (1 move-to + 4 cubic segments = 13
-    // points / 26 numbers). A top lead-in line overshoots/crosses on the right,
-    // mimicking a quick "circle this" pen gesture.
-    const BASE = [286, 50, 200, 40, 96, 42, 44, 52, 8, 60, 20, 92, 74, 103,
-                  165, 119, 255, 116, 302, 96, 336, 80, 322, 54, 238, 50];
+    // "Stadium" loop: nearly-flat top/bottom edges (uniform clearance above and
+    // below the word across its whole width) with rounded ends that sit beyond
+    // the word, plus a top-right lead-in that overshoots/crosses. Flat
+    // horizontal edges don't flatten further when the SVG is stretched wide.
+    const BASE = [360, 22, 250, 14, 150, 14, 44, 22, 10, 27, 8, 73, 42, 80,
+                  150, 88, 250, 88, 356, 80, 392, 74, 392, 30, 312, 22];
     const toD = (p) =>
       `M ${p[0]},${p[1]} C ${p[2]},${p[3]} ${p[4]},${p[5]} ${p[6]},${p[7]} ` +
       `C ${p[8]},${p[9]} ${p[10]},${p[11]} ${p[12]},${p[13]} ` +
@@ -180,7 +181,7 @@
     // about the centre plus a tiny per-point wobble. Cycling between a few of
     // these gives a hand-drawn "line boil" where the WHOLE line breathes /
     // stretches, instead of each segment jittering on its own.
-    const CX = 172, CY = 80;
+    const CX = 198, CY = 51;
     const rnd = (s) => { const x = Math.sin(s * 127.1 + 311.7) * 43758.5453; return (x - Math.floor(x)) * 2 - 1; };
     const variant = (amp, sx, sy) => BASE.map((v, i) => {
       const isX = i % 2 === 0;
@@ -198,7 +199,7 @@
     const svgNS = 'http://www.w3.org/2000/svg';
     const svg = document.createElementNS(svgNS, 'svg');
     svg.setAttribute('class', 'mark-circle__svg');
-    svg.setAttribute('viewBox', '18 38 306 80');
+    svg.setAttribute('viewBox', '12 11 372 80');
     svg.setAttribute('preserveAspectRatio', 'none');
     svg.setAttribute('aria-hidden', 'true');
 
@@ -219,8 +220,8 @@
     const fitOval = () => {
       const fs = parseFloat(getComputedStyle(host).fontSize) || 16;
       const w = host.getBoundingClientRect().width;
-      svg.style.width = (w + fs * 2.8) + 'px'; // ~1.4em clearance each side so the
-                                               // pointy oval ends clear the word
+      svg.style.width = (w + fs * 2.2) + 'px'; // rounded ends sit ~1.1em beyond
+                                               // the word on each side
     };
     fitOval();
     window.addEventListener('resize', fitOval, { passive: true });
