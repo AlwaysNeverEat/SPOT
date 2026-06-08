@@ -220,7 +220,7 @@
     const fitOval = () => {
       const fs = parseFloat(getComputedStyle(host).fontSize) || 16;
       const w = host.getBoundingClientRect().width;
-      svg.style.width = (w + fs * 2.2) + 'px'; // rounded ends sit ~1.1em beyond
+      svg.style.width = (w + fs * 3.2) + 'px'; // rounded ends sit ~1.6em beyond
                                                // the word on each side
     };
     fitOval();
