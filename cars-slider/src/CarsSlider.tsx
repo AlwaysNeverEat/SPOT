@@ -39,9 +39,17 @@ export function CarsSlider() {
   const [direction, setDirection] = useState(0);
   const [playing, setPlaying] = useState(true);
   const [hover, setHover] = useState(false);
-  const [progress, setProgress] = useState(0);
+  const [inView, setInView] = useState(true);
+  const [overlayOpen, setOverlayOpen] = useState(false);
   const progressRef = useRef(0);
+  const fillRef = useRef<HTMLDivElement>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
   const [wide, setWide] = useState(typeof window === 'undefined' ? true : window.innerWidth >= 640);
+
+  const reduce =
+    typeof window !== 'undefined' &&
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   useEffect(() => {
     const onResize = () => setWide(window.innerWidth >= 640);
@@ -49,23 +57,52 @@ export function CarsSlider() {
     return () => window.removeEventListener('resize', onResize);
   }, []);
 
-  const paused = !playing || hover;
+  // Pause when the slider scrolls out of view — no reason to burn frames off-screen.
+  useEffect(() => {
+    const el = rootRef.current;
+    if (!el || typeof IntersectionObserver === 'undefined') return;
+    const io = new IntersectionObserver(([e]) => setInView(e.isIntersecting), { threshold: 0.01 });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
 
+  // Pause while a host overlay (burger menu / modal) is open. The static site
+  // signals this with `body.menu-open` or `body { overflow: hidden }`; animating
+  // a heavy 3D card behind an open panel is what made it stutter/replay on phones.
+  useEffect(() => {
+    if (typeof MutationObserver === 'undefined') return;
+    const check = () =>
+      setOverlayOpen(
+        document.body.classList.contains('menu-open') ||
+          document.body.style.overflow === 'hidden',
+      );
+    check();
+    const mo = new MutationObserver(check);
+    mo.observe(document.body, { attributes: true, attributeFilter: ['class', 'style'] });
+    return () => mo.disconnect();
+  }, []);
+
+  const paused = !playing || hover || !inView || overlayOpen || reduce;
+
+  const resetFill = () => {
+    progressRef.current = 0;
+    if (fillRef.current) fillRef.current.style.width = '0%';
+  };
   const go = (dir: number) => {
     setDirection(dir);
     setIndex((i) => (i + dir + N) % N);
-    progressRef.current = 0;
-    setProgress(0);
+    resetFill();
   };
   const goTo = (i: number) => {
     if (i === index) return;
     setDirection(i > index ? 1 : -1);
     setIndex(((i % N) + N) % N);
-    progressRef.current = 0;
-    setProgress(0);
+    resetFill();
   };
 
-  // autoplay — the green bar fills, then advances; pauses on hover / pause button / hidden tab
+  // autoplay — the green bar fills, then advances; pauses on hover / pause button /
+  // hidden tab / off-screen / open overlay. The fill width is written straight to
+  // the DOM node so the component does NOT re-render every frame (~60×/sec).
   useEffect(() => {
     if (paused) return;
     let raf = 0;
@@ -78,22 +115,24 @@ export function CarsSlider() {
         progressRef.current += dt / DURATION;
         if (progressRef.current >= 1) {
           progressRef.current = 0;
+          if (fillRef.current) fillRef.current.style.width = '0%';
           setDirection(1);
           setIndex((i) => (i + 1) % N);
+          return; // index change re-runs this effect with a fresh loop
         }
-        setProgress(progressRef.current);
+        if (fillRef.current) fillRef.current.style.width = `${progressRef.current * 100}%`;
       }
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [paused]);
+  }, [paused, index]);
 
   const car = cars[index];
 
   return (
     <MotionConfig reducedMotion="never">
-    <div style={styles.wrap}>
+    <div ref={rootRef} style={styles.wrap}>
       <div style={styles.stage}>
         <AnimatePresence initial={false} custom={direction} mode="wait">
           <motion.div
@@ -158,7 +197,7 @@ export function CarsSlider() {
               </div>
 
               <div style={styles.progressTrack}>
-                <div style={{ ...styles.progressFill, width: `${Math.min(progress, 1) * 100}%` }} />
+                <div ref={fillRef} style={{ ...styles.progressFill, width: '0%' }} />
               </div>
             </div>
           </motion.div>
