@@ -154,7 +154,115 @@
       });
     }, { threshold: 0.15 });
     document.querySelectorAll('.line-reveal, .reveal').forEach(el => revealObs.observe(el));
+
+    setupMarkerCircle();
   }, 0);
+
+  /* ---------- Hand-drawn red marker circle (draw-in + idle "boil") ---------- */
+  function setupMarkerCircle() {
+    const host = document.querySelector('.mark-circle');
+    if (!host || host.querySelector('.mark-circle__svg')) return;
+
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // "Stadium" loop: nearly-flat top/bottom edges (uniform clearance above and
+    // below the word across its whole width) with rounded ends that sit beyond
+    // the word, plus a top-right lead-in that overshoots/crosses. Flat
+    // horizontal edges don't flatten further when the SVG is stretched wide.
+    const BASE = [360, 22, 250, 14, 150, 14, 44, 22, 10, 27, 8, 73, 42, 80,
+                  150, 88, 250, 88, 356, 80, 392, 74, 392, 30, 312, 22];
+    const toD = (p) =>
+      `M ${p[0]},${p[1]} C ${p[2]},${p[3]} ${p[4]},${p[5]} ${p[6]},${p[7]} ` +
+      `C ${p[8]},${p[9]} ${p[10]},${p[11]} ${p[12]},${p[13]} ` +
+      `C ${p[14]},${p[15]} ${p[16]},${p[17]} ${p[18]},${p[19]} ` +
+      `C ${p[20]},${p[21]} ${p[22]},${p[23]} ${p[24]},${p[25]}`;
+
+    // Build a slightly different whole-oval variant: a small global stretch
+    // about the centre plus a tiny per-point wobble. Cycling between a few of
+    // these gives a hand-drawn "line boil" where the WHOLE line breathes /
+    // stretches, instead of each segment jittering on its own.
+    const CX = 198, CY = 51;
+    const rnd = (s) => { const x = Math.sin(s * 127.1 + 311.7) * 43758.5453; return (x - Math.floor(x)) * 2 - 1; };
+    const variant = (amp, sx, sy) => BASE.map((v, i) => {
+      const isX = i % 2 === 0;
+      const c = isX ? CX : CY;
+      const s = isX ? sx : sy;
+      return c + (v - c) * s + rnd(i + amp * 100) * amp;
+    });
+    const variants = [
+      BASE.slice(),
+      variant(2.6, 1.020, 0.975),
+      variant(3.0, 0.984, 1.028),
+      variant(2.2, 1.012, 0.992)
+    ];
+
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('class', 'mark-circle__svg');
+    svg.setAttribute('viewBox', '12 11 372 80');
+    svg.setAttribute('preserveAspectRatio', 'none');
+    svg.setAttribute('aria-hidden', 'true');
+
+    const path = document.createElementNS(svgNS, 'path');
+    path.setAttribute('class', 'mark-circle__path');
+    path.setAttribute('d', toD(BASE));
+
+    svg.appendChild(path);
+    host.appendChild(svg);
+
+    // Set dash length from the actual geometry so the draw-in is exact.
+    const len = Math.ceil(path.getTotalLength());
+    host.style.setProperty('--len', len);
+
+    // Measure the real word box (resolution-independent) and size the oval to
+    // the word width plus a font-relative clearance, so the stroke never
+    // touches the glyphs. Recompute on resize and once webfonts have loaded.
+    const fitOval = () => {
+      const fs = parseFloat(getComputedStyle(host).fontSize) || 16;
+      const w = host.getBoundingClientRect().width;
+      svg.style.width = (w + fs * 3.2) + 'px'; // rounded ends sit ~1.6em beyond
+                                               // the word on each side
+    };
+    fitOval();
+    window.addEventListener('resize', fitOval, { passive: true });
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitOval);
+
+    if (reduce) { host.classList.add('is-drawn'); return; }
+
+    let boilRaf = 0;
+    const startBoil = () => {
+      if (boilRaf) return;
+      // Discrete frame-by-frame "boil": hard-swap the WHOLE oval to a random
+      // variant at a slow rate (~3fps) so the line just twitches now and then,
+      // alive but not cinematic. No tweening = no smooth, lifeless morph.
+      const INTERVAL = 320;
+      let cur = 0, last = -1e9;
+      const tick = (ts) => {
+        if (ts - last >= INTERVAL) {
+          last = ts;
+          let n; do { n = Math.floor(Math.random() * variants.length); } while (n === cur);
+          cur = n;
+          path.setAttribute('d', toD(variants[cur]));
+        }
+        boilRaf = requestAnimationFrame(tick);
+      };
+      boilRaf = requestAnimationFrame(tick);
+    };
+
+    // Trigger draw-in only when the word sits in the central band of the screen.
+    const centerObs = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          host.classList.add('is-drawn');
+          startBoil();   // twitch from the very first stroke, not after it
+          // Go solid once fully drawn so swaps never leave a dash gap.
+          path.addEventListener('transitionend', () => { path.style.strokeDasharray = 'none'; }, { once: true });
+          centerObs.disconnect();
+        }
+      });
+    }, { rootMargin: '-45% 0px -45% 0px', threshold: 0 });
+    centerObs.observe(host);
+  }
 
   /* ---------- Smooth-scroll polish for in-page links ---------- */
   document.querySelectorAll('a[href^="#"]').forEach(a => {
