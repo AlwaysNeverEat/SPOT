@@ -394,10 +394,10 @@
         const mc = sec.querySelector('.mark-circle');
         if (mc && mc._gateDraw) { mc._gateDraw(); mc._gateDraw = null; }
         const c = contentFor(sec);
-        if (c.rise)  staggerIn(c.rise,  'g-rise',  90);
+        if (c.rise)  staggerIn(c.rise,  'g-rise',  70);
         if (c.left)  staggerIn(c.left,  'g-left',  0);
         if (c.right) staggerIn(c.right, 'g-right', 0);
-        if (c.pop)   staggerIn(c.pop,   'g-pop',   80);
+        if (c.pop)   staggerIn(c.pop,   'g-pop',   70);
       };
       const reveal = (sec) => {
         if (!sec || sec.classList.contains('is-revealed')) return;
@@ -435,6 +435,17 @@
         window.removeEventListener('keydown', preventKey);
       };
 
+      // Roughly when a section's content finishes its entrance, so we can hold
+      // the lock through the whole animation (plus a beat) before releasing.
+      const RELEASE_DELAY = 480;
+      const holdFor = (sec) => {
+        if (sec.dataset.revealMs) return parseInt(sec.dataset.revealMs, 10);
+        const c = contentFor(sec);
+        const n = [].concat(c.rise || [], c.left || [], c.right || [], c.pop || []).filter(Boolean).length;
+        const step = (c.rise || c.pop) ? 70 : 0;
+        const animEnd = 40 + Math.max(0, n - 1) * step + 760;  // last item + its transition
+        return Math.min(2200, Math.max(1200, animEnd + RELEASE_DELAY));
+      };
       const lockReveal = (sec) => {
         busy = true;
         lock();                                       // take scroll away — in place
@@ -442,12 +453,11 @@
         if (curtain) curtain.classList.add('is-fixed'); // guarantee a full-white frame
         requestAnimationFrame(() => {
           reveal(sec);                                // curtain leaves, content enters
-          const hold = parseInt(sec.dataset.revealMs, 10) || 1000;
           setTimeout(() => {
-            unlock();                                 // give scroll back
+            unlock();                                 // hand scroll back, with a beat
             busy = false;
             if (curtain) curtain.remove();
-          }, hold);
+          }, holdFor(sec));
         });
       };
 
@@ -523,24 +533,26 @@
     }
   }
 
-  /* ---------- "4 steps" tree: scroll-scrubbed rail + sequential steps ---------- */
+  /* ---------- "4 steps" tree: winding branch drawn to scroll, then latched ---------- */
   function setupHowTree() {
     const how = document.getElementById('how');
     if (!how) return;
-    const fill = how.querySelector('.how-rail-fill');
+    const fill = how.querySelector('.how-path-fill');
     const steps = Array.from(how.querySelectorAll('.how-step'));
     if (!fill || !steps.length) return;
-    let tick = false;
+    // node positions along the branch (0..1); a step pops a touch before the
+    // line reaches it. First/last sit at the very ends (under the nodes).
+    const TH = steps.map((_, i) => Math.max(0, (i + 0.55) / steps.length - 0.12));
+    let drawn = 0, tick = false;             // `drawn` only ever grows = latched
     const update = () => {
       tick = false;
       const total = how.offsetHeight - window.innerHeight;
-      const p = total > 0 ? Math.min(Math.max(-how.getBoundingClientRect().top / total, 0), 1) : 1;
-      fill.style.setProperty('--p', p.toFixed(3));
-      steps.forEach((s, i) => {
-        // spread reveals across scroll; each step lands a touch before the rail.
-        const threshold = (i + 0.7) / (steps.length + 0.6);
-        s.classList.toggle('in', p >= threshold);
-      });
+      let p = total > 0 ? -how.getBoundingClientRect().top / total : 1;
+      p = Math.min(Math.max(p, 0), 1);
+      if (p <= drawn) return;                // once drawn, scrolling back keeps it
+      drawn = p;
+      fill.style.strokeDashoffset = (1 - drawn).toFixed(4);
+      steps.forEach((s, i) => { if (drawn >= TH[i]) s.classList.add('in'); });
     };
     window.addEventListener('scroll', () => { if (!tick) { tick = true; requestAnimationFrame(update); } }, { passive: true });
     window.addEventListener('resize', update);
