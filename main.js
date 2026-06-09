@@ -1,6 +1,10 @@
 /* СТО SPOT — interactivity (parallax, horizontal scroll, counters, reveal) */
 (() => {
   const isMobile = () => window.matchMedia('(max-width: 768px)').matches;
+  // Section-reveal gate runs on desktop pointers only and never under
+  // reduced-motion — touch devices keep plain scroll + light reveals.
+  const GATE_ON = window.matchMedia('(min-width: 1024px) and (pointer: fine)').matches
+    && !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   /* ---------- Header on scroll ---------- */
   const header = document.getElementById('header');
@@ -114,6 +118,8 @@
   /* ---------- Counter animation ---------- */
   const counters = document.querySelectorAll('[data-count]');
   const animateCounter = (el) => {
+    if (el.dataset.counted) return;
+    el.dataset.counted = '1';
     const target = parseInt(el.dataset.count, 10);
     const duration = 2000;
     const start = performance.now();
@@ -135,7 +141,12 @@
       }
     });
   }, { threshold: 0.4 });
-  counters.forEach(c => counterObs.observe(c));
+  // Under the gate, counters inside a curtained section would tick while hidden;
+  // let the gate fire them on reveal instead.
+  counters.forEach(c => {
+    if (GATE_ON && c.closest('[data-gate]')) return;
+    counterObs.observe(c);
+  });
 
   /* ---------- Reveal on scroll ---------- */
   // Run after applyCity so dynamic spans (stationsCount etc.) already have final text
@@ -209,9 +220,16 @@
         }
       });
     }, { threshold: 0.15 });
-    document.querySelectorAll('.line-reveal, .reveal').forEach(el => revealObs.observe(el));
+    document.querySelectorAll('.line-reveal, .reveal').forEach(el => {
+      // Gated sections start under a white curtain; defer their inner reveals so
+      // the heading/cards animate fresh the moment the curtain lifts.
+      if (GATE_ON && el.closest('[data-gate]')) return;
+      revealObs.observe(el);
+    });
 
     setupMarkerCircle();
+
+    setupRevealGate(revealObs);
   }, 0);
 
   /* ---------- Hand-drawn red marker circle (draw-in + idle "boil") ---------- */
@@ -305,19 +323,158 @@
       boilRaf = requestAnimationFrame(tick);
     };
 
+    const drawIn = () => {
+      host.classList.add('is-drawn');
+      startBoil();   // twitch from the very first stroke, not after it
+      // Go solid once fully drawn so swaps never leave a dash gap.
+      path.addEventListener('transitionend', () => { path.style.strokeDasharray = 'none'; }, { once: true });
+    };
+
+    // Inside a gated section the word is hidden behind the curtain, so the
+    // central-band observer would draw it unseen — let the gate trigger it on
+    // reveal instead (host._gateDraw is called from setupRevealGate).
+    if (GATE_ON && host.closest('[data-gate]')) {
+      host._gateDraw = drawIn;
+      return;
+    }
+
     // Trigger draw-in only when the word sits in the central band of the screen.
     const centerObs = new IntersectionObserver((entries) => {
       entries.forEach(e => {
-        if (e.isIntersecting) {
-          host.classList.add('is-drawn');
-          startBoil();   // twitch from the very first stroke, not after it
-          // Go solid once fully drawn so swaps never leave a dash gap.
-          path.addEventListener('transitionend', () => { path.style.strokeDasharray = 'none'; }, { once: true });
-          centerObs.disconnect();
-        }
+        if (e.isIntersecting) { drawIn(); centerObs.disconnect(); }
       });
     }, { rootMargin: '-45% 0px -45% 0px', threshold: 0 });
     centerObs.observe(host);
+  }
+
+  /* ---------- Section reveal gate (desktop only) ----------
+     Each [data-gate] section gets an opaque white curtain. As the user scrolls
+     a section into the trigger band we briefly lock input, glide the section to
+     a consistent landing spot, lift the curtain (direction per data-reveal) and
+     fire that section's inner animations — then unlock. Soft gate: native scroll
+     resumes between sections, anchor jumps and deep links are never trapped. */
+  function setupRevealGate(revealObs) {
+    if (!GATE_ON) return;
+    try {
+      const sections = Array.from(document.querySelectorAll('[data-gate]'));
+      if (!sections.length) return;
+
+      // Inject curtains synchronously so below-fold content is covered at once.
+      sections.forEach(sec => {
+        if (getComputedStyle(sec).position === 'static') sec.style.position = 'relative';
+        const curtain = document.createElement('div');
+        curtain.className = 'gate-curtain';
+        sec.appendChild(curtain);
+      });
+
+      let nextIdx = 0;
+      let busy = false;
+
+      const activateInner = (sec) => {
+        sec.querySelectorAll('[data-count]').forEach(c => animateCounter(c));
+        sec.querySelectorAll('.line-reveal, .reveal').forEach(el => revealObs.observe(el));
+        const mc = sec.querySelector('.mark-circle');
+        if (mc && mc._gateDraw) { mc._gateDraw(); mc._gateDraw = null; }
+      };
+      const reveal = (sec) => {
+        if (!sec || sec.classList.contains('is-revealed')) return;
+        sec.classList.add('is-revealed');
+        activateInner(sec);
+      };
+      const revealUpTo = (idx) => {
+        for (let i = 0; i <= idx && i < sections.length; i++) reveal(sections[i]);
+        if (idx + 1 > nextIdx) nextIdx = idx + 1;
+      };
+
+      /* input lock */
+      const prevent = (e) => e.preventDefault();
+      const KEYS = new Set(['ArrowDown', 'ArrowUp', 'PageDown', 'PageUp', 'Home', 'End', ' ', 'Spacebar']);
+      const preventKey = (e) => { if (KEYS.has(e.key)) e.preventDefault(); };
+      const lock = () => {
+        window.addEventListener('wheel', prevent, { passive: false });
+        window.addEventListener('touchmove', prevent, { passive: false });
+        window.addEventListener('keydown', preventKey);
+      };
+      const unlock = () => {
+        window.removeEventListener('wheel', prevent, { passive: false });
+        window.removeEventListener('touchmove', prevent, { passive: false });
+        window.removeEventListener('keydown', preventKey);
+      };
+
+      /* custom eased scroll so we know exactly when it finishes */
+      const glideTo = (targetY, dur, done) => {
+        const maxY = document.documentElement.scrollHeight - window.innerHeight;
+        targetY = Math.max(0, Math.min(targetY, maxY));
+        const startY = window.scrollY;
+        const dist = targetY - startY;
+        if (Math.abs(dist) < 2) { done(); return; }
+        const t0 = performance.now();
+        const ease = (t) => 1 - Math.pow(1 - t, 3);
+        const step = (now) => {
+          const t = Math.min((now - t0) / dur, 1);
+          window.scrollTo(0, startY + dist * ease(t));
+          if (t < 1) requestAnimationFrame(step); else done();
+        };
+        requestAnimationFrame(step);
+      };
+
+      const TRIGGER = 0.5;  // engage once the section top crosses mid-screen
+      const LAND = 0.1;     // where the section settles below the top
+      const engage = () => {
+        if (busy || nextIdx >= sections.length) return;
+        const sec = sections[nextIdx];
+        const rect = sec.getBoundingClientRect();
+        const vh = window.innerHeight;
+        if (rect.top > vh * TRIGGER) return;  // not reached yet
+        busy = true;
+        lock();
+        nextIdx++;
+        reveal(sec);
+        const hold = parseInt(sec.dataset.revealMs, 10) || 880;
+        const targetY = window.scrollY + rect.top - vh * LAND;
+        glideTo(targetY, 440, () => {
+          setTimeout(() => { unlock(); busy = false; }, hold);
+        });
+      };
+
+      let gTick = false;
+      window.addEventListener('scroll', () => {
+        if (busy || gTick) return;
+        gTick = true;
+        requestAnimationFrame(() => { gTick = false; engage(); });
+      }, { passive: true });
+      window.addEventListener('resize', () => { if (!busy) engage(); }, { passive: true });
+
+      /* anchor jumps & deep links must reveal their target up-front, never lock */
+      const revealForTarget = (sel) => {
+        const t = sel && document.querySelector(sel);
+        if (!t) return;
+        const ty = t.getBoundingClientRect().top + window.scrollY;
+        sections.forEach((s, i) => { if (s.offsetTop <= ty + 4) revealUpTo(i); });
+      };
+      document.addEventListener('click', (e) => {
+        const a = e.target.closest && e.target.closest('a[href^="#"]');
+        if (!a) return;
+        const id = a.getAttribute('href');
+        if (id.length < 2) return;
+        revealForTarget(id);
+        busy = true;                                  // don't grab during the
+        setTimeout(() => { busy = false; }, 700);     // programmatic smooth-scroll
+      }, true);
+
+      /* initial state: deep link, then instantly settle anything already passed */
+      if (location.hash && location.hash.length > 1) revealForTarget(location.hash);
+      while (nextIdx < sections.length &&
+             sections[nextIdx].getBoundingClientRect().top <= window.innerHeight * TRIGGER) {
+        reveal(sections[nextIdx]);
+        nextIdx++;
+      }
+    } catch (err) {
+      // Any failure: strip curtains so no section is ever stranded blank.
+      document.querySelectorAll('.gate-curtain').forEach(c => c.remove());
+      document.querySelectorAll('[data-gate]').forEach(s => s.classList.add('is-revealed'));
+      console.error('reveal gate disabled:', err);
+    }
   }
 
   /* ---------- Smooth-scroll polish for in-page links ---------- */
