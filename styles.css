@@ -111,7 +111,7 @@ h5 { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em; marg
   max-width: 1280px;
   display: flex;
   align-items: center;
-  gap: 1.2rem;
+  gap: 1rem;
   padding: 0.55rem 0.7rem 0.55rem 1.3rem;
   border-radius: 100px;
   background: rgba(255,255,255,0.75);
@@ -151,7 +151,7 @@ h5 { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em; marg
   font-size: 0.875rem;
   font-weight: 500;
   color: var(--ink);
-  padding: 0.42rem 0.85rem;
+  padding: 0.42rem 0.7rem;
   border-radius: 100px;
   white-space: nowrap;
   transition: color .25s ease;
@@ -2363,18 +2363,32 @@ html, body { scrollbar-width: none; -ms-overflow-style: none; }
    ========================================================================= */
 /* =========== RESPONSIVE (1024 / 768 / 480 / 360) =========== */
 
-/* ---- Tablet: nav → burger, sетки 2-col ---- */
-@media (max-width: 1024px) {
-  .nav { display: none; }
-  /* На мобиле в пилюле оставляем только выбор города — он важен и должен быть на виду */
-  .header-actions { display: flex; margin-left: auto; gap: 0.25rem; }
+/* ============================================================
+   HEADER RESPONSIVE — ступенчатый коллапс (независим от сеток секций)
+   ≥1320px : нав + город + Каталог + История + Записаться
+   1120–1320: нав + город + Записаться + бургер (Каталог/История → бургер)
+   ≤1120px : лого + город + бургер
+   ============================================================ */
+@media (max-width: 1320px) {
+  /* Полный набор действий шире доступного места — прячем второстепенные
+     кнопки в бургер, оставляя навигацию, город и главный CTA. */
   .header-actions .hdr-btn,
-  .header-actions .hdr-divider,
+  .header-actions .hdr-divider { display: none; }
+  .burger { display: flex; }
+}
+@media (max-width: 1120px) {
+  /* Навигация перестаёт помещаться — сворачиваем в бургер,
+     в пилюле остаются только лого, выбор города и бургер. */
+  .nav { display: none; }
+  .header-actions { margin-left: auto; gap: 0.25rem; }
   .header-actions .hdr-book { display: none; }
   .city-hint { display: none; }
-  .burger { display: flex; }
   .header { padding: 16px 16px 0; }
   .header-pill { gap: 0.5rem; padding: 0.5rem 0.7rem 0.5rem 1.1rem; }
+}
+
+/* ---- Tablet: сетки 2-col ---- */
+@media (max-width: 1024px) {
   .stats { grid-template-columns: repeat(2, 1fr); padding: 4rem 1.5rem; gap: 1.5rem; }
   .steps { grid-template-columns: repeat(2, 1fr); }
   .promo-grid { grid-template-columns: repeat(3, 1fr); }
