@@ -19,6 +19,14 @@
     const sec = document.querySelector(a.getAttribute('href'));
     if (sec) { spyLinkFor.set(sec, a); spySections.push(sec); }
   });
+  // Секция «Рассчитать стоимость работ» (#signup) не имеет своего пункта меню —
+  // относим её к «Контактам», иначе на ней зависает подсветка FAQ.
+  const contactsLink = spyLinks.find(a => a.getAttribute('href') === '#contacts');
+  const signupSec = document.getElementById('signup');
+  if (contactsLink && signupSec && !spyLinkFor.has(signupSec)) {
+    spyLinkFor.set(signupSec, contactsLink);
+    spySections.push(signupSec);
+  }
   spySections.sort((a, b) => a.offsetTop - b.offsetTop);
   let spyTicking = false;
   let activeLink = null;
@@ -648,26 +656,21 @@
   const cityHintClose = document.getElementById('cityHintClose');
   if (cityHint) {
     let hintVisible = false;
-    let hintDismissed = false;
-    try { hintDismissed = localStorage.getItem('spotCityHintDismissed') === '1'; } catch (e) {}
-    const hideHint = (persist) => {
+    const hideHint = () => {
       if (!hintVisible) return;
       hintVisible = false;
-      if (persist) { try { localStorage.setItem('spotCityHintDismissed', '1'); } catch (e) {} }
       cityHint.classList.add('hiding');
       setTimeout(() => { cityHint.hidden = true; cityHint.classList.remove('hiding'); }, 300);
     };
-    if (!hintDismissed) {
-      setTimeout(() => {
-        if (!hintDismissed && window.scrollY < 30) { cityHint.hidden = false; hintVisible = true; }
-      }, 1300);
-    }
-    cityHintClose && cityHintClose.addEventListener('click', (e) => {
-      e.stopPropagation(); hintDismissed = true; hideHint(true);
-    });
-    picker && picker.addEventListener('click', () => { hintDismissed = true; hideHint(true); });
+    // Показываем при каждой загрузке, если пользователь в начале страницы
+    // (закрытие действует только на текущий просмотр — после перезагрузки снова появится).
+    setTimeout(() => {
+      if (window.scrollY < 30) { cityHint.hidden = false; hintVisible = true; }
+    }, 1300);
+    cityHintClose && cityHintClose.addEventListener('click', (e) => { e.stopPropagation(); hideHint(); });
+    picker && picker.addEventListener('click', hideHint);
     window.addEventListener('scroll', () => {
-      if (hintVisible && window.scrollY > 40) hideHint(false);
+      if (hintVisible && window.scrollY > 40) hideHint();
     }, { passive: true });
   }
 
