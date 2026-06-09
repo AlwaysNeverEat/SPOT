@@ -13,37 +13,56 @@
 </head>
 <body>
 
-<!-- =========== STICKY HEADER =========== -->
+<!-- =========== STICKY HEADER (floating compact pill) =========== -->
 <header class="header" id="header">
+ <div class="header-pill">
   <a href="#hero" class="logo" aria-label="СТО SPOT">
     <img src="photos/logo.png" alt="СТО SPOT" />
   </a>
 
-  <nav class="nav">
+  <nav class="nav" id="nav">
+    <span class="nav-pill" id="navPill" aria-hidden="true"></span>
     <a href="#services">Услуги</a>
     <a href="#prices">Цены</a>
-    <a href="#" data-open-catalog>Каталог масел</a>
     <a href="#stations">Станции</a>
     <a href="#promo">Акции</a>
     <a href="#reviews">Отзывы</a>
     <a href="#faq">FAQ</a>
-    <a href="#contacts">Контакты</a>
+    <a href="#signup">Контакты</a>
   </nav>
 
-  <button class="city-picker" id="cityPicker" aria-label="Выбрать город">
-    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s-8-7.5-8-13a8 8 0 1 1 16 0c0 5.5-8 13-8 13z"/><circle cx="12" cy="9" r="2.5"/></svg>
-    <span class="city-name" id="cityName">Санкт-Петербург</span>
-    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
-  </button>
+  <div class="header-actions">
+    <div class="city-picker-wrap">
+      <button class="city-picker" id="cityPicker" aria-label="Выбрать город">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s-8-7.5-8-13a8 8 0 1 1 16 0c0 5.5-8 13-8 13z"/><circle cx="12" cy="9" r="2.5"/></svg>
+        <span class="city-name" id="cityName">Санкт-Петербург</span>
+        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <div class="city-hint" id="cityHint" hidden role="status">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s-8-7.5-8-13a8 8 0 1 1 16 0c0 5.5-8 13-8 13z"/><circle cx="12" cy="9" r="2.5"/></svg>
+        <span class="city-hint-text">Кажется, вы из этого города</span>
+        <button type="button" class="city-hint-close" id="cityHintClose" aria-label="Скрыть">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
 
-  <div class="cta-group">
-    <button type="button" class="btn btn-ghost" data-open-history>История обслуживания</button>
-    <button type="button" class="btn btn-primary" data-open-booking>Записаться</button>
+    <button type="button" class="hdr-btn" data-open-catalog>
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+      <span>Каталог</span>
+    </button>
+    <button type="button" class="hdr-btn" data-open-history>
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      <span>История</span>
+    </button>
+    <span class="hdr-divider" aria-hidden="true"></span>
+    <button type="button" class="btn btn-primary hdr-book" data-open-booking>Записаться</button>
   </div>
 
   <button class="burger" id="burger" aria-label="Меню">
     <span></span><span></span><span></span>
   </button>
+ </div>
 </header>
 
 <!-- =========== MOBILE MENU =========== -->
@@ -67,7 +86,7 @@
       <a href="#about" class="mobile-menu-link">О нас</a>
       <a href="#reviews" class="mobile-menu-link">Отзывы</a>
       <a href="#faq" class="mobile-menu-link">FAQ</a>
-      <a href="#contacts" class="mobile-menu-link">Контакты</a>
+      <a href="#signup" class="mobile-menu-link">Контакты</a>
     </nav>
     <div class="mobile-menu-actions">
       <button type="button" class="btn btn-primary" data-open-booking>Записаться онлайн</button>

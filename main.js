@@ -8,6 +8,62 @@
   window.addEventListener('scroll', onScrollHeader, { passive: true });
   onScrollHeader();
 
+  /* ---------- Scroll-spy: подсветка активного пункта + «жидкая» пилюля ---------- */
+  const navEl = document.getElementById('nav');
+  const navPill = document.getElementById('navPill');
+  const spyLinks = Array.from(document.querySelectorAll('.nav a[href^="#"]'))
+    .filter(a => a.getAttribute('href').length > 1);
+  const spySections = [];
+  const spyLinkFor = new Map();
+  spyLinks.forEach(a => {
+    const sec = document.querySelector(a.getAttribute('href'));
+    if (sec) { spyLinkFor.set(sec, a); spySections.push(sec); }
+  });
+  // Секция «Рассчитать стоимость работ» (#signup) не имеет своего пункта меню —
+  // относим её к «Контактам», иначе на ней зависает подсветка FAQ.
+  const contactsLink = spyLinks.find(a => a.getAttribute('href') === '#contacts');
+  const signupSec = document.getElementById('signup');
+  if (contactsLink && signupSec && !spyLinkFor.has(signupSec)) {
+    spyLinkFor.set(signupSec, contactsLink);
+    spySections.push(signupSec);
+  }
+  spySections.sort((a, b) => a.offsetTop - b.offsetTop);
+  let spyTicking = false;
+  let activeLink = null;
+  const movePill = (link) => {
+    if (!navPill) return;
+    if (!link) { navPill.style.opacity = '0'; return; }
+    // offsetLeft/Width — layout-координаты, не зависят от transform:scale пилюли
+    navPill.style.width = link.offsetWidth + 'px';
+    navPill.style.transform = `translate(${link.offsetLeft}px, -50%)`;
+    navPill.style.opacity = '1';
+  };
+  const updateSpy = () => {
+    spyTicking = false;
+    const line = window.innerHeight * 0.35; // секция активна, когда её верх ушёл выше трети экрана
+    let current = null;
+    for (const sec of spySections) {
+      if (sec.getBoundingClientRect().top - line <= 0) current = sec;
+    }
+    // У низа страницы короткий футер не доходит до линии — форсим последнюю секцию
+    if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2) {
+      current = spySections[spySections.length - 1];
+    }
+    const link = current ? spyLinkFor.get(current) : null;
+    if (link === activeLink) return;
+    if (activeLink) activeLink.classList.remove('is-active');
+    if (link) link.classList.add('is-active');
+    activeLink = link;
+    movePill(link);
+  };
+  if (spySections.length) {
+    window.addEventListener('scroll', () => {
+      if (!spyTicking) { requestAnimationFrame(updateSpy); spyTicking = true; }
+    }, { passive: true });
+    window.addEventListener('resize', () => { activeLink = null; updateSpy(); });
+    updateSpy();
+  }
+
   /* ---------- Parallax ---------- */
   const parallaxItems = Array.from(document.querySelectorAll('[data-parallax]'));
   let ticking = false;
@@ -272,7 +328,7 @@
         const target = document.querySelector(id);
         if (target) {
           e.preventDefault();
-          window.scrollTo({ top: target.getBoundingClientRect().top + window.scrollY - 70, behavior: 'smooth' });
+          window.scrollTo({ top: target.getBoundingClientRect().top + window.scrollY - 100, behavior: 'smooth' });
         }
       }
     });
@@ -594,6 +650,30 @@
   };
 
   if (picker) picker.addEventListener('click', openModal);
+
+  /* ---------- City hint («вы из этого города») ---------- */
+  const cityHint = document.getElementById('cityHint');
+  const cityHintClose = document.getElementById('cityHintClose');
+  if (cityHint) {
+    let hintVisible = false;
+    const hideHint = () => {
+      if (!hintVisible) return;
+      hintVisible = false;
+      cityHint.classList.add('hiding');
+      setTimeout(() => { cityHint.hidden = true; cityHint.classList.remove('hiding'); }, 300);
+    };
+    // Показываем при каждой загрузке, если пользователь в начале страницы
+    // (закрытие действует только на текущий просмотр — после перезагрузки снова появится).
+    setTimeout(() => {
+      if (window.scrollY < 30) { cityHint.hidden = false; hintVisible = true; }
+    }, 1300);
+    cityHintClose && cityHintClose.addEventListener('click', (e) => { e.stopPropagation(); hideHint(); });
+    picker && picker.addEventListener('click', hideHint);
+    window.addEventListener('scroll', () => {
+      if (hintVisible && window.scrollY > 40) hideHint();
+    }, { passive: true });
+  }
+
   document.querySelectorAll('[data-open-city]').forEach(b => b.addEventListener('click', openModal));
   document.querySelectorAll('[data-close-city]').forEach(b => b.addEventListener('click', closeModal));
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && modal && modal.classList.contains('is-open')) closeModal(); });
