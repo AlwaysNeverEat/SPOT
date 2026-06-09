@@ -2365,10 +2365,16 @@ html, body { scrollbar-width: none; -ms-overflow-style: none; }
 
 /* ---- Tablet: nav → burger, sетки 2-col ---- */
 @media (max-width: 1024px) {
-  .nav, .header-actions { display: none; }
-  .burger { display: flex; margin-left: auto; }
+  .nav { display: none; }
+  /* На мобиле в пилюле оставляем только выбор города — он важен и должен быть на виду */
+  .header-actions { display: flex; margin-left: auto; gap: 0.25rem; }
+  .header-actions .hdr-btn,
+  .header-actions .hdr-divider,
+  .header-actions .hdr-book { display: none; }
+  .city-hint { display: none; }
+  .burger { display: flex; }
   .header { padding: 16px 16px 0; }
-  .header-pill { gap: 0.6rem; padding: 0.5rem 0.8rem 0.5rem 1.1rem; }
+  .header-pill { gap: 0.5rem; padding: 0.5rem 0.7rem 0.5rem 1.1rem; }
   .stats { grid-template-columns: repeat(2, 1fr); padding: 4rem 1.5rem; gap: 1.5rem; }
   .steps { grid-template-columns: repeat(2, 1fr); }
   .promo-grid { grid-template-columns: repeat(3, 1fr); }
@@ -2391,6 +2397,11 @@ html, body { scrollbar-width: none; -ms-overflow-style: none; }
 @media (max-width: 768px) {
   .header { padding: 12px 12px 0; }
   .logo img { height: 32px; }
+  .city-picker { padding: 0.5rem 0.65rem; min-height: 42px; }
+  .city-picker .city-name {
+    display: inline-block; max-width: 120px; vertical-align: middle;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
   .mobile-cta { display: flex; }
   body { padding-bottom: calc(70px + env(safe-area-inset-bottom)); }
   .hero { padding: 7rem 1.2rem 3rem; min-height: auto; }
