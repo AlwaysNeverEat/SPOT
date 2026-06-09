@@ -147,6 +147,8 @@ h5 { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em; marg
   transition: width .25s ease;
 }
 .nav a:hover::after { width: 100%; }
+.nav a.is-active { color: var(--green); }
+.nav a.is-active::after { width: 100%; }
 
 .cta-group { display: flex; gap: 0.6rem; align-items: center; }
 
@@ -2182,17 +2184,12 @@ body.menu-open { overflow: hidden; }
 .spot-pin-active svg { transform: scale(1.4); filter: drop-shadow(0 4px 10px rgba(0,0,0,0.35)); }
 
 
-/* =========== SCROLLBAR =========== */
-html { scrollbar-color: var(--green) transparent; scrollbar-width: thin; }
-::-webkit-scrollbar { width: 10px; height: 10px; }
+/* =========== SCROLLBAR — hidden on page (Chrome/Safari/Firefox/Edge) =========== */
+/* Внутренние тонкие скроллбары каталога заданы более специфично выше и сохраняются. */
+html, body { scrollbar-width: none; -ms-overflow-style: none; }
+::-webkit-scrollbar { width: 0; height: 0; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, var(--green), var(--green-dark));
-  border-radius: 100px;
-  border: 2px solid var(--white);
-}
-::-webkit-scrollbar-thumb:hover { background: var(--green-dark); }
-.city-list::-webkit-scrollbar-thumb { border-color: #fff; }
+::-webkit-scrollbar-thumb { background: transparent; }
 
 /* Reveal-on-scroll baseline */
 .reveal { opacity: 0; transform: translateY(30px); transition: opacity .8s ease, transform .8s ease; }

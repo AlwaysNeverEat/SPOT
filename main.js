@@ -8,6 +8,39 @@
   window.addEventListener('scroll', onScrollHeader, { passive: true });
   onScrollHeader();
 
+  /* ---------- Scroll-spy: подсветка активного пункта меню ---------- */
+  const spyLinks = Array.from(document.querySelectorAll('.nav a[href^="#"]'))
+    .filter(a => a.getAttribute('href').length > 1);
+  const spySections = [];
+  const spyLinkFor = new Map();
+  spyLinks.forEach(a => {
+    const sec = document.querySelector(a.getAttribute('href'));
+    if (sec) { spyLinkFor.set(sec, a); spySections.push(sec); }
+  });
+  spySections.sort((a, b) => a.offsetTop - b.offsetTop);
+  let spyTicking = false;
+  let activeLink = null;
+  const updateSpy = () => {
+    spyTicking = false;
+    const line = window.innerHeight * 0.35; // секция активна, когда её верх ушёл выше трети экрана
+    let current = null;
+    for (const sec of spySections) {
+      if (sec.getBoundingClientRect().top - line <= 0) current = sec;
+    }
+    const link = current ? spyLinkFor.get(current) : null;
+    if (link === activeLink) return;
+    if (activeLink) activeLink.classList.remove('is-active');
+    if (link) link.classList.add('is-active');
+    activeLink = link;
+  };
+  if (spySections.length) {
+    window.addEventListener('scroll', () => {
+      if (!spyTicking) { requestAnimationFrame(updateSpy); spyTicking = true; }
+    }, { passive: true });
+    window.addEventListener('resize', updateSpy);
+    updateSpy();
+  }
+
   /* ---------- Parallax ---------- */
   const parallaxItems = Array.from(document.querySelectorAll('[data-parallax]'));
   let ticking = false;
