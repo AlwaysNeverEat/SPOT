@@ -23,12 +23,11 @@
   let spyTicking = false;
   let activeLink = null;
   const movePill = (link) => {
-    if (!navPill || !navEl) return;
+    if (!navPill) return;
     if (!link) { navPill.style.opacity = '0'; return; }
-    const navRect = navEl.getBoundingClientRect();
-    const r = link.getBoundingClientRect();
-    navPill.style.width = r.width + 'px';
-    navPill.style.transform = `translate(${(r.left - navRect.left)}px, -50%)`;
+    // offsetLeft/Width — layout-координаты, не зависят от transform:scale пилюли
+    navPill.style.width = link.offsetWidth + 'px';
+    navPill.style.transform = `translate(${link.offsetLeft}px, -50%)`;
     navPill.style.opacity = '1';
   };
   const updateSpy = () => {
@@ -37,6 +36,10 @@
     let current = null;
     for (const sec of spySections) {
       if (sec.getBoundingClientRect().top - line <= 0) current = sec;
+    }
+    // У низа страницы короткий футер не доходит до линии — форсим последнюю секцию
+    if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2) {
+      current = spySections[spySections.length - 1];
     }
     const link = current ? spyLinkFor.get(current) : null;
     if (link === activeLink) return;
