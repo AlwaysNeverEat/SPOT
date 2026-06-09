@@ -44,7 +44,16 @@ PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers node scripts/screenshot.mjs \
 - `main.js` переразбивает все `<h2>` посимвольно для reveal-анимации
   (`.line-wrap` > `.word` > `.char`). Если оборачиваешь слово в заголовке
   своим `<span class="...">`, класс сохраняется — это стабильный хук.
+- **React-слайдер машин** (`cars-slider/`, Vite → `assets/cars-slider/spot-cars-slider.js`).
+  Правишь `.tsx` → обязательно `cd cars-slider && npm run build` и подними `?v=N`
+  у `<script>` в `index.html`, иначе изменений не видно. Autoplay паузится вне
+  экрана (IntersectionObserver) и пока открыт оверлей сайта — он смотрит
+  `body.menu-open` / `body{overflow:hidden}` через MutationObserver. Полоску
+  прогресса двигаем DOM-ref'ом, НЕ через React-стейт — иначе ререндер 60fps
+  забивал главный поток на телефоне и анимации меню/модалок дёргались.
 
 ## Гит
 - Разработка на ветке `claude/epic-galileo-m12Ty`, пуш туда же. PR создаётся из UI.
 - Не коммить `node_modules/`, `package-lock.json`, временные скрипты (в `.gitignore`).
+- **Коммиты и PR — всегда на английском и максимально кратко** (одна строка,
+  imperative: `Fix...`, `Add...`, `Pause...`). Без длинных русских описаний.
