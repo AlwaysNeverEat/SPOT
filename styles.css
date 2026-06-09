@@ -37,6 +37,7 @@ body {
   line-height: 1.55;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
+  min-width: 320px;   /* ниже не сжимаемся — появляется горизонтальный скролл */
 }
 
 img, svg { display: block; max-width: 100%; }
@@ -100,6 +101,7 @@ h5 { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em; marg
   display: flex;
   justify-content: center;
   padding: 28px 24px 0;          /* плавающий отступ от краёв экрана */
+  min-width: 320px;              /* шапка не сжимается ниже минимума страницы */
   pointer-events: none;          /* кликабельна только пилюля, не зазоры */
   transition: padding .4s cubic-bezier(.4,0,.2,1);
 }
@@ -298,7 +300,8 @@ body.menu-open { overflow: hidden; }
 }
 .mobile-menu-city:hover { border-color: var(--green); }
 .mobile-menu-city svg { color: var(--green); flex: 0 0 auto; }
-@media (min-width: 1025px) { .mobile-menu { display: none !important; } }
+/* Бургер-меню доступно везде, где показан бургер (≤1320px) */
+@media (min-width: 1321px) { .mobile-menu { display: none !important; } }
 
 /* =========== HERO =========== */
 .hero {
