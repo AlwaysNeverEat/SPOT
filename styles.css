@@ -547,54 +547,79 @@ body.menu-open { overflow: hidden; }
 .hpanel-end h3 { margin-bottom: 1rem; }
 .hpanel-end p { margin-bottom: 1.5rem; font-size: 1.1rem; }
 
-/* =========== HOW IT WORKS =========== */
+/* =========== HOW IT WORKS — scroll-scrubbed tree (white) =========== */
 .how {
   position: relative;
-  isolation: isolate;
-  padding: 8rem 2.5rem;
-  background: transparent;
-  color: #fff;
+  background: var(--white);
+  color: var(--ink);
+}
+.how-pin {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2.4rem;
+  padding: 6rem 1.5rem 4rem;
+}
+.how h2 { color: var(--ink); text-align: center; max-width: 820px; margin: 0; }
+.how-tree { position: relative; width: 100%; max-width: 660px; }
+/* central rail + green fill that grows top→down with scroll progress */
+.how-rail {
+  position: absolute;
+  left: 26px; top: 10px; bottom: 10px;
+  width: 4px;
+  background: var(--line);
+  border-radius: 4px;
   overflow: hidden;
 }
-.how::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: rgba(13,13,13,0.58);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
-  z-index: 1;
+.how-rail-fill {
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, var(--green), #14b03c);
+  transform-origin: top;        /* full on mobile; scrubbed on desktop (below) */
 }
-.how-bg {
-  position: absolute;
-  inset: -20% 0;
-  background: transparent;
-  z-index: 0;
-  will-change: transform;
+.how-steps { display: flex; flex-direction: column; gap: 1.1rem; }
+.how-step {
+  display: flex;
+  align-items: center;
+  gap: 1.3rem;
+  transition: opacity .45s ease, transform .55s cubic-bezier(.22, 1, .36, 1);
 }
-.how-inner { position: relative; z-index: 2; max-width: 1360px; margin: 0 auto; }
-.how h2 { color: #fff; margin-bottom: 4rem; max-width: 700px; }
-.steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; }
-.step {
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.1);
-  backdrop-filter: blur(10px);
-  padding: 2rem;
-  border-radius: var(--radius);
-  transition: transform .4s ease, background .4s;
-  will-change: transform;
-}
-.step:hover { background: rgba(255,255,255,0.1); transform: translateY(-8px); }
-.step-num {
+.how-step .step-num {
+  flex: 0 0 auto;
   display: inline-flex; align-items: center; justify-content: center;
-  width: 48px; height: 48px;
+  width: 56px; height: 56px;
   background: var(--green); color: #fff;
   border-radius: 50%;
-  font-weight: 800; font-size: 1.2rem;
-  margin-bottom: 1.2rem;
+  font-weight: 800; font-size: 1.3rem;
+  box-shadow: 0 0 0 6px var(--white), 0 8px 22px rgba(31,157,63,0.28);
+  position: relative; z-index: 2;
 }
-.step h4 { margin-bottom: 0.6rem; color: #fff; }
-.step p { color: rgba(255,255,255,0.65); font-size: 0.95rem; }
+.how-step-card {
+  flex: 1;
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 1.05rem 1.4rem;
+  transition: transform .3s ease, box-shadow .3s ease;
+}
+.how-step.in .how-step-card:hover { transform: translateX(4px); box-shadow: var(--shadow); }
+.how-step-card h4 { margin-bottom: 0.25rem; color: var(--ink); font-size: 1.15rem; }
+.how-step-card p { color: var(--muted); font-size: 0.95rem; line-height: 1.45; }
+/* Desktop only: tall section + sticky pin so the tree draws to scroll tempo.
+   Mobile / no-JS keeps the natural flow above (steps & rail fully visible). */
+@media (min-width: 1024px) and (pointer: fine) {
+  .how { height: 360vh; }
+  .how-pin {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    padding: 7rem 2rem 3rem;
+    overflow: hidden;
+  }
+  .how-rail-fill { transform: scaleY(var(--p, 0)); }
+  .how-step { opacity: 0; transform: translateY(26px); }
+  .how-step.in { opacity: 1; transform: none; }
+}
 
 /* =========== BRANDS =========== */
 .brands {
@@ -2307,9 +2332,24 @@ html, body { scrollbar-width: none; -ms-overflow-style: none; }
 .line-reveal.in .char { opacity: 1; transform: translateY(0); }
 
 /* =========== Section reveal gate — white curtains =========== */
-/* Curtains are injected by JS only on desktop (pointer:fine, motion ok).
-   Without JS / on mobile no `.gate-curtain` exists, so the site renders
+/* Curtains/centering are injected by JS only on desktop (pointer:fine, motion
+   ok). Without JS / on mobile nothing here applies, so the site renders
    normally — the gate is purely additive and can't strand a section blank. */
+
+/* Lock + fade sections fill the whole screen (desktop only) so the white-out
+   happens edge to edge and content sits relaxed (never cramped) in the centre.
+   On mobile the gate is off, so sections keep their natural compact height. */
+@media (min-width: 1024px) and (pointer: fine) {
+  .brands, .promo, .trust, .reviews, .faq, .cta, .price-cta {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: safe center;   /* center when it fits; pin to top if taller
+                                       than the screen so headings never clip */
+  }
+  .stations { min-height: 100vh; }
+}
+
 .gate-curtain {
   position: absolute;
   inset: 0;
@@ -2317,19 +2357,27 @@ html, body { scrollbar-width: none; -ms-overflow-style: none; }
   background: var(--white);
   pointer-events: none;
   clip-path: inset(0 0 0 0);
-  will-change: opacity, transform, clip-path;
-  transition: opacity .7s ease,
-              clip-path .9s cubic-bezier(.22, 1, .36, 1),
-              transform .9s cubic-bezier(.22, 1, .36, 1);
+  will-change: opacity, clip-path;
+  transition: opacity .55s ease, clip-path .7s cubic-bezier(.22, 1, .36, 1);
 }
-/* Default exit: fade. Directional variants wipe via clip-path (stay in-bounds,
-   never spawn a scrollbar). The section's own inner reveals (heading chars,
-   counters, cards, marker) fire as the curtain leaves. */
-.is-revealed > .gate-curtain                          { opacity: 0; }
-[data-reveal="wipe-up"].is-revealed > .gate-curtain   { opacity: 1; clip-path: inset(0 0 100% 0); }
-[data-reveal="wipe-down"].is-revealed > .gate-curtain { opacity: 1; clip-path: inset(100% 0 0 0); }
-[data-reveal="slide-right"].is-revealed > .gate-curtain { opacity: 1; clip-path: inset(0 0 0 100%); }
-[data-reveal="slide-left"].is-revealed > .gate-curtain  { opacity: 1; clip-path: inset(0 100% 0 0); }
+/* At the lock moment the curtain goes full-viewport fixed: guarantees a pure
+   white frame regardless of the exact scroll position — no scrolling for the
+   user. It then leaves (fade, or an iris for the services block). */
+.gate-curtain.is-fixed { position: fixed; inset: 0; z-index: 90; }
+.is-revealed > .gate-curtain { opacity: 0; }
+[data-reveal="iris"] > .gate-curtain { clip-path: circle(140% at 50% 45%); }
+[data-reveal="iris"].is-revealed > .gate-curtain { opacity: 1; clip-path: circle(0% at 50% 45%); }
+
+/* Content entrance helpers (added/removed by JS as a section reveals) */
+.g-rise  { opacity: 0; transform: translateY(34px); }
+.g-left  { opacity: 0; transform: translateX(-52px); }
+.g-right { opacity: 0; transform: translateX(52px); }
+.g-pop   { opacity: 0; transform: scale(.9); }
+.g-rise, .g-left, .g-right {
+  transition: opacity .6s ease, transform .75s cubic-bezier(.22, 1, .36, 1);
+}
+.g-pop { transition: opacity .5s ease, transform .6s cubic-bezier(.34, 1.56, .64, 1); }
+.g-in { opacity: 1 !important; transform: none !important; }
 
 .hero .accent-green { color: #c5ff6a; }
 .hero .thin { color: rgba(255,255,255,0.92); }

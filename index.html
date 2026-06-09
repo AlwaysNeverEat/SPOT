@@ -136,7 +136,7 @@
 </section>
 
 <!-- =========== STATS =========== -->
-<section class="stats" id="stats" data-gate data-reveal="wipe-up">
+<section class="stats" id="stats">
   <div class="stat">
     <div class="num" data-count="896858">0</div>
     <div class="lbl">замен масла с 2013 года</div>
@@ -223,7 +223,7 @@
 </section>
 
 <!-- =========== PRICE LIST CTA =========== -->
-<section class="price-cta" id="prices" data-gate data-reveal="fade">
+<section class="price-cta" id="prices" data-gate="fade">
   <div class="price-cta-card">
     <div class="price-cta-text">
       
@@ -244,39 +244,47 @@
 </section>
 
 <!-- =========== HOW IT WORKS — VERTICAL PARALLAX =========== -->
-<section class="how" id="how" data-gate data-reveal="wipe-down">
-  <div class="how-bg" data-parallax="0.2"></div>
-  <div class="how-inner">
-    
+<section class="how" id="how" data-gate="scrub">
+  <div class="how-pin">
     <h2>4 шага до чистого двигателя</h2>
-
-    <div class="steps">
-      <div class="step" data-parallax="0.05">
-        <div class="step-num">1</div>
-        <h4>Запись онлайн</h4>
-        <p>Выбираете удобную станцию, дату и время. Подбираем масло по VIN или марке.</p>
-      </div>
-      <div class="step" data-parallax="0.1">
-        <div class="step-num">2</div>
-        <h4>Приезжаете к нам</h4>
-        <p>23 станции по городу — найдётся рядом с домом или работой. Без очередей.</p>
-      </div>
-      <div class="step" data-parallax="0.15">
-        <div class="step-num">3</div>
-        <h4>Замена за 30 минут</h4>
-        <p>Сертифицированный мастер делает работу при вас. Можно наблюдать через стекло.</p>
-      </div>
-      <div class="step" data-parallax="0.2">
-        <div class="step-num">4</div>
-        <h4>Кешбэк и бонусы</h4>
-        <p>10% кешбэка за своевременную замену. Оплата бонусами до 100% следующего визита.</p>
+    <div class="how-tree">
+      <div class="how-rail"><span class="how-rail-fill"></span></div>
+      <div class="how-steps">
+        <div class="how-step">
+          <div class="step-num">1</div>
+          <div class="how-step-card">
+            <h4>Запись онлайн</h4>
+            <p>Выбираете удобную станцию, дату и время. Подбираем масло по VIN или марке.</p>
+          </div>
+        </div>
+        <div class="how-step">
+          <div class="step-num">2</div>
+          <div class="how-step-card">
+            <h4>Приезжаете к нам</h4>
+            <p>23 станции по городу — найдётся рядом с домом или работой. Без очередей.</p>
+          </div>
+        </div>
+        <div class="how-step">
+          <div class="step-num">3</div>
+          <div class="how-step-card">
+            <h4>Замена за 30 минут</h4>
+            <p>Сертифицированный мастер делает работу при вас. Можно наблюдать через стекло.</p>
+          </div>
+        </div>
+        <div class="how-step">
+          <div class="step-num">4</div>
+          <div class="how-step-card">
+            <h4>Кешбэк и бонусы</h4>
+            <p>10% кешбэка за своевременную замену. Оплата бонусами до 100% следующего визита.</p>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 </section>
 
 <!-- =========== OIL BRANDS =========== -->
-<section class="brands" id="brands" data-gate data-reveal="slide-right">
+<section class="brands" id="brands" data-gate="lock" data-reveal="rise">
   
   <h2>Работаем только с <span class="mark-circle">проверенными</span> производителями</h2>
   <p class="brands-sub">Собственная линейка <strong>SPOT Standard</strong> и <strong>SPOT Optimal</strong>, плюс мировые бренды моторных масел.</p>
@@ -296,7 +304,7 @@
 </section>
 
 <!-- =========== STATIONS =========== -->
-<section class="stations" id="stations" data-gate data-reveal="slide-left">
+<section class="stations" id="stations" data-gate="lock" data-reveal="split">
   <div class="stations-left" data-parallax="0.1">
     <h2><span id="stationsCount">28</span> <span id="stationsWord">станций</span> <br/>в <span class="js-city-loc">Санкт-Петербурге</span></h2>
     <p id="stationsCopy">А также филиалы в городах: Янино, Петрозаводск, Рязань, Гатчина, Кировск, Саратов, Шушары, Ростов-на-Дону и других.</p>
@@ -314,7 +322,7 @@
 </section>
 
 <!-- =========== PROMO =========== -->
-<section class="promo" id="promo" data-gate data-reveal="slide-right">
+<section class="promo" id="promo" data-gate="lock" data-reveal="rise">
   <h2>Выгоднее, чем кажется</h2>
 
   <div class="promo-grid">
@@ -351,7 +359,7 @@
 </section>
 
 <!-- =========== TRUST / ABOUT =========== -->
-<section class="trust" id="about" data-gate data-reveal="wipe-up">
+<section class="trust" id="about" data-gate="lock" data-reveal="fade">
   <div class="trust-inner">
     <h2>Прозрачно, надёжно, по-настоящему</h2>
     <p class="trust-sub">Гарантия на работы, открытые посты с обзором, собственная сеть и команда — всё, что важно знать о СТО SPOT.</p>
@@ -397,7 +405,7 @@
 </section>
 
 <!-- =========== REVIEWS =========== -->
-<section class="reviews" id="reviews" data-gate data-reveal="slide-left">
+<section class="reviews" id="reviews" data-gate="lock" data-reveal="rise">
   <div class="reviews-head">
     <h2>Нам доверяют почти 900&nbsp;000 водителей</h2>
     <p>Средняя оценка 4.8 из 5 на основе отзывов в Яндекс.Картах, 2GIS и Google. Несколько недавних:</p>
@@ -448,7 +456,7 @@
 </section>
 
 <!-- =========== FAQ =========== -->
-<section class="faq" id="faq" data-gate data-reveal="wipe-down">
+<section class="faq" id="faq" data-gate="lock" data-reveal="fade">
   <div class="faq-inner">
     <h2>Часто спрашивают</h2>
     <p class="faq-sub">Самые частые вопросы об интервалах, маслах и фильтрах. Не нашли ответ — позвоните, подскажем.</p>
@@ -514,7 +522,7 @@
 </section>
 
 <!-- =========== FINAL CTA =========== -->
-<section class="cta" id="signup" data-gate data-reveal="wipe-up">
+<section class="cta" id="signup" data-gate="lock" data-reveal="pop">
   <div class="cta-bg" data-parallax="0.25"></div>
   <div class="cta-inner">
     <h2>Рассчитать стоимость работ</h2>

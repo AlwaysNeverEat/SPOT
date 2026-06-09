@@ -144,7 +144,7 @@
   // Under the gate, counters inside a curtained section would tick while hidden;
   // let the gate fire them on reveal instead.
   counters.forEach(c => {
-    if (GATE_ON && c.closest('[data-gate]')) return;
+    if (GATE_ON && c.closest('[data-gate="lock"], [data-gate="fade"]')) return;
     counterObs.observe(c);
   });
 
@@ -223,7 +223,7 @@
     document.querySelectorAll('.line-reveal, .reveal').forEach(el => {
       // Gated sections start under a white curtain; defer their inner reveals so
       // the heading/cards animate fresh the moment the curtain lifts.
-      if (GATE_ON && el.closest('[data-gate]')) return;
+      if (GATE_ON && el.closest('[data-gate="lock"], [data-gate="fade"]')) return;
       revealObs.observe(el);
     });
 
@@ -333,7 +333,7 @@
     // Inside a gated section the word is hidden behind the curtain, so the
     // central-band observer would draw it unseen — let the gate trigger it on
     // reveal instead (host._gateDraw is called from setupRevealGate).
-    if (GATE_ON && host.closest('[data-gate]')) {
+    if (GATE_ON && host.closest('[data-gate="lock"], [data-gate="fade"]')) {
       host._gateDraw = drawIn;
       return;
     }
@@ -356,37 +356,71 @@
   function setupRevealGate(revealObs) {
     if (!GATE_ON) return;
     try {
-      const sections = Array.from(document.querySelectorAll('[data-gate]'));
-      if (!sections.length) return;
+      const lockSecs = Array.from(document.querySelectorAll('[data-gate="lock"]'));
+      const fadeSecs = Array.from(document.querySelectorAll('[data-gate="fade"]'));
 
-      // Inject curtains synchronously so below-fold content is covered at once.
-      sections.forEach(sec => {
-        if (getComputedStyle(sec).position === 'static') sec.style.position = 'relative';
-        const curtain = document.createElement('div');
-        curtain.className = 'gate-curtain';
-        sec.appendChild(curtain);
-      });
-
-      let nextIdx = 0;
-      let busy = false;
-
+      /* ---- content-entrance choreography (per section) ---- */
+      // Stagger a set of elements in with a motion class, then strip the classes
+      // once done so any hover/transition on those elements returns to normal.
+      const staggerIn = (els, cls, step) => {
+        els.filter(Boolean).forEach((el, i) => {
+          el.classList.add(cls);
+          void el.offsetWidth;                 // commit the hidden state
+          setTimeout(() => {
+            el.classList.add('g-in');
+            const done = () => { el.classList.remove(cls, 'g-in'); el.removeEventListener('transitionend', done); };
+            el.addEventListener('transitionend', done);
+          }, 40 + i * step);
+        });
+      };
+      const noH2 = (list) => list.filter(el => el && el.tagName !== 'H2');
+      const contentFor = (sec) => {
+        const q = (s) => sec.querySelector(s);
+        const qa = (s) => Array.from(sec.querySelectorAll(s));
+        switch (sec.id) {
+          case 'brands':  return { rise: [q('.brands-sub'), q('.brand-marquee'), q('.cars-feed')] };
+          case 'stations':return { left: [q('.stations-left')], right: [q('.stations-right')] };
+          case 'about':   return { rise: [q('.trust-sub'), ...qa('.trust-card')] };
+          case 'reviews': return { rise: [q('.reviews-deck'), q('.reviews-controls')] };
+          case 'faq':     return { rise: [q('.faq-sub'), ...qa('.faq-item')] };
+          case 'signup':  return { pop: noH2(qa('.cta-inner > *')) };
+          case 'prices':  return { rise: [q('.price-cta-card')] };
+          default:        return {};            // promo: cards animate via .reveal
+        }
+      };
       const activateInner = (sec) => {
         sec.querySelectorAll('[data-count]').forEach(c => animateCounter(c));
         sec.querySelectorAll('.line-reveal, .reveal').forEach(el => revealObs.observe(el));
         const mc = sec.querySelector('.mark-circle');
         if (mc && mc._gateDraw) { mc._gateDraw(); mc._gateDraw = null; }
+        const c = contentFor(sec);
+        if (c.rise)  staggerIn(c.rise,  'g-rise',  90);
+        if (c.left)  staggerIn(c.left,  'g-left',  0);
+        if (c.right) staggerIn(c.right, 'g-right', 0);
+        if (c.pop)   staggerIn(c.pop,   'g-pop',   80);
       };
       const reveal = (sec) => {
         if (!sec || sec.classList.contains('is-revealed')) return;
         sec.classList.add('is-revealed');
         activateInner(sec);
       };
-      const revealUpTo = (idx) => {
-        for (let i = 0; i <= idx && i < sections.length; i++) reveal(sections[i]);
-        if (idx + 1 > nextIdx) nextIdx = idx + 1;
+      // Instant reveal (anchor jumps / load): drop curtain immediately, no lock.
+      const revealNow = (sec) => {
+        if (sec.classList.contains('is-revealed')) return;
+        const cur = sec.querySelector('.gate-curtain');
+        if (cur) cur.remove();
+        reveal(sec);
       };
 
-      /* input lock */
+      /* ---- lock sections: white curtain, freeze in place, reveal, release ---- */
+      let busy = false;
+      lockSecs.forEach(sec => {
+        if (getComputedStyle(sec).position === 'static') sec.style.position = 'relative';
+        const curtain = document.createElement('div');
+        curtain.className = 'gate-curtain';
+        sec.appendChild(curtain);
+      });
+
       const prevent = (e) => e.preventDefault();
       const KEYS = new Set(['ArrowDown', 'ArrowUp', 'PageDown', 'PageUp', 'Home', 'End', ' ', 'Spacebar']);
       const preventKey = (e) => { if (KEYS.has(e.key)) e.preventDefault(); };
@@ -401,40 +435,36 @@
         window.removeEventListener('keydown', preventKey);
       };
 
-      /* custom eased scroll so we know exactly when it finishes */
-      const glideTo = (targetY, dur, done) => {
-        const maxY = document.documentElement.scrollHeight - window.innerHeight;
-        targetY = Math.max(0, Math.min(targetY, maxY));
-        const startY = window.scrollY;
-        const dist = targetY - startY;
-        if (Math.abs(dist) < 2) { done(); return; }
-        const t0 = performance.now();
-        const ease = (t) => 1 - Math.pow(1 - t, 3);
-        const step = (now) => {
-          const t = Math.min((now - t0) / dur, 1);
-          window.scrollTo(0, startY + dist * ease(t));
-          if (t < 1) requestAnimationFrame(step); else done();
-        };
-        requestAnimationFrame(step);
+      const lockReveal = (sec) => {
+        busy = true;
+        lock();                                       // take scroll away — in place
+        const curtain = sec.querySelector('.gate-curtain');
+        if (curtain) curtain.classList.add('is-fixed'); // guarantee a full-white frame
+        requestAnimationFrame(() => {
+          reveal(sec);                                // curtain leaves, content enters
+          const hold = parseInt(sec.dataset.revealMs, 10) || 1000;
+          setTimeout(() => {
+            unlock();                                 // give scroll back
+            busy = false;
+            if (curtain) curtain.remove();
+          }, hold);
+        });
       };
 
-      const TRIGGER = 0.5;  // engage once the section top crosses mid-screen
-      const LAND = 0.1;     // where the section settles below the top
+      // Fire when the incoming section has all but filled the screen (full white).
       const engage = () => {
-        if (busy || nextIdx >= sections.length) return;
-        const sec = sections[nextIdx];
-        const rect = sec.getBoundingClientRect();
+        if (busy) return;
         const vh = window.innerHeight;
-        if (rect.top > vh * TRIGGER) return;  // not reached yet
-        busy = true;
-        lock();
-        nextIdx++;
-        reveal(sec);
-        const hold = parseInt(sec.dataset.revealMs, 10) || 880;
-        const targetY = window.scrollY + rect.top - vh * LAND;
-        glideTo(targetY, 440, () => {
-          setTimeout(() => { unlock(); busy = false; }, hold);
-        });
+        for (const sec of lockSecs) {
+          if (sec.classList.contains('is-revealed')) continue;
+          const top = sec.getBoundingClientRect().top;
+          if (top <= vh * 0.06) {
+            if (top <= -vh) { revealNow(sec); continue; } // blasted past -> just show
+            lockReveal(sec);
+            return;
+          }
+          break;                                      // next gate not reached yet
+        }
       };
 
       let gTick = false;
@@ -445,36 +475,76 @@
       }, { passive: true });
       window.addEventListener('resize', () => { if (!busy) engage(); }, { passive: true });
 
-      /* anchor jumps & deep links must reveal their target up-front, never lock */
+      /* ---- fade sections: no lock, content just eases in on approach ---- */
+      fadeSecs.forEach(sec => {
+        const c = contentFor(sec);
+        const blocks = [].concat(c.rise || [], c.left || [], c.right || [], c.pop || []).filter(Boolean);
+        blocks.forEach(el => el.classList.add('g-rise'));   // pre-hide (JS-only)
+        const probe = blocks[0] || sec;
+        const io = new IntersectionObserver((entries) => {
+          entries.forEach(e => {
+            if (e.isIntersecting) { reveal(sec); io.disconnect(); }
+          });
+        }, { threshold: 0.35 });
+        io.observe(probe);
+      });
+
+      /* ---- anchor jumps & deep links: reveal target up-front, never lock ---- */
+      const allGated = lockSecs.concat(fadeSecs);
       const revealForTarget = (sel) => {
         const t = sel && document.querySelector(sel);
         if (!t) return;
         const ty = t.getBoundingClientRect().top + window.scrollY;
-        sections.forEach((s, i) => { if (s.offsetTop <= ty + 4) revealUpTo(i); });
+        allGated.forEach(s => { if (s.offsetTop <= ty + 4) revealNow(s); });
       };
       document.addEventListener('click', (e) => {
         const a = e.target.closest && e.target.closest('a[href^="#"]');
-        if (!a) return;
-        const id = a.getAttribute('href');
-        if (id.length < 2) return;
-        revealForTarget(id);
-        busy = true;                                  // don't grab during the
-        setTimeout(() => { busy = false; }, 700);     // programmatic smooth-scroll
+        if (!a || a.getAttribute('href').length < 2) return;
+        revealForTarget(a.getAttribute('href'));
+        busy = true;                                  // sit out the smooth-scroll
+        setTimeout(() => { busy = false; }, 700);
       }, true);
 
-      /* initial state: deep link, then instantly settle anything already passed */
       if (location.hash && location.hash.length > 1) revealForTarget(location.hash);
-      while (nextIdx < sections.length &&
-             sections[nextIdx].getBoundingClientRect().top <= window.innerHeight * TRIGGER) {
-        reveal(sections[nextIdx]);
-        nextIdx++;
-      }
+      // reveal anything already on screen at load (no lock)
+      lockSecs.forEach(sec => {
+        if (sec.getBoundingClientRect().top <= window.innerHeight * 0.06) revealNow(sec);
+      });
+
+      setupHowTree();
     } catch (err) {
-      // Any failure: strip curtains so no section is ever stranded blank.
+      // Any failure: strip curtains / hidden states so nothing is stranded blank.
       document.querySelectorAll('.gate-curtain').forEach(c => c.remove());
-      document.querySelectorAll('[data-gate]').forEach(s => s.classList.add('is-revealed'));
+      document.querySelectorAll('.g-rise, .g-left, .g-right, .g-pop')
+        .forEach(el => el.classList.remove('g-rise', 'g-left', 'g-right', 'g-pop'));
+      document.querySelectorAll('[data-gate="lock"], [data-gate="fade"]')
+        .forEach(s => s.classList.add('is-revealed'));
       console.error('reveal gate disabled:', err);
     }
+  }
+
+  /* ---------- "4 steps" tree: scroll-scrubbed rail + sequential steps ---------- */
+  function setupHowTree() {
+    const how = document.getElementById('how');
+    if (!how) return;
+    const fill = how.querySelector('.how-rail-fill');
+    const steps = Array.from(how.querySelectorAll('.how-step'));
+    if (!fill || !steps.length) return;
+    let tick = false;
+    const update = () => {
+      tick = false;
+      const total = how.offsetHeight - window.innerHeight;
+      const p = total > 0 ? Math.min(Math.max(-how.getBoundingClientRect().top / total, 0), 1) : 1;
+      fill.style.setProperty('--p', p.toFixed(3));
+      steps.forEach((s, i) => {
+        // spread reveals across scroll; each step lands a touch before the rail.
+        const threshold = (i + 0.7) / (steps.length + 0.6);
+        s.classList.toggle('in', p >= threshold);
+      });
+    };
+    window.addEventListener('scroll', () => { if (!tick) { tick = true; requestAnimationFrame(update); } }, { passive: true });
+    window.addEventListener('resize', update);
+    update();
   }
 
   /* ---------- Smooth-scroll polish for in-page links ---------- */
