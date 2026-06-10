@@ -596,15 +596,13 @@ body.menu-open { overflow: hidden; }
 .how-dot { display: none; }                  /* desktop-only firefly (below) */
 /* Desktop only: tall section + sticky pin, absolute winding tree, scrubbed draw.
    Mobile / no-JS keeps the natural stacked flow above (everything visible). */
-@media (min-width: 1024px) and (pointer: fine) {
-  .how { height: 280vh; }      /* scrub runway; latched so re-passes never redraw */
-  .how-pin {
-    position: sticky;
-    top: 0;
-    height: 100vh;
-    padding: 7rem 2rem 3rem;
-    overflow: hidden;
-  }
+/* gated tree visuals only when the reveal gate is live (matches GATE_ON);
+   under reduced-motion the block is skipped and the steps show as a plain list */
+@media (min-width: 1024px) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  /* normal full-screen stop like every other section — the branch is drawn on
+     a timer when the section reveals, so re-scrolling never holds the page */
+  .how { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; }
+  .how-pin { padding: 7rem 2rem 3rem; }
   .how-tree { height: 60vh; max-height: 580px; min-height: 460px; }
   .how-path {
     display: block;

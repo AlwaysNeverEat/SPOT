@@ -404,6 +404,7 @@
         sec.querySelectorAll('.line-reveal, .reveal').forEach(el => revealObs.observe(el));
         const mc = sec.querySelector('.mark-circle');
         if (mc && mc._gateDraw) { mc._gateDraw(); mc._gateDraw = null; }
+        if (sec._drawTree) sec._drawTree();           // "4 steps" branch draws itself
         const c = contentFor(sec);
         if (c.rise)  staggerIn(c.rise,  'g-rise',  80);
         if (c.left)  staggerIn(c.left,  'g-left',  0);
@@ -555,7 +556,12 @@
     }
   }
 
-  /* ---------- "4 steps" tree: winding branch drawn to scroll, then latched ---------- */
+  /* ---------- "4 steps" tree: winding branch drawn on a timer at reveal ----------
+     The tree is now a normal full-screen lock section. When it reveals, the
+     branch draws itself once over ~1.7s (firefly riding the tip, nodes popping
+     in sequence). It's a one-shot — re-scrolling the section never re-pins or
+     re-draws it, so the page is never "held" on later passes. Mobile keeps the
+     plain stacked layout (the draw never runs there). */
   function setupHowTree() {
     const how = document.getElementById('how');
     if (!how) return;
@@ -564,33 +570,30 @@
     if (!fill || !steps.length) return;
     const tree = how.querySelector('.how-tree');
     const dot = how.querySelector('.how-dot');
-    // Geometric length in viewBox units (pathLength="1" only affects dashes),
-    // so getPointAtLength(drawn * realLen) gives 0–100 coords = CSS %.
-    const realLen = fill.getTotalLength();
-    // node positions along the branch (0..1); a step pops a touch before the
-    // line reaches it. First/last sit at the very ends (under the nodes).
+    const realLen = fill.getTotalLength();    // viewBox units; coords map to CSS %
     const TH = steps.map((_, i) => Math.max(0, (i + 0.55) / steps.length - 0.12));
-    let drawn = 0, tick = false;             // `drawn` only ever grows = latched
-    const update = () => {
-      tick = false;
-      const total = how.offsetHeight - window.innerHeight;
-      let p = total > 0 ? -how.getBoundingClientRect().top / total : 1;
-      p = Math.min(Math.max(p, 0), 1);
-      if (p <= drawn) return;                // once drawn, scrolling back keeps it
-      drawn = p;
-      fill.style.strokeDashoffset = (1 - drawn).toFixed(4);
-      if (dot) {
-        const pt = fill.getPointAtLength(drawn * realLen);
-        dot.style.left = pt.x + '%';
-        dot.style.top = pt.y + '%';
-        dot.classList.toggle('on', drawn > 0.01 && drawn < 0.99);
-      }
-      steps.forEach((s, i) => { if (drawn >= TH[i]) s.classList.add('in'); });
-      if (drawn >= 0.999 && tree) tree.classList.add('done');
+    let played = false;
+    how._drawTree = (duration = 1700) => {
+      if (played) return;
+      played = true;
+      const ease = (t) => 1 - Math.pow(1 - t, 2);   // easeOutQuad
+      const t0 = performance.now();
+      const frame = (now) => {
+        const t = Math.min((now - t0) / duration, 1);
+        const e = ease(t);
+        fill.style.strokeDashoffset = (1 - e).toFixed(4);
+        if (dot) {
+          const pt = fill.getPointAtLength(e * realLen);
+          dot.style.left = pt.x + '%';
+          dot.style.top = pt.y + '%';
+          dot.classList.toggle('on', e > 0.01 && e < 0.985);
+        }
+        steps.forEach((s, i) => { if (e >= TH[i]) s.classList.add('in'); });
+        if (t < 1) requestAnimationFrame(frame);
+        else { if (dot) dot.classList.remove('on'); if (tree) tree.classList.add('done'); }
+      };
+      requestAnimationFrame(frame);
     };
-    window.addEventListener('scroll', () => { if (!tick) { tick = true; requestAnimationFrame(update); } }, { passive: true });
-    window.addEventListener('resize', update);
-    update();
   }
 
   /* ---------- Smooth-scroll polish for in-page links ---------- */
