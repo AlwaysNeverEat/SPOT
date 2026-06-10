@@ -597,10 +597,7 @@ body.menu-open { overflow: hidden; }
 /* Desktop only: tall section + sticky pin, absolute winding tree, scrubbed draw.
    Mobile / no-JS keeps the natural stacked flow above (everything visible). */
 @media (min-width: 1024px) and (pointer: fine) {
-  .how { height: 360vh; }
-  /* once fully drawn the runway folds to one screen — repeat passes scroll
-     straight through instead of re-pinning the tree */
-  .how.done-collapse { height: 100vh; }
+  .how { height: 280vh; }      /* scrub runway; latched so re-passes never redraw */
   .how-pin {
     position: sticky;
     top: 0;
@@ -1007,43 +1004,35 @@ body.menu-open { overflow: hidden; }
 .btn-ghost-mobile { background: var(--bg-soft); color: var(--ink); border: 1.5px solid var(--line); }
 
 
-/* =========== PRICE-LIST CTA =========== */
+/* =========== PRICE-LIST CTA (full-bleed, centred — like the other stops) === */
 .price-cta {
-  padding: 5rem 2.5rem;
-  background: var(--white);
-}
-.price-cta-card {
-  max-width: 1280px;
-  margin: 0 auto;
-  background: linear-gradient(135deg, #fffaea 0%, #ffffff 60%);
-  border: 1px solid var(--line);
-  border-radius: 28px;
-  padding: 3rem clamp(1.5rem, 4vw, 4rem);
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 2.5rem;
-  align-items: center;
-  box-shadow: var(--shadow);
   position: relative;
+  padding: 8rem 2.5rem;
+  background: var(--white);
+  text-align: center;
   overflow: hidden;
 }
-.price-cta-card::before {
-  content: '';
+.price-cta-bg {
   position: absolute;
-  top: -60px; right: -60px;
-  width: 220px; height: 220px;
-  border-radius: 50%;
-  background: radial-gradient(circle, var(--yellow) 0%, transparent 70%);
-  opacity: 0.45;
-  pointer-events: none;
+  inset: -15% -5%;
+  background:
+    radial-gradient(circle at 50% 38%, rgba(245,210,42,0.20), transparent 55%),
+    radial-gradient(circle at 78% 82%, rgba(31,157,63,0.10), transparent 50%);
+  z-index: 0;
+  will-change: transform;
 }
-.price-cta-text { max-width: 640px; position: relative; z-index: 1; }
-.price-cta-text h2 { font-size: clamp(1.6rem, 2.4vw, 2.4rem); margin-bottom: 0.8rem; }
-.price-cta-text p { color: var(--muted); font-size: 1.05rem; }
-.price-cta-actions { display: flex; flex-direction: column; gap: 0.8rem; position: relative; z-index: 1; }
+.price-cta-inner { position: relative; z-index: 2; max-width: 860px; margin: 0 auto; }
+.price-eyebrow {
+  display: inline-block;
+  font-size: 0.75rem; letter-spacing: 0.18em; text-transform: uppercase;
+  font-weight: 800; color: var(--green);
+  margin-bottom: 1.2rem;
+}
+.price-cta h2 { margin-bottom: 1rem; }
+.price-cta-inner > p { color: var(--muted); font-size: 1.15rem; max-width: 660px; margin: 0 auto 2.4rem; }
+.price-cta-actions { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
 .price-cta-actions .btn { justify-content: center; }
 @media (max-width: 900px) {
-  .price-cta-card { grid-template-columns: 1fr; padding: 2.2rem 1.5rem; }
   .price-cta-actions { flex-direction: column; }
 }
 

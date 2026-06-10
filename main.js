@@ -395,7 +395,7 @@
           case 'reviews': return { rise: [q('.reviews-controls')], pop: [q('.reviews-deck')] };
           case 'faq':     return { rise: [q('.faq-sub'), ...qa('.faq-item')] };
           case 'signup':  return { pop: noH2(qa('.cta-inner > *')) };
-          case 'prices':  return { rise: [q('.price-cta-card')] };
+          case 'prices':  return { rise: [q('.price-eyebrow'), q('.price-cta-inner > p')], pop: [q('.price-cta-actions')] };
           default:        return {};
         }
       };
@@ -571,30 +571,11 @@
     // line reaches it. First/last sit at the very ends (under the nodes).
     const TH = steps.map((_, i) => Math.max(0, (i + 0.55) / steps.length - 0.12));
     let drawn = 0, tick = false;             // `drawn` only ever grows = latched
-    let collapsed = false;
-    // Once fully drawn, fold the 360vh runway to one screen so later passes
-    // scroll straight through instead of re-pinning the tree. Only while the
-    // tree is fully off-screen and no section lock owns the scroll — folding
-    // mid-lock would fight the wall corrector and throw reveals off-screen.
-    const maybeCollapse = () => {
-      if (collapsed || drawn < 0.999 || locking || navHold) return;
-      const r = how.getBoundingClientRect();
-      const below = r.bottom <= 0;             // user is past the tree
-      if (!below && r.top < window.innerHeight) return;  // still (partly) in view
-      collapsed = true;
-      const before = how.offsetHeight;
-      how.classList.add('done-collapse');
-      // removing runway ABOVE the viewport shifts the page: compensate in the
-      // same frame so the visible content doesn't move
-      if (below) window.scrollTo({ top: window.scrollY - (before - how.offsetHeight), behavior: 'instant' });
-    };
     const update = () => {
       tick = false;
-      maybeCollapse();
       const total = how.offsetHeight - window.innerHeight;
       let p = total > 0 ? -how.getBoundingClientRect().top / total : 1;
       p = Math.min(Math.max(p, 0), 1);
-      if (collapsed) p = 1;                  // folded section always reads done
       if (p <= drawn) return;                // once drawn, scrolling back keeps it
       drawn = p;
       fill.style.strokeDashoffset = (1 - drawn).toFixed(4);
