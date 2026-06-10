@@ -5,6 +5,9 @@
   // reduced-motion — touch devices keep plain scroll + light reveals.
   const GATE_ON = window.matchMedia('(min-width: 1024px) and (pointer: fine)').matches
     && !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // True while the gate owns the scroll (lock playing / anchor glide) —
+  // shared so the tree collapse never reshuffles the page mid-lock.
+  let gateBusy = false;
 
   /* ---------- Header on scroll ---------- */
   const header = document.getElementById('header');
@@ -420,7 +423,6 @@
       };
 
       /* ---- lock sections: white curtain, freeze in place, reveal, release ---- */
-      let busy = false;
       lockSecs.forEach(sec => {
         if (getComputedStyle(sec).position === 'static') sec.style.position = 'relative';
         const curtain = document.createElement('div');
@@ -453,7 +455,7 @@
         return Math.min(2400, Math.max(1300, animEnd + RELEASE_DELAY));
       };
       const lockReveal = (sec) => {
-        busy = true;
+        gateBusy = true;
         lock();                                       // take scroll away — in place
         const curtain = sec.querySelector('.gate-curtain');
         if (curtain) curtain.classList.add('is-fixed'); // guarantee a full-white frame
@@ -461,35 +463,44 @@
           reveal(sec);                                // curtain leaves, content enters
           setTimeout(() => {
             unlock();                                 // hand scroll back, with a beat
-            busy = false;
+            gateBusy = false;
             if (curtain) curtain.remove();
           }, holdFor(sec));
         });
       };
 
-      // Fire when the incoming section has all but filled the screen (full white).
+      /* ---- hard walls: the page can't scroll past an unrevealed section ----
+         Fast scrolling used to overshoot the trigger, so the reveal played
+         half off-screen. Now the first unrevealed section is a dead end: any
+         overshoot is snapped back to its exact top (full-white frame, content
+         dead-centre), the reveal plays, then scroll is handed back. Snaps are
+         `behavior:'instant'` — html { scroll-behavior: smooth } would
+         otherwise turn the wall into a glide. */
+      const snapTo = (y) => window.scrollTo({ top: y, behavior: 'instant' });
+      let lockY = 0;
       const engage = () => {
-        if (busy) return;
-        const vh = window.innerHeight;
-        for (const sec of lockSecs) {
-          if (sec.classList.contains('is-revealed')) continue;
-          const top = sec.getBoundingClientRect().top;
-          if (top <= vh * 0.06) {
-            if (top <= -vh) { revealNow(sec); continue; } // blasted past -> just show
-            lockReveal(sec);
-            return;
-          }
-          break;                                      // next gate not reached yet
+        if (gateBusy) {
+          // squash residual momentum that slipped past preventDefault
+          if (Math.abs(window.scrollY - lockY) > 1) snapTo(lockY);
+          return;
+        }
+        // fade sections: IO can miss them during violent scrolling — this
+        // position check guarantees they never end up passed-but-blank
+        fadeSecs.forEach(s => {
+          if (!s.classList.contains('is-revealed') &&
+              s.getBoundingClientRect().top < window.innerHeight * 0.7) reveal(s);
+        });
+        const sec = lockSecs.find(s => !s.classList.contains('is-revealed'));
+        if (!sec) return;
+        const wallY = sec.offsetTop;
+        if (window.scrollY >= wallY - 2) {
+          lockY = wallY;
+          snapTo(wallY);
+          lockReveal(sec);
         }
       };
-
-      let gTick = false;
-      window.addEventListener('scroll', () => {
-        if (busy || gTick) return;
-        gTick = true;
-        requestAnimationFrame(() => { gTick = false; engage(); });
-      }, { passive: true });
-      window.addEventListener('resize', () => { if (!busy) engage(); }, { passive: true });
+      window.addEventListener('scroll', engage, { passive: true });
+      window.addEventListener('resize', engage, { passive: true });
 
       /* ---- fade sections: no lock, content just eases in on approach ---- */
       fadeSecs.forEach(sec => {
@@ -517,8 +528,8 @@
         const a = e.target.closest && e.target.closest('a[href^="#"]');
         if (!a || a.getAttribute('href').length < 2) return;
         revealForTarget(a.getAttribute('href'));
-        busy = true;                                  // sit out the smooth-scroll
-        setTimeout(() => { busy = false; }, 700);
+        gateBusy = true;                              // sit out the smooth-scroll
+        setTimeout(() => { gateBusy = false; }, 700);
       }, true);
 
       if (location.hash && location.hash.length > 1) revealForTarget(location.hash);
@@ -555,11 +566,30 @@
     // line reaches it. First/last sit at the very ends (under the nodes).
     const TH = steps.map((_, i) => Math.max(0, (i + 0.55) / steps.length - 0.12));
     let drawn = 0, tick = false;             // `drawn` only ever grows = latched
+    let collapsed = false;
+    // Once fully drawn, fold the 360vh runway to one screen so later passes
+    // scroll straight through instead of re-pinning the tree. Only while the
+    // tree is fully off-screen and no section lock owns the scroll — folding
+    // mid-lock would fight the wall corrector and throw reveals off-screen.
+    const maybeCollapse = () => {
+      if (collapsed || drawn < 0.999 || gateBusy) return;
+      const r = how.getBoundingClientRect();
+      const below = r.bottom <= 0;             // user is past the tree
+      if (!below && r.top < window.innerHeight) return;  // still (partly) in view
+      collapsed = true;
+      const before = how.offsetHeight;
+      how.classList.add('done-collapse');
+      // removing runway ABOVE the viewport shifts the page: compensate in the
+      // same frame so the visible content doesn't move
+      if (below) window.scrollTo({ top: window.scrollY - (before - how.offsetHeight), behavior: 'instant' });
+    };
     const update = () => {
       tick = false;
+      maybeCollapse();
       const total = how.offsetHeight - window.innerHeight;
       let p = total > 0 ? -how.getBoundingClientRect().top / total : 1;
       p = Math.min(Math.max(p, 0), 1);
+      if (collapsed) p = 1;                  // folded section always reads done
       if (p <= drawn) return;                // once drawn, scrolling back keeps it
       drawn = p;
       fill.style.strokeDashoffset = (1 - drawn).toFixed(4);

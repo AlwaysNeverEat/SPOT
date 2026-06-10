@@ -565,11 +565,12 @@ body.menu-open { overflow: hidden; }
 .how-tree { position: relative; width: 100%; max-width: 680px; margin: 0 auto; }
 /* Winding green branch (SVG) — desktop only; mobile stacks the steps plainly. */
 .how-path { display: none; }
-.how-path-bg, .how-path-fill {
-  fill: none; stroke-width: 4; stroke-linecap: round; vector-effect: non-scaling-stroke;
-}
-.how-path-bg { stroke: var(--line); }
-.how-path-fill { stroke: var(--green); stroke-dasharray: 1; stroke-dashoffset: 0; }
+/* Stroke metrics are in viewBox user units — no vector-effect here: Chromium
+   dashes non-scaling strokes in screen space and ignores pathLength, which
+   shreds the dash-draw into random scraps. */
+.how-path-bg, .how-path-fill { fill: none; stroke-linecap: round; }
+.how-path-bg { stroke: var(--line); stroke-width: .7; }
+.how-path-fill { stroke: var(--green); stroke-width: .9; stroke-dasharray: 1; stroke-dashoffset: 0; }
 .how-step { display: flex; align-items: center; gap: 1.2rem; margin-bottom: 1.1rem; }
 .how-step .step-num {
   flex: 0 0 auto;
@@ -597,6 +598,9 @@ body.menu-open { overflow: hidden; }
    Mobile / no-JS keeps the natural stacked flow above (everything visible). */
 @media (min-width: 1024px) and (pointer: fine) {
   .how { height: 360vh; }
+  /* once fully drawn the runway folds to one screen — repeat passes scroll
+     straight through instead of re-pinning the tree */
+  .how.done-collapse { height: 100vh; }
   .how-pin {
     position: sticky;
     top: 0;
@@ -611,23 +615,25 @@ body.menu-open { overflow: hidden; }
     width: 100%; height: 100%;
     overflow: visible; pointer-events: none;
   }
-  /* dotted grey "route" the green branch is drawn over */
-  .how-path-bg { stroke-dasharray: 0 .03; }
+  /* dotted grey "route" the green branch is drawn over (round caps on
+     zero-length dashes render as evenly spaced dots) */
+  .how-path-bg { stroke-dasharray: 0 .025; }
   .how-path-fill {
-    stroke-width: 5;
     stroke-dashoffset: 1;                    /* JS scrubs 1 → 0 as you scroll */
     filter: drop-shadow(0 2px 8px rgba(31,157,63,0.3));
   }
-  /* firefly riding the tip of the branch (JS feeds left/top in %) */
+  /* firefly riding the tip of the branch (JS feeds left/top in %);
+     z-index 1 keeps it ON the line but UNDER nodes and cards, so it ducks
+     behind each circle it passes instead of crossing on top of it */
   .how-dot {
     display: block;
     position: absolute;
-    width: 14px; height: 14px;
-    margin: -7px 0 0 -7px;
+    width: 12px; height: 12px;
+    margin: -6px 0 0 -6px;
     border-radius: 50%;
     background: #fff;
     border: 3px solid var(--green);
-    z-index: 3;
+    z-index: 1;
     opacity: 0;
     transition: opacity .35s ease;
     animation: dotPulse 1.2s ease-in-out infinite;
@@ -659,6 +665,7 @@ body.menu-open { overflow: hidden; }
     top: 50%; transform: translateY(-50%);
     width: 264px; flex: none;
     opacity: 0;
+    z-index: 2;                              /* above the firefly, like nodes */
   }
   .how-step--right .how-step-card { left: calc(100% + 20px); }
   .how-step--left  .how-step-card { right: calc(100% + 20px); }
@@ -700,7 +707,7 @@ body.menu-open { overflow: hidden; }
   text-align: center;
   background: var(--bg);
 }
-.brands h2 { max-width: 800px; margin-left: auto; margin-right: auto; }
+.brands h2 { max-width: 940px; margin-left: auto; margin-right: auto; }
 
 /* --- Hand-drawn red marker circle around "проверенными" --- */
 .mark-circle {
@@ -744,7 +751,7 @@ body.menu-open { overflow: hidden; }
     filter: none !important;
   }
 }
-.brands-sub { color: var(--muted); margin: 0 auto 3rem; max-width: 600px; }
+.brands-sub { color: var(--muted); margin: 0 auto 3rem; max-width: 700px; font-size: 1.1rem; }
 
 .brand-marquee { overflow: hidden; padding: 2rem 0; mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent); -webkit-mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent); }
 .brand-row {
@@ -920,7 +927,7 @@ body.menu-open { overflow: hidden; }
   z-index: 0;
   will-change: transform;
 }
-.cta-inner { position: relative; z-index: 2; max-width: 820px; margin: 0 auto; }
+.cta-inner { position: relative; z-index: 2; max-width: 920px; margin: 0 auto; }
 .cta h2 { margin-bottom: 1rem; }
 .cta p { color: var(--muted); margin-bottom: 2.5rem; font-size: 1.1rem; }
 .cta-buttons { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
@@ -1933,7 +1940,7 @@ body.menu-open { overflow: hidden; }
   text-align: center;
 }
 .trust-inner { max-width: 1360px; margin: 0 auto; }
-.trust-sub { color: var(--muted); max-width: 620px; margin: 0 auto 3rem; font-size: 1.05rem; }
+.trust-sub { color: var(--muted); max-width: 720px; margin: 0 auto 3rem; font-size: 1.1rem; }
 .trust-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -1992,7 +1999,7 @@ body.menu-open { overflow: hidden; }
   position: relative;
 }
 .reviews-head {
-  max-width: 880px;
+  max-width: 1000px;
   margin: 0 auto 3rem;
   padding: 0 2.5rem;
   text-align: center;
@@ -2000,7 +2007,7 @@ body.menu-open { overflow: hidden; }
 .reviews-head p { color: var(--muted); margin-top: 0.6rem; font-size: 1.02rem; }
 .reviews-deck {
   display: grid;
-  max-width: 640px;
+  max-width: 720px;
   margin: 0 auto 1rem;
   padding: 0 2.5rem 2rem;
 }
@@ -2129,8 +2136,8 @@ body.menu-open { overflow: hidden; }
   padding: 7rem 2.5rem;
   background: var(--bg-soft);
 }
-.faq-inner { max-width: 960px; margin: 0 auto; text-align: center; }
-.faq-sub { color: var(--muted); margin: 0 auto 2.4rem; max-width: 560px; }
+.faq-inner { max-width: 1020px; margin: 0 auto; text-align: center; }
+.faq-sub { color: var(--muted); margin: 0 auto 2.4rem; max-width: 660px; font-size: 1.1rem; }
 .faq-list { text-align: left; display: grid; gap: 0.7rem; }
 .faq-item {
   background: #fff;
