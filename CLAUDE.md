@@ -44,6 +44,11 @@ PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers node scripts/screenshot.mjs \
 - `main.js` переразбивает все `<h2>` посимвольно для reveal-анимации
   (`.line-wrap` > `.word` > `.char`). Если оборачиваешь слово в заголовке
   своим `<span class="...">`, класс сохраняется — это стабильный хук.
+- **Секция `#how`** — скролл-скраб (700vh + sticky stage), таймлайн в `setupHowScrub()`
+  (main.js). CSS-медиазапрос у `.how.is-scrub` и `SCRUB_ON` в JS должны совпадать
+  дословно. Скриншоты битов таймлайна — флаг `--progress "#how:0.42"` у
+  `scripts/screenshot.mjs`; URL открывать с хэшем `#how`, чтобы гейт-секции выше
+  раскрылись по deep-link и не отщёлкивали скролл назад.
 - **React-слайдер машин** (`cars-slider/`, Vite → `assets/cars-slider/spot-cars-slider.js`).
   Правишь `.tsx` → обязательно `cd cars-slider && npm run build` и подними `?v=N`
   у `<script>` в `index.html`, иначе изменений не видно. Autoplay паузится вне

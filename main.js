@@ -239,6 +239,7 @@
     setupMarkerCircle();
 
     setupRevealGate(revealObs);
+    setupHowScrub();
   }, 0);
 
   /* ---------- Hand-drawn red marker circle (draw-in + idle "boil") ---------- */
@@ -404,7 +405,6 @@
         sec.querySelectorAll('.line-reveal, .reveal').forEach(el => revealObs.observe(el));
         const mc = sec.querySelector('.mark-circle');
         if (mc && mc._gateDraw) { mc._gateDraw(); mc._gateDraw = null; }
-        if (sec._drawTree) sec._drawTree();           // "4 steps" branch draws itself
         const c = contentFor(sec);
         if (c.rise)  staggerIn(c.rise,  'g-rise',  80);
         if (c.left)  staggerIn(c.left,  'g-left',  0);
@@ -543,8 +543,6 @@
       lockSecs.forEach(sec => {
         if (sec.getBoundingClientRect().top <= window.innerHeight * 0.06) revealNow(sec);
       });
-
-      setupHowTree();
     } catch (err) {
       // Any failure: strip curtains / hidden states so nothing is stranded blank.
       document.querySelectorAll('.gate-curtain').forEach(c => c.remove());
@@ -556,44 +554,223 @@
     }
   }
 
-  /* ---------- "4 steps" tree: winding branch drawn on a timer at reveal ----------
-     The tree is now a normal full-screen lock section. When it reveals, the
-     branch draws itself once over ~1.7s (firefly riding the tip, nodes popping
-     in sequence). It's a one-shot — re-scrolling the section never re-pins or
-     re-draws it, so the page is never "held" on later passes. Mobile keeps the
-     plain stacked layout (the draw never runs there). */
-  function setupHowTree() {
+  /* ---------- "How it works" story: pinned stage scrubbed by scroll ----------
+     #how is a 700vh runway with a sticky 100vh stage. Scroll progress 0..1
+     drives a declarative timeline — fully reversible, no scroll lock. Per
+     element+property the segments chain (before the first one it holds its
+     "from", between/after segments it holds the latest "to"), so the engine
+     also establishes every initial state on the first render. Desktop fine
+     pointers only; mobile/reduced-motion keep the static .how-static list. */
+  function setupHowScrub() {
     const how = document.getElementById('how');
     if (!how) return;
-    const fill = how.querySelector('.how-path-fill');
-    const steps = Array.from(how.querySelectorAll('.how-step'));
-    if (!fill || !steps.length) return;
-    const tree = how.querySelector('.how-tree');
-    const dot = how.querySelector('.how-dot');
-    const realLen = fill.getTotalLength();    // viewBox units; coords map to CSS %
-    const TH = steps.map((_, i) => Math.max(0, (i + 0.55) / steps.length - 0.12));
-    let played = false;
-    how._drawTree = (duration = 1700) => {
-      if (played) return;
-      played = true;
-      const ease = (t) => 1 - Math.pow(1 - t, 2);   // easeOutQuad
-      const t0 = performance.now();
-      const frame = (now) => {
-        const t = Math.min((now - t0) / duration, 1);
-        const e = ease(t);
-        fill.style.strokeDashoffset = (1 - e).toFixed(4);
-        if (dot) {
-          const pt = fill.getPointAtLength(e * realLen);
-          dot.style.left = pt.x + '%';
-          dot.style.top = pt.y + '%';
-          dot.classList.toggle('on', e > 0.01 && e < 0.985);
+    const SCRUB_ON = window.matchMedia('(min-width: 1024px) and (pointer: fine)').matches
+      && !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!SCRUB_ON) return;
+    try {
+      const stage = how.querySelector('.how-stage');
+      const $ = (s) => stage.querySelector(s);
+      how.classList.add('is-scrub');          // CSS swaps static list → stage
+
+      const clamp01 = (v) => v < 0 ? 0 : v > 1 ? 1 : v;
+      const lin = (t) => t;
+      const easeOut = (t) => 1 - Math.pow(1 - t, 3);
+      const easeIO = (t) => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+
+      /* props per tween: x/y px, s scale, r deg, o opacity — [from, to] */
+      const els = new Map();                  // el -> {x:[seg], y:[...], cache}
+      const tw = (el, a, b, props, ease = easeOut) => {
+        if (!el) return;
+        let rec = els.get(el);
+        if (!rec) { rec = { cache: '' }; els.set(el, rec); }
+        for (const k in props) {
+          (rec[k] || (rec[k] = [])).push({ a, b, f: props[k][0], t: props[k][1], e: ease });
         }
-        steps.forEach((s, i) => { if (e >= TH[i]) s.classList.add('in'); });
-        if (t < 1) requestAnimationFrame(frame);
-        else { if (dot) dot.classList.remove('on'); if (tree) tree.classList.add('done'); }
       };
-      requestAnimationFrame(frame);
-    };
+      const fxs = [];                         // custom segments (text, dashes)
+      const fx = (a, b, fn, ease = lin) => fxs.push({ a, b, fn, ease, last: -1 });
+
+      // active segment for a prop = the last one already started (else first)
+      const val = (segs, p) => {
+        let s = segs[0];
+        for (let i = 1; i < segs.length; i++) { if (segs[i].a <= p) s = segs[i]; else break; }
+        return s.f + (s.t - s.f) * s.e(clamp01((p - s.a) / (s.b - s.a)));
+      };
+
+      const render = (p) => {
+        els.forEach((rec, el) => {
+          const x = rec.x ? val(rec.x, p) : 0;
+          const y = rec.y ? val(rec.y, p) : 0;
+          const s = rec.s ? val(rec.s, p) : 1;
+          const r = rec.r ? val(rec.r, p) : 0;
+          const o = rec.o ? val(rec.o, p) : null;
+          let css = `translate3d(${x.toFixed(2)}px,${y.toFixed(2)}px,0)`;
+          if (rec.s) css += ` scale(${s.toFixed(4)})`;
+          if (rec.r) css += ` rotate(${r.toFixed(2)}deg)`;
+          const key = css + '|' + (o === null ? '' : o.toFixed(3));
+          if (key === rec.cache) return;      // clamped tracks cost nothing
+          rec.cache = key;
+          el.style.transform = css;
+          if (o !== null) el.style.opacity = o.toFixed(3);
+        });
+        for (const f of fxs) {
+          const t = f.ease(clamp01((p - f.a) / (f.b - f.a)));
+          if (t !== f.last) { f.last = t; f.fn(t); }
+        }
+      };
+
+      /* ---- title FLIP: laid out docked top-left, starts screen-centred ---- */
+      const title = $('.how-title');
+      const intro = { x: 0, y: 0 };
+      const measure = () => {
+        const prev = title.style.transform;
+        title.style.transform = 'none';
+        const tr = title.getBoundingClientRect();
+        const sr = stage.getBoundingClientRect();
+        title.style.transform = prev;
+        intro.x = (sr.width - tr.width) / 2 - (tr.left - sr.left);
+        intro.y = sr.height * 0.46 - tr.height / 2 - (tr.top - sr.top);
+      };
+      fx(0.03, 0.085, (t) => {
+        const e = easeIO(t);
+        title.style.transform =
+          `translate3d(${(intro.x * (1 - e)).toFixed(1)}px,${(intro.y * (1 - e)).toFixed(1)}px,0) scale(${(1 - 0.55 * e).toFixed(4)})`;
+      });
+
+      /* ---- chapter label (in/out pairs at chapter bounds) ---- */
+      const chapter = (el, a1, a2, b1, b2) => {
+        tw(el, a1, a2, { o: [0, 1], y: [14, 0] });
+        tw(el, b1, b2, { o: [1, 0], y: [0, -14] });
+      };
+      chapter($('#howCh1'), 0.085, 0.105, 0.290, 0.310);
+      chapter($('#howCh2'), 0.300, 0.320, 0.540, 0.560);
+      chapter($('#howCh3'), 0.550, 0.570, 0.730, 0.750);
+      chapter($('#howCh4'), 0.740, 0.760, 0.900, 0.920);
+
+      /* ---- scene layers: visibility per range + opacity tweens ---- */
+      const scenes = [
+        { el: $('#howSc1'),  a: 0.070, b: 0.320 },
+        { el: $('#howSc2'),  a: 0.295, b: 0.560 },
+        { el: $('#howSc3'),  a: 0.545, b: 0.755 },
+        { el: $('#howSc4'),  a: 0.745, b: 0.925 },
+        { el: $('#howFinal'), a: 0.915, b: 1.001 }
+      ];
+      const sceneVis = (p) => scenes.forEach(sc => {
+        const on = p >= sc.a && p <= sc.b;
+        if (on !== sc.on) { sc.on = on; sc.el.classList.toggle('is-on', on); }
+      });
+
+      /* ---- scene 1: booking ---- */
+      const sc1 = $('#howSc1');
+      tw(sc1, 0.080, 0.100, { o: [0, 1] });
+      tw(sc1, 0.295, 0.315, { o: [1, 0] });
+      tw($('#sc1Hand'), 0.085, 0.115, { y: [180, 0], o: [0, 1] });
+      tw($('#sc1Hand'), 0.258, 0.285, { y: [0, 200], o: [1, 0] }, easeIO);
+      const screenUi = (el, a1, a2, b1, b2) => {
+        tw(el, a1, a2, { o: [0, 1], y: [16, 0] });
+        if (b1) tw(el, b1, b2, { o: [1, 0], y: [0, -16] });
+      };
+      screenUi($('#sc1UiBook'),  0.112, 0.128, 0.162, 0.176);
+      screenUi($('#sc1UiCall'),  0.164, 0.180, 0.212, 0.226);
+      screenUi($('#sc1UiPrice'), 0.214, 0.230, 0.256, 0.270);
+      const copyIn = (el, a1, a2, b1, b2) => {
+        tw(el, a1, a2, { o: [0, 1], y: [22, 0] });
+        if (b1) tw(el, b1, b2, { o: [1, 0.35] });   // done items dim, checklist-style
+      };
+      copyIn($('#sc1T1'), 0.112, 0.135, 0.162, 0.176);
+      copyIn($('#sc1T2'), 0.164, 0.187, 0.212, 0.226);
+      copyIn($('#sc1T3'), 0.214, 0.237, 0.258, 0.272);
+      tw($('#sc1Badge'), 0.262, 0.288, { o: [0, 1], s: [0.7, 1], y: [10, 0] });
+
+      /* ---- scene 2: arriving ---- */
+      const sc2 = $('#howSc2');
+      tw(sc2, 0.300, 0.320, { o: [0, 1] });
+      tw(sc2, 0.540, 0.558, { o: [1, 0] });
+      tw($('#sc2Marks'), 0.300, 0.460, { y: [0, -360] }, lin);   // camera travels
+      tw($('#sc2Car'), 0.330, 0.420, { y: [360, 0], o: [0, 1] });
+      tw($('#sc2Box'), 0.370, 0.420, { o: [0, 1], x: [40, 0] });
+      tw($('#sc2T1'), 0.420, 0.443, { o: [0, 1], y: [22, 0] });
+      tw($('#sc2T2'), 0.440, 0.463, { o: [0, 1], y: [22, 0] });
+      tw($('#sc2ClockWrap'), 0.465, 0.490, { o: [0, 1], y: [22, 0] });
+      tw($('#sc2Hh'), 0.500, 0.545, { r: [270, 330] }, lin);     // 9:00 → 11:00
+      tw($('#sc2Mm'), 0.500, 0.545, { r: [0, 720] }, lin);
+      const timeEl = $('#sc2Time');
+      let lastTime = '';
+      fx(0.500, 0.545, (t) => {
+        const m = Math.round(t * 120);
+        const s = `${9 + (m / 60 | 0)}:${String(m % 60).padStart(2, '0')}`;
+        if (s !== lastTime) { lastTime = s; timeEl.textContent = s; }
+      });
+      tw($('#sc2Promo'), 0.505, 0.530, { o: [0, 1], y: [22, 0] });
+
+      /* ---- scene 3: service ---- */
+      const sc3 = $('#howSc3');
+      tw(sc3, 0.550, 0.570, { o: [0, 1] });
+      tw(sc3, 0.735, 0.753, { o: [1, 0] });
+      tw($('#sc3Gate'), 0.560, 0.600, { y: [0, -172] }, easeIO); // gate rolls up
+      tw($('#sc3Car'), 0.575, 0.625, { x: [-300, 0] });
+      tw($('#sc3Car'), 0.622, 0.640, { o: [1, 0] });             // swallowed by the box
+      tw($('#sc3Bldg'), 0.640, 0.662, { o: [1, 0], s: [1, 0.94] });
+      tw($('#sc3Dial'), 0.652, 0.676, { o: [0, 1], s: [0.92, 1] });
+      fx(0.660, 0.730, (t) => { $('#sc3Ring').style.strokeDashoffset = (1 - t).toFixed(4); });
+      tw($('#sc3T1'), 0.600, 0.625, { o: [0, 1], y: [22, 0] });
+      tw($('#sc3T2'), 0.655, 0.680, { o: [0, 1], y: [22, 0] });
+      tw($('#sc3T3'), 0.695, 0.720, { o: [0, 1], y: [22, 0] });
+
+      /* ---- scene 4: cashback ---- */
+      const sc4 = $('#howSc4');
+      tw(sc4, 0.750, 0.770, { o: [0, 1] });
+      tw(sc4, 0.905, 0.923, { o: [1, 0] });
+      tw($('#sc4Phone'), 0.752, 0.785, { x: [-90, 0], o: [0, 1] });
+      const balEl = $('#sc4Balance');
+      const fmtRu = new Intl.NumberFormat('ru-RU');
+      let lastBal = -1;
+      fx(0.770, 0.860, (t) => {
+        const v = Math.round(easeOut(t) * 1250);
+        if (v !== lastBal) { lastBal = v; balEl.textContent = fmtRu.format(v) + ' ₽'; }
+      });
+      ['#sc4B1', '#sc4B2', '#sc4B3', '#sc4B4', '#sc4B5'].forEach((sel, i) => {
+        const a = 0.775 + i * 0.024;
+        tw($(sel), a, a + 0.020, { o: [0, 1], y: [22, 0] });
+      });
+
+      /* ---- outro ---- */
+      tw($('#howFinal h3'), 0.928, 0.962, { o: [0, 1], y: [26, 0] });
+      tw($('#howFinal .btn'), 0.945, 0.975, { o: [0, 1], s: [0.9, 1], y: [18, 0] });
+      const bar = $('#howProgressBar');
+      fx(0, 1, (t) => { bar.style.transform = `scaleX(${t.toFixed(4)})`; });
+
+      // `val` walks segments in start order — guarantee it
+      els.forEach(rec => ['x', 'y', 's', 'r', 'o'].forEach(k => {
+        if (rec[k]) rec[k].sort((m, n) => m.a - n.a);
+      }));
+
+      /* ---- drive: rAF-throttled scroll, same pattern as updateHScroll ---- */
+      let raf = 0, lastP = -1;
+      const update = (force) => {
+        raf = 0;
+        const top = window.scrollY + how.getBoundingClientRect().top;
+        const p = clamp01((window.scrollY - top) / (how.offsetHeight - window.innerHeight));
+        if (!force && p === lastP) return;
+        lastP = p;
+        sceneVis(p);
+        render(p);
+      };
+      const onScroll = () => { if (!raf) raf = requestAnimationFrame(() => update(false)); };
+      const refresh = () => {                  // resize / font load: re-measure + redraw
+        measure();
+        els.forEach(rec => { rec.cache = ''; });
+        fxs.forEach(f => { f.last = -1; });
+        update(true);
+      };
+      window.addEventListener('scroll', onScroll, { passive: true });
+      window.addEventListener('resize', refresh);
+      if (document.fonts && document.fonts.ready) document.fonts.ready.then(refresh);
+      refresh();
+    } catch (err) {
+      how.classList.remove('is-scrub');        // CSS falls back to the static list
+      console.error('how scrub disabled:', err);
+    }
   }
 
   /* ---------- Smooth-scroll polish for in-page links ---------- */
