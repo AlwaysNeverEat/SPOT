@@ -5,9 +5,10 @@
   // reduced-motion — touch devices keep plain scroll + light reveals.
   const GATE_ON = window.matchMedia('(min-width: 1024px) and (pointer: fine)').matches
     && !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  // True while the gate owns the scroll (lock playing / anchor glide) —
-  // shared so the tree collapse never reshuffles the page mid-lock.
-  let gateBusy = false;
+  // Gate scroll-ownership flags, shared with the tree so its runway never folds
+  // mid-lock: `locking` = a section reveal is playing (squash momentum under the
+  // white curtain); `navHold` = an anchor smooth-scroll is in flight (stand aside).
+  let locking = false, navHold = false;
 
   /* ---------- Header on scroll ---------- */
   const header = document.getElementById('header');
@@ -455,7 +456,7 @@
         return Math.min(2400, Math.max(1300, animEnd + RELEASE_DELAY));
       };
       const lockReveal = (sec) => {
-        gateBusy = true;
+        locking = true;
         lock();                                       // take scroll away — in place
         const curtain = sec.querySelector('.gate-curtain');
         if (curtain) curtain.classList.add('is-fixed'); // guarantee a full-white frame
@@ -463,7 +464,7 @@
           reveal(sec);                                // curtain leaves, content enters
           setTimeout(() => {
             unlock();                                 // hand scroll back, with a beat
-            gateBusy = false;
+            locking = false;
             if (curtain) curtain.remove();
           }, holdFor(sec));
         });
@@ -471,19 +472,21 @@
 
       /* ---- hard walls: the page can't scroll past an unrevealed section ----
          Fast scrolling used to overshoot the trigger, so the reveal played
-         half off-screen. Now the first unrevealed section is a dead end: any
-         overshoot is snapped back to its exact top (full-white frame, content
-         dead-centre), the reveal plays, then scroll is handed back. Snaps are
-         `behavior:'instant'` — html { scroll-behavior: smooth } would
-         otherwise turn the wall into a glide. */
+         half off-screen. Now the first unrevealed section is a dead end. The
+         white curtain is pinned full-screen FIRST, then the scroll snaps to the
+         wall behind it — so the correction is invisible (seamless), not a
+         visible jerk back. Residual momentum keeps getting squashed under the
+         same white curtain until the reveal hands scroll back.
+         Snaps are `behavior:'instant'`; html{scroll-behavior:smooth} would
+         otherwise turn the correction into a visible glide. */
       const snapTo = (y) => window.scrollTo({ top: y, behavior: 'instant' });
       let lockY = 0;
       const engage = () => {
-        if (gateBusy) {
-          // squash residual momentum that slipped past preventDefault
-          if (Math.abs(window.scrollY - lockY) > 1) snapTo(lockY);
+        if (locking) {
+          if (Math.abs(window.scrollY - lockY) > 1) snapTo(lockY);  // hidden under white
           return;
         }
+        if (navHold) return;                          // let anchor glides through
         // fade sections: IO can miss them during violent scrolling — this
         // position check guarantees they never end up passed-but-blank
         fadeSecs.forEach(s => {
@@ -494,8 +497,10 @@
         if (!sec) return;
         const wallY = sec.offsetTop;
         if (window.scrollY >= wallY - 2) {
+          const curtain = sec.querySelector('.gate-curtain');
+          if (curtain) curtain.classList.add('is-fixed');  // white covers the overshoot
           lockY = wallY;
-          snapTo(wallY);
+          snapTo(wallY);                              // …then snap behind it, unseen
           lockReveal(sec);
         }
       };
@@ -528,8 +533,8 @@
         const a = e.target.closest && e.target.closest('a[href^="#"]');
         if (!a || a.getAttribute('href').length < 2) return;
         revealForTarget(a.getAttribute('href'));
-        gateBusy = true;                              // sit out the smooth-scroll
-        setTimeout(() => { gateBusy = false; }, 700);
+        navHold = true;                               // sit out the smooth-scroll
+        setTimeout(() => { navHold = false; }, 800);
       }, true);
 
       if (location.hash && location.hash.length > 1) revealForTarget(location.hash);
@@ -572,7 +577,7 @@
     // tree is fully off-screen and no section lock owns the scroll — folding
     // mid-lock would fight the wall corrector and throw reveals off-screen.
     const maybeCollapse = () => {
-      if (collapsed || drawn < 0.999 || gateBusy) return;
+      if (collapsed || drawn < 0.999 || locking || navHold) return;
       const r = how.getBoundingClientRect();
       const below = r.bottom <= 0;             // user is past the tree
       if (!below && r.top < window.innerHeight) return;  // still (partly) in view

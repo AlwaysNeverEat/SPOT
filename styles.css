@@ -1087,8 +1087,11 @@ body.menu-open { overflow: hidden; }
   border-radius: 14px;
   box-shadow: 0 12px 32px rgba(31,157,63,0.4);
   white-space: nowrap;
+  width: max-content;          /* never let the absolute box shrink to a vertical sliver */
+  max-width: min(80vw, 340px);
   animation: cityHintIn .5s cubic-bezier(.34,1.56,.64,1) both;
 }
+.city-hint-text { white-space: nowrap; }
 .city-hint[hidden] { display: none; }
 .city-hint::before {
   content: '';
