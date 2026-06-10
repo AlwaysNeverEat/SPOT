@@ -210,7 +210,12 @@
     });
 
     const blockReveals = document.querySelectorAll('.step, .promo-card, .hpanel-card');
-    blockReveals.forEach(el => el.classList.add('reveal'));
+    blockReveals.forEach(el => {
+      // Inside lock/fade gates these cards enter via the section's own
+      // choreography (g-* staggers) — a .reveal here would double-animate.
+      if (GATE_ON && el.closest('[data-gate="lock"], [data-gate="fade"]')) return;
+      el.classList.add('reveal');
+    });
 
     const revealObs = new IntersectionObserver((entries) => {
       entries.forEach(e => {
@@ -378,14 +383,16 @@
         const q = (s) => sec.querySelector(s);
         const qa = (s) => Array.from(sec.querySelectorAll(s));
         switch (sec.id) {
+          case 'services':return { rise: [q('.hpanel-intro')], right: qa('.hpanel-card').slice(0, 3) };
           case 'brands':  return { rise: [q('.brands-sub'), q('.brand-marquee'), q('.cars-feed')] };
           case 'stations':return { left: [q('.stations-left')], right: [q('.stations-right')] };
+          case 'promo':   return { pop: qa('.promo-card') };
           case 'about':   return { rise: [q('.trust-sub'), ...qa('.trust-card')] };
-          case 'reviews': return { rise: [q('.reviews-deck'), q('.reviews-controls')] };
+          case 'reviews': return { rise: [q('.reviews-controls')], pop: [q('.reviews-deck')] };
           case 'faq':     return { rise: [q('.faq-sub'), ...qa('.faq-item')] };
           case 'signup':  return { pop: noH2(qa('.cta-inner > *')) };
           case 'prices':  return { rise: [q('.price-cta-card')] };
-          default:        return {};            // promo: cards animate via .reveal
+          default:        return {};
         }
       };
       const activateInner = (sec) => {
@@ -394,10 +401,10 @@
         const mc = sec.querySelector('.mark-circle');
         if (mc && mc._gateDraw) { mc._gateDraw(); mc._gateDraw = null; }
         const c = contentFor(sec);
-        if (c.rise)  staggerIn(c.rise,  'g-rise',  70);
+        if (c.rise)  staggerIn(c.rise,  'g-rise',  80);
         if (c.left)  staggerIn(c.left,  'g-left',  0);
-        if (c.right) staggerIn(c.right, 'g-right', 0);
-        if (c.pop)   staggerIn(c.pop,   'g-pop',   70);
+        if (c.right) staggerIn(c.right, 'g-right', 110);
+        if (c.pop)   staggerIn(c.pop,   'g-pop',   80);
       };
       const reveal = (sec) => {
         if (!sec || sec.classList.contains('is-revealed')) return;
@@ -437,14 +444,13 @@
 
       // Roughly when a section's content finishes its entrance, so we can hold
       // the lock through the whole animation (plus a beat) before releasing.
-      const RELEASE_DELAY = 480;
+      const RELEASE_DELAY = 600;
       const holdFor = (sec) => {
         if (sec.dataset.revealMs) return parseInt(sec.dataset.revealMs, 10);
         const c = contentFor(sec);
         const n = [].concat(c.rise || [], c.left || [], c.right || [], c.pop || []).filter(Boolean).length;
-        const step = (c.rise || c.pop) ? 70 : 0;
-        const animEnd = 40 + Math.max(0, n - 1) * step + 760;  // last item + its transition
-        return Math.min(2200, Math.max(1200, animEnd + RELEASE_DELAY));
+        const animEnd = 40 + Math.max(0, n - 1) * 90 + 800;    // last item + its transition
+        return Math.min(2400, Math.max(1300, animEnd + RELEASE_DELAY));
       };
       const lockReveal = (sec) => {
         busy = true;
@@ -540,6 +546,11 @@
     const fill = how.querySelector('.how-path-fill');
     const steps = Array.from(how.querySelectorAll('.how-step'));
     if (!fill || !steps.length) return;
+    const tree = how.querySelector('.how-tree');
+    const dot = how.querySelector('.how-dot');
+    // Geometric length in viewBox units (pathLength="1" only affects dashes),
+    // so getPointAtLength(drawn * realLen) gives 0–100 coords = CSS %.
+    const realLen = fill.getTotalLength();
     // node positions along the branch (0..1); a step pops a touch before the
     // line reaches it. First/last sit at the very ends (under the nodes).
     const TH = steps.map((_, i) => Math.max(0, (i + 0.55) / steps.length - 0.12));
@@ -552,7 +563,14 @@
       if (p <= drawn) return;                // once drawn, scrolling back keeps it
       drawn = p;
       fill.style.strokeDashoffset = (1 - drawn).toFixed(4);
+      if (dot) {
+        const pt = fill.getPointAtLength(drawn * realLen);
+        dot.style.left = pt.x + '%';
+        dot.style.top = pt.y + '%';
+        dot.classList.toggle('on', drawn > 0.01 && drawn < 0.99);
+      }
       steps.forEach((s, i) => { if (drawn >= TH[i]) s.classList.add('in'); });
+      if (drawn >= 0.999 && tree) tree.classList.add('done');
     };
     window.addEventListener('scroll', () => { if (!tick) { tick = true; requestAnimationFrame(update); } }, { passive: true });
     window.addEventListener('resize', update);
