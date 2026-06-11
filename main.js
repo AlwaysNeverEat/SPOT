@@ -660,19 +660,74 @@
         if (on !== sc.on) { sc.on = on; sc.el.classList.toggle('is-on', on); }
       });
 
-      /* ---- scene 1: booking ---- */
+      /* ---- 3D phone (scenes 1 & 4) ----
+         Lazy ES-module import; until it resolves the copy plays on its own.
+         View props use the same chained-segment semantics as `tw` (via val);
+         screen state/balance derive from p directly. Everything is pushed to
+         the module which renders on demand (only when something changed). */
+      let phone = null, phoneCanvas = null;
+      const phsegs = {};                       // x/y/ry/rz/s/o segment lists
+      const ptw = (key, a, b, f, t, e = easeOut) =>
+        (phsegs[key] || (phsegs[key] = [])).push({ a, b, f, t, e });
+      // scene 1: rise from below in 3/4, settle, square up on confirmation
+      ptw('x',  0.085, 0.125, -0.85, -0.85);
+      ptw('y',  0.085, 0.125, -4.8, -0.08);
+      ptw('y',  0.125, 0.255, -0.08, 0.08, lin);
+      ptw('ry', 0.085, 0.125, -0.65, -0.12);
+      ptw('ry', 0.125, 0.255, -0.12, 0.10, lin);
+      ptw('ry', 0.255, 0.285, 0.10, 0);
+      ptw('rz', 0.085, 0.125, -0.10, -0.025);
+      ptw('rz', 0.255, 0.285, -0.025, 0);
+      ptw('s',  0.085, 0.125, 1.18, 1.18);
+      ptw('s',  0.255, 0.285, 1.18, 1.24);
+      ptw('y',  0.295, 0.315, 0.08, 0.7);      // floats up as the scene fades
+      // scene 4: slide in from the left with the bonuses screen
+      ptw('x',  0.750, 0.785, -2.6, -0.85);
+      ptw('y',  0.750, 0.785, -0.4, 0);
+      ptw('ry', 0.750, 0.785, 0.55, 0.12);
+      ptw('ry', 0.785, 0.900, 0.12, -0.05, lin);
+      ptw('rz', 0.750, 0.785, 0, 0);
+      ptw('s',  0.750, 0.785, 1.10, 1.18);
+      // canvas opacity (the canvas lives outside the scene layers)
+      ptw('o',  0.085, 0.105, 0, 1);
+      ptw('o',  0.295, 0.315, 1, 0);
+      ptw('o',  0.750, 0.770, 0, 1);
+      ptw('o',  0.905, 0.923, 1, 0);
+      Object.keys(phsegs).forEach(k => phsegs[k].sort((m, n) => m.a - n.a));
+      // screen states: 0 booking, 1 call, 2 price, 3 confirmed, 4 bonuses
+      const SCREEN_PLAN = [
+        { a: 0.164, b: 0.182, from: 0, to: 1 },
+        { a: 0.214, b: 0.232, from: 1, to: 2 },
+        { a: 0.255, b: 0.275, from: 2, to: 3 },
+        { a: 0.500, b: 0.505, from: 3, to: 4 } // hard swap while hidden
+      ];
+      const screenAt = (p) => {
+        let a = 0, b = 0, mix = 0;
+        for (const tr of SCREEN_PLAN) {
+          if (p >= tr.b) { a = b = tr.to; }
+          else if (p > tr.a) { a = tr.from; b = tr.to; mix = easeIO((p - tr.a) / (tr.b - tr.a)); break; }
+          else break;
+        }
+        return { a, b, mix };
+      };
+      const updatePhone = (p) => {
+        if (!phone) return;
+        const o = phsegs.o ? val(phsegs.o, p) : 0;
+        phoneCanvas.style.opacity = o.toFixed(3);
+        const ui = screenAt(p);
+        ui.balance = Math.round(easeOut(clamp01((p - 0.77) / 0.09)) * 1250);
+        phone.update({
+          x: val(phsegs.x, p), y: val(phsegs.y, p),
+          ry: val(phsegs.ry, p), rz: val(phsegs.rz, p),
+          s: val(phsegs.s, p),
+          visible: o > 0.001
+        }, ui);
+      };
+
+      /* ---- scene 1: booking copy ---- */
       const sc1 = $('#howSc1');
       tw(sc1, 0.080, 0.100, { o: [0, 1] });
       tw(sc1, 0.295, 0.315, { o: [1, 0] });
-      tw($('#sc1Hand'), 0.085, 0.115, { y: [180, 0], o: [0, 1] });
-      tw($('#sc1Hand'), 0.258, 0.285, { y: [0, 200], o: [1, 0] }, easeIO);
-      const screenUi = (el, a1, a2, b1, b2) => {
-        tw(el, a1, a2, { o: [0, 1], y: [16, 0] });
-        if (b1) tw(el, b1, b2, { o: [1, 0], y: [0, -16] });
-      };
-      screenUi($('#sc1UiBook'),  0.112, 0.128, 0.162, 0.176);
-      screenUi($('#sc1UiCall'),  0.164, 0.180, 0.212, 0.226);
-      screenUi($('#sc1UiPrice'), 0.214, 0.230, 0.256, 0.270);
       const copyIn = (el, a1, a2, b1, b2) => {
         tw(el, a1, a2, { o: [0, 1], y: [22, 0] });
         if (b1) tw(el, b1, b2, { o: [1, 0.35] });   // done items dim, checklist-style
@@ -680,55 +735,28 @@
       copyIn($('#sc1T1'), 0.112, 0.135, 0.162, 0.176);
       copyIn($('#sc1T2'), 0.164, 0.187, 0.212, 0.226);
       copyIn($('#sc1T3'), 0.214, 0.237, 0.258, 0.272);
-      tw($('#sc1Badge'), 0.262, 0.288, { o: [0, 1], s: [0.7, 1], y: [10, 0] });
 
-      /* ---- scene 2: arriving ---- */
+      /* ---- scene 2: arriving (text only for now) ---- */
       const sc2 = $('#howSc2');
       tw(sc2, 0.300, 0.320, { o: [0, 1] });
       tw(sc2, 0.540, 0.558, { o: [1, 0] });
-      tw($('#sc2Marks'), 0.300, 0.460, { y: [0, -360] }, lin);   // camera travels
-      tw($('#sc2Car'), 0.330, 0.420, { y: [360, 0], o: [0, 1] });
-      tw($('#sc2Box'), 0.370, 0.420, { o: [0, 1], x: [40, 0] });
-      tw($('#sc2T1'), 0.420, 0.443, { o: [0, 1], y: [22, 0] });
-      tw($('#sc2T2'), 0.440, 0.463, { o: [0, 1], y: [22, 0] });
-      tw($('#sc2ClockWrap'), 0.465, 0.490, { o: [0, 1], y: [22, 0] });
-      tw($('#sc2Hh'), 0.500, 0.545, { r: [270, 330] }, lin);     // 9:00 → 11:00
-      tw($('#sc2Mm'), 0.500, 0.545, { r: [0, 720] }, lin);
-      const timeEl = $('#sc2Time');
-      let lastTime = '';
-      fx(0.500, 0.545, (t) => {
-        const m = Math.round(t * 120);
-        const s = `${9 + (m / 60 | 0)}:${String(m % 60).padStart(2, '0')}`;
-        if (s !== lastTime) { lastTime = s; timeEl.textContent = s; }
-      });
-      tw($('#sc2Promo'), 0.505, 0.530, { o: [0, 1], y: [22, 0] });
+      tw($('#sc2T1'), 0.330, 0.365, { o: [0, 1], y: [26, 0] });
+      tw($('#sc2T2'), 0.380, 0.415, { o: [0, 1], y: [26, 0] });
+      tw($('#sc2T3'), 0.430, 0.465, { o: [0, 1], y: [26, 0] });
+      tw($('#sc2Promo'), 0.480, 0.520, { o: [0, 1], y: [26, 0] });
 
-      /* ---- scene 3: service ---- */
+      /* ---- scene 3: service (text only for now) ---- */
       const sc3 = $('#howSc3');
       tw(sc3, 0.550, 0.570, { o: [0, 1] });
       tw(sc3, 0.735, 0.753, { o: [1, 0] });
-      tw($('#sc3Gate'), 0.560, 0.600, { y: [0, -172] }, easeIO); // gate rolls up
-      tw($('#sc3Car'), 0.575, 0.625, { x: [-300, 0] });
-      tw($('#sc3Car'), 0.622, 0.640, { o: [1, 0] });             // swallowed by the box
-      tw($('#sc3Bldg'), 0.640, 0.662, { o: [1, 0], s: [1, 0.94] });
-      tw($('#sc3Dial'), 0.652, 0.676, { o: [0, 1], s: [0.92, 1] });
-      fx(0.660, 0.730, (t) => { $('#sc3Ring').style.strokeDashoffset = (1 - t).toFixed(4); });
-      tw($('#sc3T1'), 0.600, 0.625, { o: [0, 1], y: [22, 0] });
-      tw($('#sc3T2'), 0.655, 0.680, { o: [0, 1], y: [22, 0] });
-      tw($('#sc3T3'), 0.695, 0.720, { o: [0, 1], y: [22, 0] });
+      tw($('#sc3T1'), 0.585, 0.625, { o: [0, 1], y: [26, 0] });
+      tw($('#sc3T2'), 0.640, 0.680, { o: [0, 1], y: [26, 0] });
+      tw($('#sc3T3'), 0.685, 0.720, { o: [0, 1], y: [26, 0] });
 
-      /* ---- scene 4: cashback ---- */
+      /* ---- scene 4: cashback copy ---- */
       const sc4 = $('#howSc4');
       tw(sc4, 0.750, 0.770, { o: [0, 1] });
       tw(sc4, 0.905, 0.923, { o: [1, 0] });
-      tw($('#sc4Phone'), 0.752, 0.785, { x: [-90, 0], o: [0, 1] });
-      const balEl = $('#sc4Balance');
-      const fmtRu = new Intl.NumberFormat('ru-RU');
-      let lastBal = -1;
-      fx(0.770, 0.860, (t) => {
-        const v = Math.round(easeOut(t) * 1250);
-        if (v !== lastBal) { lastBal = v; balEl.textContent = fmtRu.format(v) + ' ₽'; }
-      });
       ['#sc4B1', '#sc4B2', '#sc4B3', '#sc4B4', '#sc4B5'].forEach((sel, i) => {
         const a = 0.775 + i * 0.024;
         tw($(sel), a, a + 0.020, { o: [0, 1], y: [22, 0] });
@@ -755,18 +783,34 @@
         lastP = p;
         sceneVis(p);
         render(p);
+        updatePhone(p);
       };
       const onScroll = () => { if (!raf) raf = requestAnimationFrame(() => update(false)); };
       const refresh = () => {                  // resize / font load: re-measure + redraw
         measure();
         els.forEach(rec => { rec.cache = ''; });
         fxs.forEach(f => { f.last = -1; });
+        if (phone) phone.setSize(stage.clientWidth, stage.clientHeight);
         update(true);
       };
       window.addEventListener('scroll', onScroll, { passive: true });
       window.addEventListener('resize', refresh);
       if (document.fonts && document.fonts.ready) document.fonts.ready.then(refresh);
       refresh();
+
+      /* lazy-load the 3D phone; on any failure the section just runs text-only */
+      import('./assets/phone3d.js')
+        .then(m => m.createPhoneScene(stage))
+        .then(ph => {
+          phone = ph;
+          phoneCanvas = ph.canvas;
+          ph.setSize(stage.clientWidth, stage.clientHeight);
+          if (document.fonts && document.fonts.ready) {
+            document.fonts.ready.then(() => { if (phone) { phone.redraw(); updatePhone(lastP); } });
+          }
+          updatePhone(lastP < 0 ? 0 : lastP);
+        })
+        .catch(err => console.error('phone3d disabled:', err));
     } catch (err) {
       how.classList.remove('is-scrub');        // CSS falls back to the static list
       console.error('how scrub disabled:', err);

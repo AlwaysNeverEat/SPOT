@@ -49,6 +49,18 @@ PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers node scripts/screenshot.mjs \
   дословно. Скриншоты битов таймлайна — флаг `--progress "#how:0.42"` у
   `scripts/screenshot.mjs`; URL открывать с хэшем `#how`, чтобы гейт-секции выше
   раскрылись по deep-link и не отщёлкивали скролл назад.
+- **3D-телефон в `#how`** (сцены «Записаться»/«Кешбэк») — three.js, всё вендорено,
+  сборки нет: `assets/vendor/` (three.module.min.js + three.core.min.js + GLTFLoader/
+  DRACOLoader/RoomEnvironment + draco-декодер), модель `assets/models/phone.glb`
+  (Sketchfab-оригинал 26МБ ужат gltf-transform'ом: weld→simplify 0.4→quantize→draco,
+  686КБ). Bare-импорт `'three'` резолвит importmap в `<head>` index.html. Логика —
+  `assets/phone3d.js`, лениво импортируется из `setupHowScrub()`; рендер по требованию
+  (без rAF-цикла). Модель из Sketchfab лежит криво — выпрямляет захардкоженный
+  `BASE_QUAT` (решён офлайн по нормали меша экрана). UI экрана НЕ в модели: у её меша
+  «Pantalla» рваные UV и сверху непрозрачное чёрное стекло, поэтому UI рисуется на
+  2D-канвасе (CanvasTexture) на отдельном plane чуть выше стекла (`SCREEN_*`-константы).
+  В GLTFLoader.js поправлен импорт BufferGeometryUtils на `./` — не перезаписывать
+  бездумно при апгрейде three.
 - **React-слайдер машин** (`cars-slider/`, Vite → `assets/cars-slider/spot-cars-slider.js`).
   Правишь `.tsx` → обязательно `cd cars-slider && npm run build` и подними `?v=N`
   у `<script>` в `index.html`, иначе изменений не видно. Autoplay паузится вне
