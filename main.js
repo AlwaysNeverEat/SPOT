@@ -799,6 +799,10 @@
       refresh();
 
       /* lazy-load the 3D phone; on any failure the section just runs text-only */
+      if (location.protocol === 'file:') {
+        // double-clicked index.html: browsers block ES modules / model fetch from file://
+        console.warn('how 3d: страница открыта как file:// — браузер блокирует ES-модули и загрузку 3D-модели. Запусти локальный сервер в папке проекта: `npm run serve` или `py -m http.server 8080`, затем открой http://localhost:8080');
+      } else {
       import('./assets/phone3d.js')
         .then(m => m.createPhoneScene(stage))
         .then(ph => {
@@ -811,6 +815,7 @@
           updatePhone(lastP < 0 ? 0 : lastP);
         })
         .catch(err => console.error('phone3d disabled:', err));
+      }
     } catch (err) {
       how.classList.remove('is-scrub');        // CSS falls back to the static list
       console.error('how scrub disabled:', err);
