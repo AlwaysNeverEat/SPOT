@@ -47,7 +47,9 @@ const ROUTE = (() => {
   }
   return { segs, total, end: ROUTE_PTS[ROUTE_PTS.length - 1], start: ROUTE_PTS[0] };
 })();
-const METERS = 3200;                                      // route ≈ 3,2 км
+const SEG_M = [1200, 200, 600, 200];        // real distance (m) of each leg
+const TOTAL_M = SEG_M.reduce((a, b) => a + b, 0);
+const fmtDist = (m) => m >= 1000 ? (m / 1000).toFixed(1).replace('.', ',') + ' км' : Math.max(0, Math.round(m / 10) * 10) + ' м';
 function routeAt(t) {
   const d = clamp01(t) * ROUTE.total;
   for (const s of ROUTE.segs) {
@@ -58,16 +60,19 @@ function routeAt(t) {
   }
   return { x: ROUTE.start[0], y: ROUTE.start[1], ang: -Math.PI / 2 };
 }
-// next manoeuvre ahead of the cursor: distance to the upcoming turn + side
+// next manoeuvre + remaining trip, using the real per-leg distances above
 function maneuverAt(t) {
   const segs = ROUTE.segs, d = clamp01(t) * ROUTE.total;
   let k = 0; for (; k < segs.length; k++) if (d <= segs[k].acc + segs[k].len) break;
   k = Math.min(k, segs.length - 1);
-  const rem = (segs[k].acc + segs[k].len) - d;
-  if (k >= segs.length - 1) return { arrive: true, dist: rem };
+  const frac = clamp01((d - segs[k].acc) / segs[k].len);
+  const toTurn = (1 - frac) * SEG_M[k];
+  let remain = toTurn; for (let i = k + 1; i < SEG_M.length; i++) remain += SEG_M[i];
+  const mins = Math.max(1, Math.round(remain / (TOTAL_M / 8)));
+  if (k >= segs.length - 1) return { arrive: true, dist: toTurn, mins };
   const a = segs[k], b = segs[k + 1];
   const cross = (a.x2 - a.x1) * (b.y2 - b.y1) - (a.y2 - a.y1) * (b.x2 - b.x1);
-  return { arrive: false, dist: rem, right: cross > 0 };
+  return { arrive: false, dist: toTurn, right: cross > 0, mins };
 }
 
 function drawStreets(ctx) {
@@ -96,41 +101,47 @@ function drawRouteLine(ctx) {
   ctx.strokeStyle = 'rgba(23,128,49,0.20)'; ctx.lineWidth = 22; ctx.stroke();
   ctx.strokeStyle = C.green; ctx.lineWidth = 13; ctx.stroke();
 }
+// only the part of the route AHEAD of the cursor — the travelled bit vanishes
+function drawRouteAhead(ctx, t) {
+  const segs = ROUTE.segs, d = clamp01(t) * ROUTE.total, p = routeAt(t);
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  ctx.beginPath(); ctx.moveTo(p.x, p.y);
+  segs.forEach(s => { if (s.acc + s.len > d) ctx.lineTo(s.x2, s.y2); });
+  ctx.strokeStyle = 'rgba(23,128,49,0.20)'; ctx.lineWidth = 22; ctx.stroke();
+  ctx.strokeStyle = C.green; ctx.lineWidth = 13; ctx.stroke();
+}
+// destination marker — the SPOT pin silhouette (green teardrop + white hole)
 function drawPin(ctx, x, y) {
-  ctx.fillStyle = 'rgba(0,0,0,0.12)'; ctx.beginPath(); ctx.ellipse(x, y + 2, 16, 6, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = 'rgba(0,0,0,0.14)'; ctx.beginPath(); ctx.ellipse(x, y + 2, 16, 6, 0, 0, 7); ctx.fill();
   ctx.fillStyle = C.green;
   ctx.beginPath(); ctx.arc(x, y - 46, 27, 0, 7); ctx.fill();
   ctx.beginPath(); ctx.moveTo(x - 18, y - 32); ctx.lineTo(x + 18, y - 32); ctx.lineTo(x, y); ctx.closePath(); ctx.fill();
-  drawOil(ctx, x, y - 46, 1.6, '#fff');
+  ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(x, y - 48, 11, 0, 7); ctx.fill();
 }
 function drawYou(ctx, x, y) {
   ctx.fillStyle = 'rgba(31,157,63,0.16)'; ctx.beginPath(); ctx.arc(x, y, 30, 0, 7); ctx.fill();
   ctx.fillStyle = C.green; ctx.beginPath(); ctx.arc(x, y, 14, 0, 7); ctx.fill();
   ctx.strokeStyle = '#fff'; ctx.lineWidth = 5; ctx.stroke();
 }
-// the «you are driving» cursor — deliberately much larger than the route line
+// the «you are driving» cursor — clean chevron, deliberately bigger than the route
 function drawArrow(ctx, x, y, ang) {
+  const path = (c) => { c.beginPath(); c.moveTo(0, -42); c.lineTo(32, 38); c.lineTo(0, 18); c.lineTo(-32, 38); c.closePath(); };
   ctx.save(); ctx.translate(x, y); ctx.rotate(ang + Math.PI / 2);
-  ctx.fillStyle = 'rgba(0,0,0,0.22)'; ctx.beginPath(); ctx.ellipse(0, 12, 34, 14, 0, 0, 7); ctx.fill();
-  ctx.fillStyle = C.yellow; ctx.strokeStyle = '#fff'; ctx.lineWidth = 8; ctx.lineJoin = 'round';
-  ctx.beginPath(); ctx.moveTo(0, -52); ctx.lineTo(40, 40); ctx.lineTo(0, 18); ctx.lineTo(-40, 40); ctx.closePath();
-  ctx.fill(); ctx.stroke();
+  ctx.save();                                        // soft blurred shadow (no hard ellipse)
+  ctx.shadowColor = 'rgba(0,0,0,0.30)'; ctx.shadowBlur = 14; ctx.shadowOffsetY = 4;
+  ctx.fillStyle = C.yellow; path(ctx); ctx.fill();
+  ctx.restore();
+  ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.lineWidth = 7; ctx.strokeStyle = '#fff';
+  path(ctx); ctx.stroke();
   ctx.restore();
 }
-// dashboard oil-can lamp icon, drawn around (cx,cy)
-function drawOil(ctx, cx, cy, s, color) {
-  ctx.save(); ctx.translate(cx, cy); ctx.scale(s, s);
-  ctx.fillStyle = color; ctx.strokeStyle = color; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-  ctx.beginPath();                                   // lamp body
-  ctx.moveTo(-11, 1); ctx.quadraticCurveTo(-11, 7, -3, 7);
-  ctx.lineTo(8, 7); ctx.quadraticCurveTo(14, 7, 14, 2);
-  ctx.quadraticCurveTo(14, -3, 7, -3); ctx.lineTo(-2, -3);
-  ctx.quadraticCurveTo(-11, -3, -11, 1); ctx.fill();
-  ctx.lineWidth = 2.4;                               // spout + drop
-  ctx.beginPath(); ctx.moveTo(-7, -3); ctx.lineTo(-14, -10); ctx.stroke();
-  ctx.beginPath(); ctx.arc(-15, -7, 2.3, 0, 7); ctx.fill();
-  ctx.lineWidth = 2;                                 // waves under the lamp
-  ctx.beginPath(); ctx.moveTo(-9, 12); ctx.quadraticCurveTo(-6, 10, -3, 12); ctx.quadraticCurveTo(0, 14, 3, 12); ctx.stroke();
+// SPOT location-pin logo (24×24 viewBox), stroked white inside the UI chips
+const PIN_LOGO = new Path2D('M12 21C15.5 17.4 19 14.1764 19 10.2C19 6.22355 15.866 3 12 3C8.13401 3 5 6.22355 5 10.2C5 14.1764 8.5 17.4 12 21Z M12 13C13.6569 13 15 11.6569 15 10C15 8.34315 13.6569 7 12 7C10.3431 7 9 8.34315 9 10C9 11.6569 10.3431 13 12 13Z');
+function drawPinLogo(ctx, cx, cy, size, color) {
+  const s = size / 24;
+  ctx.save(); ctx.translate(cx, cy); ctx.scale(s, s); ctx.translate(-12, -12.5);
+  ctx.strokeStyle = color; ctx.lineWidth = 2.2; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  ctx.stroke(PIN_LOGO);
   ctx.restore();
 }
 // white bent turn-arrow (or arrival flag) inside the manoeuvre chip
@@ -155,7 +166,7 @@ function infoCard(ctx, y, title, sub) {
   ctx.fillStyle = '#fff'; rr(ctx, x, y, w, h, 26); ctx.fill();
   ctx.shadowColor = 'transparent';
   ctx.fillStyle = C.green; rr(ctx, x + 24, y + 28, 60, 60, 16); ctx.fill();
-  drawOil(ctx, x + 54, y + 58, 2.1, '#fff');
+  drawPinLogo(ctx, x + 54, y + 58, 44, '#fff');
   ctx.textAlign = 'left';
   ctx.fillStyle = C.ink; ctx.font = FONT(800, 33); ctx.fillText(title, x + 104, y + 54);
   ctx.fillStyle = C.muted; ctx.font = FONT(600, 25); ctx.fillText(sub, x + 104, y + 88);
@@ -186,17 +197,15 @@ function drawCall(ctx, ui) {
   ctx.fillStyle = C.ink; ctx.font = FONT(800, 52); ctx.fillText('SPOT', TEX_W / 2, 500);
   ctx.fillStyle = C.muted; ctx.font = FONT(600, 30); ctx.fillText('входящий звонок…', TEX_W / 2, 552);
 
-  // slide-to-answer track — the knob auto-slides across as we scroll
+  // slide-to-answer: «ответить» sits on the track and is swallowed by the
+  // green layer as the knob auto-slides across on scroll
   const tx = 54, tw = TEX_W - 108, ty = 800, th = 124, r = th / 2, at = clamp01(ui.answerT || 0);
   ctx.fillStyle = '#edf0ec'; rr(ctx, tx, ty, tw, th, r); ctx.fill();
   const knobR = r - 9, x0 = tx + r, travel = tw - 2 * r, kx = x0 + travel * at;
   ctx.save(); rr(ctx, tx, ty, tw, th, r); ctx.clip();
-  ctx.fillStyle = 'rgba(31,157,63,0.18)'; rr(ctx, tx, ty, (kx - tx) + knobR + 9, th, r); ctx.fill();
-  ctx.fillStyle = 'rgba(31,157,63,0.55)'; ctx.font = FONT(700, 30); ctx.textAlign = 'center';
-  ctx.fillText('ответить', tx + tw * 0.62, ty + th / 2 + 11);
-  // chevrons hinting the slide direction
-  ctx.strokeStyle = 'rgba(31,157,63,0.35)'; ctx.lineWidth = 6; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-  for (let i = 0; i < 3; i++) { const cx = tx + r + 84 + i * 30; ctx.beginPath(); ctx.moveTo(cx - 8, ty + th / 2 - 13); ctx.lineTo(cx + 8, ty + th / 2); ctx.lineTo(cx - 8, ty + th / 2 + 13); ctx.stroke(); }
+  ctx.fillStyle = C.muted; ctx.font = FONT(700, 30); ctx.textAlign = 'center';
+  ctx.fillText('ответить', tx + tw * 0.56, ty + th / 2 + 11);
+  ctx.fillStyle = C.green; rr(ctx, tx, ty, (kx - tx), th, r); ctx.fill();   // covers «ответить» behind the knob
   ctx.restore();
   // white knob with the green handset
   ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(kx, ty + th / 2, knobR, 0, 7); ctx.fill();
@@ -237,44 +246,41 @@ function drawNav(ctx, ui) {
   const t = ui.navT || 0, p = routeAt(t), ZOOM = 2.05, cx = TEX_W / 2, cy = TEX_H * 0.56;
   ctx.save();
   ctx.translate(cx, cy); ctx.scale(ZOOM, ZOOM); ctx.translate(-p.x, -p.y);
-  drawStreets(ctx); drawRouteLine(ctx); drawPin(ctx, ROUTE.end[0], ROUTE.end[1]);
+  drawStreets(ctx); drawRouteAhead(ctx, t); drawPin(ctx, ROUTE.end[0], ROUTE.end[1]);
   ctx.restore();
   drawArrow(ctx, cx, cy, p.ang);
 
-  const nf = clamp01(ui.notifT || 0);
-  // turn-by-turn manoeuvre chip — slides down to make room when the toast drops in
-  const mv = maneuverAt(t), mY = 36 + nf * 168, mx = 36, mw = TEX_W - 72, mh = 150;
+  // top header: [turn icon] distance-to-turn ............ time remaining
+  const mv = maneuverAt(t), x = 36, y = 40, w = TEX_W - 72, h = 150;
   ctx.save();
-  ctx.shadowColor = 'rgba(0,0,0,0.14)'; ctx.shadowBlur = 20; ctx.shadowOffsetY = 6;
-  ctx.fillStyle = '#fff'; rr(ctx, mx, mY, mw, mh, 28); ctx.fill(); ctx.shadowColor = 'transparent';
-  ctx.fillStyle = C.green; rr(ctx, mx + 24, mY + 25, 100, 100, 24); ctx.fill();
-  drawTurnArrow(ctx, mx + 74, mY + 75, mv);
+  ctx.shadowColor = 'rgba(0,0,0,0.13)'; ctx.shadowBlur = 20; ctx.shadowOffsetY = 6;
+  ctx.fillStyle = '#fff'; rr(ctx, x, y, w, h, 28); ctx.fill(); ctx.shadowColor = 'transparent';
+  ctx.fillStyle = C.green; rr(ctx, x + 22, y + 25, 100, 100, 24); ctx.fill();
+  drawTurnArrow(ctx, x + 72, y + 75, mv);
   ctx.textAlign = 'left'; ctx.fillStyle = C.ink;
-  if (mv.arrive) {
-    ctx.font = FONT(800, 42); ctx.fillText('Прибытие', mx + 150, mY + 72);
-    ctx.fillStyle = C.muted; ctx.font = FONT(600, 27); ctx.fillText('вы почти на месте', mx + 150, mY + 110);
+  if (mv.arrive) {                                   // no time on arrival — avoids a clash
+    ctx.font = FONT(800, 40); ctx.fillText('Прибытие', x + 146, y + 72);
+    ctx.fillStyle = C.muted; ctx.font = FONT(600, 25); ctx.fillText('вы на месте', x + 146, y + 106);
   } else {
-    const m = Math.max(0, Math.round(mv.dist / ROUTE.total * METERS / 10) * 10);
-    ctx.font = FONT(800, 54); ctx.fillText(m + ' м', mx + 150, mY + 74);
-    ctx.fillStyle = C.muted; ctx.font = FONT(600, 27); ctx.fillText('поворот ' + (mv.right ? 'направо' : 'налево'), mx + 150, mY + 110);
+    ctx.font = FONT(800, 42); ctx.fillText(fmtDist(mv.dist), x + 146, y + 92);
+    ctx.textAlign = 'right'; ctx.fillStyle = C.ink; ctx.font = FONT(800, 38);
+    ctx.fillText(mv.mins + ' мин', x + w - 28, y + 70);
+    ctx.fillStyle = C.muted; ctx.font = FONT(600, 24); ctx.fillText('осталось', x + w - 28, y + 104);
   }
   ctx.restore();
 
-  // bottom destination card — just «СТО SPOT» + ETA, no street
-  const mins = Math.max(0, Math.round((1 - t) * 8));
-  infoCard(ctx, 928, 'СТО SPOT', mins + ' мин до прибытия');
-
-  // «Скидка до 11:00» push notification drops in from the top
+  // «Скидка до 11:00» push notification rises from the bottom
+  const nf = clamp01(ui.notifT || 0);
   if (nf > 0.001) {
-    const y = -134 + 170 * easeOutBack(nf), x = 40, w = TEX_W - 80, h = 120;
+    const yb = TEX_H + 12 - 200 * easeOutBack(nf), bx = 40, bw = TEX_W - 80, bh = 120;
     ctx.save(); ctx.globalAlpha = clamp01(nf * 1.6);
-    ctx.shadowColor = 'rgba(0,0,0,0.20)'; ctx.shadowBlur = 26; ctx.shadowOffsetY = 9;
-    ctx.fillStyle = '#fff'; rr(ctx, x, y, w, h, 28); ctx.fill(); ctx.shadowColor = 'transparent';
-    ctx.fillStyle = C.yellow; rr(ctx, x + 22, y + 26, 68, 68, 20); ctx.fill();
-    ctx.fillStyle = C.ink; ctx.font = FONT(800, 40); ctx.textAlign = 'center'; ctx.fillText('%', x + 56, y + 71);
+    ctx.shadowColor = 'rgba(0,0,0,0.22)'; ctx.shadowBlur = 28; ctx.shadowOffsetY = 10;
+    ctx.fillStyle = '#fff'; rr(ctx, bx, yb, bw, bh, 28); ctx.fill(); ctx.shadowColor = 'transparent';
+    ctx.fillStyle = C.yellow; rr(ctx, bx + 22, yb + 26, 68, 68, 20); ctx.fill();
+    ctx.fillStyle = C.ink; ctx.font = FONT(800, 40); ctx.textAlign = 'center'; ctx.fillText('%', bx + 56, yb + 71);
     ctx.textAlign = 'left';
-    ctx.fillStyle = C.ink; ctx.font = FONT(800, 31); ctx.fillText('Скидка до 11:00', x + 110, y + 52);
-    ctx.fillStyle = C.muted; ctx.font = FONT(600, 25); ctx.fillText('−10% · Счастливые часы', x + 110, y + 88);
+    ctx.fillStyle = C.ink; ctx.font = FONT(800, 31); ctx.fillText('Скидка до 11:00', bx + 110, yb + 52);
+    ctx.fillStyle = C.muted; ctx.font = FONT(600, 25); ctx.fillText('−10% · Счастливые часы', bx + 110, yb + 88);
     ctx.restore();
   }
 }
