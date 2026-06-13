@@ -580,8 +580,9 @@ body.menu-open { overflow: hidden; }
 .how-stage { display: none; }
 
 @media (min-width: 1024px) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
-  /* must mirror SCRUB_ON in main.js (setupHowScrub) */
-  .how.is-scrub { height: 700vh; }
+  /* must mirror SCRUB_ON in main.js (setupHowScrub).
+     Tall on purpose — more scroll distance = slower, calmer scrubbing. */
+  .how.is-scrub { height: 1280vh; }
   .how.is-scrub .how-static { display: none; }
   .how.is-scrub .how-stage {
     display: block;
@@ -595,12 +596,13 @@ body.menu-open { overflow: hidden; }
   .how-head { position: absolute; top: 104px; left: 56px; right: 56px; z-index: 5; pointer-events: none; }
   .how-title { will-change: transform; transform-origin: top left; width: max-content; }
   .how-title h2 { margin: 0; white-space: nowrap; }
-  .how-chapter { position: absolute; left: 1px; top: 48px; height: 1.4rem; }
+  .how-title .hl, .how-copy .hl { color: var(--green); }
+  .how-chapter { position: absolute; left: 1px; top: 52px; height: 1.6rem; }
   .how-chapter span {
     position: absolute; left: 0; top: 0;
     white-space: nowrap;
-    font-size: 0.95rem; font-weight: 800;
-    letter-spacing: 0.08em; text-transform: uppercase;
+    font-size: 1.15rem; font-weight: 800;
+    letter-spacing: 0.06em; text-transform: uppercase;
     color: var(--green);
     opacity: 0;
   }
@@ -628,38 +630,32 @@ body.menu-open { overflow: hidden; }
   .how-scene.is-on { visibility: visible; }
   /* phone scenes: the 3D phone occupies the left half of the stage,
      so the copy column sits on the right half */
-  .how-scene--phone { justify-content: flex-start; padding-left: 52vw; }
+  .how-scene--phone { justify-content: flex-start; padding-left: 55vw; }
 
-  .how-copy { max-width: 430px; display: flex; flex-direction: column; gap: 1.15rem; }
+  .how-copy { max-width: 480px; display: flex; flex-direction: column; gap: 1.5rem; }
   .how-copy p {
-    font-size: 1.3rem; font-weight: 700; line-height: 1.3;
+    margin: 0;
+    font-size: clamp(1.5rem, 2.1vw, 2rem); font-weight: 800;
+    line-height: 1.18; letter-spacing: -0.01em;
     color: var(--ink);
-    display: flex; align-items: center; gap: 0.9rem;
+    will-change: transform, opacity, filter;
   }
-  .how-copy p.how-note { font-size: 1rem; font-weight: 500; color: var(--muted); }
-  .how-copy--list p { font-size: 1.12rem; }
-  /* text-only scenes: bigger, roomier copy in the centre */
-  .how-scene--text .how-copy { max-width: 620px; gap: 1.5rem; }
-  .how-scene--text .how-copy p { font-size: clamp(1.6rem, 2.4vw, 2.2rem); }
-  .how-scene--text .how-copy p.how-note { font-size: clamp(1.05rem, 1.4vw, 1.3rem); }
+  .how-copy--list { gap: 1.15rem; }
+  .how-copy--list p { font-size: clamp(1.2rem, 1.5vw, 1.5rem); font-weight: 700; }
+  /* swap scenes: every line stacked in one cell, engine fades them one by one */
+  .how-copy--swap { display: grid; }
+  .how-copy--swap > p { grid-area: 1 / 1; align-self: center; }
+  /* text-only scenes: centred, even bigger */
+  .how-scene--text .how-copy { max-width: 760px; gap: 1.8rem; }
+  .how-scene--text .how-copy p { font-size: clamp(2rem, 3vw, 2.9rem); }
 
-  .how-promo {
-    display: flex; flex-direction: column; gap: 0.15rem;
-    background: var(--yellow-soft);
-    border: 1px solid var(--yellow);
-    border-radius: var(--radius-sm);
-    padding: 0.9rem 1.2rem;
-    margin-top: 0.4rem;
-  }
-  .how-promo strong { font-size: 1.05rem; }
-  .how-promo span { color: var(--muted); font-size: 0.95rem; }
-
-  .how-final { flex-direction: column; gap: 2rem; text-align: center; }
+  .how-final { flex-direction: column; gap: 2.2rem; text-align: center; }
   .how-final.is-on { pointer-events: auto; }
-  .how-final h3 { font-size: clamp(2rem, 3.6vw, 3rem); font-weight: 800; letter-spacing: -0.02em; }
-
-  .how-progress { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; z-index: 3; }
-  .how-progress i { display: block; height: 100%; background: var(--green); transform-origin: left; transform: scaleX(0); }
+  .how-final h3 {
+    margin: 0; font-size: clamp(2.4rem, 4.4vw, 4rem); font-weight: 800;
+    line-height: 1.05; letter-spacing: -0.025em;
+    will-change: transform, opacity, filter;
+  }
 }
 
 /* =========== BRANDS =========== */

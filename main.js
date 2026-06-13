@@ -576,6 +576,9 @@
       const lin = (t) => t;
       const easeOut = (t) => 1 - Math.pow(1 - t, 3);
       const easeIO = (t) => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+      const smooth = (t) => t * t * t * (t * (t * 6 - 15) + 10);     // smootherstep, silky both ends
+      const back = (t) => { const c = 1.70158, c3 = c + 1; return 1 + c3 * Math.pow(t - 1, 3) + c * Math.pow(t - 1, 2); };
+      const tri = (p, a, b) => { const m = (a + b) / 2; return p < a || p > b ? 0 : p < m ? (p - a) / (m - a) : 1 - (p - m) / (b - m); };
 
       /* props per tween: x/y px, s scale, r deg, o opacity — [from, to] */
       const els = new Map();                  // el -> {x:[seg], y:[...], cache}
@@ -604,14 +607,16 @@
           const s = rec.s ? val(rec.s, p) : 1;
           const r = rec.r ? val(rec.r, p) : 0;
           const o = rec.o ? val(rec.o, p) : null;
+          const b = rec.b ? val(rec.b, p) : null;     // blur px (text entrances)
           let css = `translate3d(${x.toFixed(2)}px,${y.toFixed(2)}px,0)`;
           if (rec.s) css += ` scale(${s.toFixed(4)})`;
           if (rec.r) css += ` rotate(${r.toFixed(2)}deg)`;
-          const key = css + '|' + (o === null ? '' : o.toFixed(3));
+          const key = css + '|' + (o === null ? '' : o.toFixed(3)) + '|' + (b === null ? '' : b.toFixed(2));
           if (key === rec.cache) return;      // clamped tracks cost nothing
           rec.cache = key;
           el.style.transform = css;
           if (o !== null) el.style.opacity = o.toFixed(3);
+          if (b !== null) el.style.filter = b > 0.04 ? `blur(${b.toFixed(2)}px)` : '';
         });
         for (const f of fxs) {
           const t = f.ease(clamp01((p - f.a) / (f.b - f.a)));
@@ -631,29 +636,29 @@
         intro.x = (sr.width - tr.width) / 2 - (tr.left - sr.left);
         intro.y = sr.height * 0.46 - tr.height / 2 - (tr.top - sr.top);
       };
-      fx(0.03, 0.085, (t) => {
-        const e = easeIO(t);
+      fx(0.018, 0.075, (t) => {
+        const e = smooth(t);
         title.style.transform =
           `translate3d(${(intro.x * (1 - e)).toFixed(1)}px,${(intro.y * (1 - e)).toFixed(1)}px,0) scale(${(1 - 0.55 * e).toFixed(4)})`;
       });
 
       /* ---- chapter label (in/out pairs at chapter bounds) ---- */
       const chapter = (el, a1, a2, b1, b2) => {
-        tw(el, a1, a2, { o: [0, 1], y: [14, 0] });
-        tw(el, b1, b2, { o: [1, 0], y: [0, -14] });
+        tw(el, a1, a2, { o: [0, 1], y: [16, 0] }, smooth);
+        tw(el, b1, b2, { o: [1, 0], y: [0, -16] }, easeIO);
       };
-      chapter($('#howCh1'), 0.085, 0.105, 0.290, 0.310);
-      chapter($('#howCh2'), 0.300, 0.320, 0.540, 0.560);
-      chapter($('#howCh3'), 0.550, 0.570, 0.730, 0.750);
-      chapter($('#howCh4'), 0.740, 0.760, 0.900, 0.920);
+      chapter($('#howCh1'), 0.050, 0.085, 0.245, 0.275);
+      chapter($('#howCh2'), 0.265, 0.300, 0.500, 0.530);
+      chapter($('#howCh3'), 0.520, 0.555, 0.720, 0.750);
+      chapter($('#howCh4'), 0.740, 0.775, 0.900, 0.930);
 
       /* ---- scene layers: visibility per range + opacity tweens ---- */
       const scenes = [
-        { el: $('#howSc1'),  a: 0.070, b: 0.320 },
-        { el: $('#howSc2'),  a: 0.295, b: 0.560 },
-        { el: $('#howSc3'),  a: 0.545, b: 0.755 },
-        { el: $('#howSc4'),  a: 0.745, b: 0.925 },
-        { el: $('#howFinal'), a: 0.915, b: 1.001 }
+        { el: $('#howSc1'),  a: 0.040, b: 0.300 },
+        { el: $('#howSc2'),  a: 0.260, b: 0.535 },
+        { el: $('#howSc3'),  a: 0.510, b: 0.740 },
+        { el: $('#howSc4'),  a: 0.730, b: 0.935 },
+        { el: $('#howFinal'), a: 0.905, b: 1.001 }
       ];
       const sceneVis = (p) => scenes.forEach(sc => {
         const on = p >= sc.a && p <= sc.b;
@@ -666,40 +671,56 @@
          screen state/balance derive from p directly. Everything is pushed to
          the module which renders on demand (only when something changed). */
       let phone = null, phoneCanvas = null;
-      const phsegs = {};                       // x/y/ry/rz/s/o segment lists
-      const ptw = (key, a, b, f, t, e = easeOut) =>
+      const phsegs = {};                       // x/y/rx/ry/rz/s/o segment lists
+      const ptw = (key, a, b, f, t, e = smooth) =>
         (phsegs[key] || (phsegs[key] = [])).push({ a, b, f, t, e });
-      // scene 1: rise from below in 3/4, settle, square up on confirmation
-      ptw('x',  0.085, 0.125, -0.85, -0.85);
-      ptw('y',  0.085, 0.125, -4.8, -0.08);
-      ptw('y',  0.125, 0.255, -0.08, 0.08, lin);
-      ptw('ry', 0.085, 0.125, -0.65, -0.12);
-      ptw('ry', 0.125, 0.255, -0.12, 0.10, lin);
-      ptw('ry', 0.255, 0.285, 0.10, 0);
-      ptw('rz', 0.085, 0.125, -0.10, -0.025);
-      ptw('rz', 0.255, 0.285, -0.025, 0);
-      ptw('s',  0.085, 0.125, 1.18, 1.18);
-      ptw('s',  0.255, 0.285, 1.18, 1.24);
-      ptw('y',  0.295, 0.315, 0.08, 0.7);      // floats up as the scene fades
-      // scene 4: slide in from the left with the bonuses screen
-      ptw('x',  0.750, 0.785, -2.6, -0.85);
-      ptw('y',  0.750, 0.785, -0.4, 0);
-      ptw('ry', 0.750, 0.785, 0.55, 0.12);
-      ptw('ry', 0.785, 0.900, 0.12, -0.05, lin);
-      ptw('rz', 0.750, 0.785, 0, 0);
-      ptw('s',  0.750, 0.785, 1.10, 1.18);
-      // canvas opacity (the canvas lives outside the scene layers)
-      ptw('o',  0.085, 0.105, 0, 1);
-      ptw('o',  0.295, 0.315, 1, 0);
-      ptw('o',  0.750, 0.770, 0, 1);
-      ptw('o',  0.905, 0.923, 1, 0);
+      // HERO_RX tilts the phone back so we look down onto the screen (scene 2 nav).
+      const HERO_RX = -0.52;
+      /* scenes 1→2 are one continuous shot: the phone rises with the booking,
+         glides to centre as the map opens, then tilts back into a big hero pose
+         for the drive. scene 4 is a separate slide-in for the cashback screen. */
+      // x
+      ptw('x', 0.060, 0.130, -0.90, -0.90);
+      ptw('x', 0.250, 0.320, -0.90, -0.52);    // glide toward centre for the map
+      ptw('x', 0.370, 0.435, -0.52, -0.98);    // settle left as it tilts (copy on the right)
+      ptw('x', 0.745, 0.795, -2.70, -0.86);    // scene 4 slide-in
+      // y
+      ptw('y', 0.060, 0.140, -5.0, 0.0, back);  // rise from below with a soft landing
+      ptw('y', 0.370, 0.435, 0.0, -0.50);       // drop down so the bottom runs off-frame
+      ptw('y', 0.500, 0.540, -0.50, -1.7);      // slides out
+      ptw('y', 0.745, 0.795, -0.40, 0.0);
+      // rx (pitch)
+      ptw('rx', 0.370, 0.435, 0.0, HERO_RX);
+      ptw('rx', 0.690, 0.740, HERO_RX, 0.0);    // reset while hidden, before scene 4
+      // ry (yaw)
+      ptw('ry', 0.060, 0.140, -0.62, -0.12);
+      ptw('ry', 0.140, 0.250, -0.12, 0.07);
+      ptw('ry', 0.250, 0.320, 0.07, 0.0);       // square up to camera for the map
+      ptw('ry', 0.745, 0.795, 0.52, 0.10);
+      ptw('ry', 0.795, 0.900, 0.10, -0.05);
+      // rz (roll)
+      ptw('rz', 0.060, 0.140, -0.09, -0.02);
+      ptw('rz', 0.250, 0.320, -0.02, 0.0);
+      // s (scale)
+      ptw('s', 0.060, 0.140, 1.16, 1.16);
+      ptw('s', 0.250, 0.320, 1.16, 1.28);       // closer when centred
+      ptw('s', 0.370, 0.435, 1.28, 1.58);       // big hero for the drive
+      ptw('s', 0.745, 0.795, 1.06, 1.20);
+      // o (canvas opacity — phone lives across scenes 1+2, then returns for 4)
+      ptw('o', 0.058, 0.100, 0, 1, easeOut);
+      ptw('o', 0.500, 0.540, 1, 0, easeIO);
+      ptw('o', 0.745, 0.780, 0, 1, easeOut);
+      ptw('o', 0.905, 0.930, 1, 0, easeIO);
       Object.keys(phsegs).forEach(k => phsegs[k].sort((m, n) => m.a - n.a));
-      // screen states: 0 booking, 1 call, 2 price, 3 confirmed, 4 bonuses
+      const vv = (k, p, d) => phsegs[k] ? val(phsegs[k], p) : d;
+      // screen states: 0 booking 1 call 2 price 3 confirmed 4 map 5 nav 6 bonuses
       const SCREEN_PLAN = [
-        { a: 0.164, b: 0.182, from: 0, to: 1 },
-        { a: 0.214, b: 0.232, from: 1, to: 2 },
-        { a: 0.255, b: 0.275, from: 2, to: 3 },
-        { a: 0.500, b: 0.505, from: 3, to: 4 } // hard swap while hidden
+        { a: 0.140, b: 0.170, from: 0, to: 1 },
+        { a: 0.190, b: 0.220, from: 1, to: 2 },
+        { a: 0.232, b: 0.262, from: 2, to: 3 },
+        { a: 0.290, b: 0.330, from: 3, to: 4 }, // confirmed → map as it centres
+        { a: 0.382, b: 0.418, from: 4, to: 5 }, // map → nav as it tilts back
+        { a: 0.640, b: 0.646, from: 5, to: 6 }  // nav → bonuses (hard swap while hidden)
       ];
       const screenAt = (p) => {
         let a = 0, b = 0, mix = 0;
@@ -712,64 +733,57 @@
       };
       const updatePhone = (p) => {
         if (!phone) return;
-        const o = phsegs.o ? val(phsegs.o, p) : 0;
+        const o = vv('o', p, 0);
         phoneCanvas.style.opacity = o.toFixed(3);
         const ui = screenAt(p);
-        ui.balance = Math.round(easeOut(clamp01((p - 0.77) / 0.09)) * 1250);
+        ui.balance = Math.round(easeOut(clamp01((p - 0.775) / 0.10)) * 1250);
+        ui.navT = smooth(clamp01((p - 0.408) / 0.092));   // arrow travels the route
+        ui.pressT = tri(p, 0.350, 0.376);                  // «Поехали» press
+        ui.notifT = smooth(clamp01((p - 0.430) / 0.040));  // «Скидка до 11:00» drops in
         phone.update({
-          x: val(phsegs.x, p), y: val(phsegs.y, p),
-          ry: val(phsegs.ry, p), rz: val(phsegs.rz, p),
-          s: val(phsegs.s, p),
+          x: vv('x', p, 0), y: vv('y', p, 0), rx: vv('rx', p, 0),
+          ry: vv('ry', p, 0), rz: vv('rz', p, 0), s: vv('s', p, 1),
           visible: o > 0.001
         }, ui);
       };
 
-      /* ---- scene 1: booking copy ---- */
-      const sc1 = $('#howSc1');
-      tw(sc1, 0.080, 0.100, { o: [0, 1] });
-      tw(sc1, 0.295, 0.315, { o: [1, 0] });
-      const copyIn = (el, a1, a2, b1, b2) => {
-        tw(el, a1, a2, { o: [0, 1], y: [22, 0] });
-        if (b1) tw(el, b1, b2, { o: [1, 0.35] });   // done items dim, checklist-style
-      };
-      copyIn($('#sc1T1'), 0.112, 0.135, 0.162, 0.176);
-      copyIn($('#sc1T2'), 0.164, 0.187, 0.212, 0.226);
-      copyIn($('#sc1T3'), 0.214, 0.237, 0.258, 0.272);
+      /* ---- text entrances: bigger, softer — rise + scale + blur ---- */
+      const rise = (el, a, w = 0.05) => tw(el, a, a + w, { o: [0, 1], y: [40, 0], s: [0.96, 1], b: [10, 0] }, smooth);
+      const fade = (el, a, w = 0.035) => tw(el, a, a + w, { o: [1, 0], y: [0, -28], b: [0, 8] }, easeIO);
+      const dim = (el, a, w = 0.04) => tw(el, a, a + w, { o: [1, 0.3] }, easeIO);
 
-      /* ---- scene 2: arriving (text only for now) ---- */
-      const sc2 = $('#howSc2');
-      tw(sc2, 0.300, 0.320, { o: [0, 1] });
-      tw(sc2, 0.540, 0.558, { o: [1, 0] });
-      tw($('#sc2T1'), 0.330, 0.365, { o: [0, 1], y: [26, 0] });
-      tw($('#sc2T2'), 0.380, 0.415, { o: [0, 1], y: [26, 0] });
-      tw($('#sc2T3'), 0.430, 0.465, { o: [0, 1], y: [26, 0] });
-      tw($('#sc2Promo'), 0.480, 0.520, { o: [0, 1], y: [26, 0] });
+      /* ---- scene 1: booking copy (checklist — done lines dim) ---- */
+      tw($('#howSc1'), 0.050, 0.085, { o: [0, 1] });
+      tw($('#howSc1'), 0.285, 0.310, { o: [1, 0] });
+      rise($('#sc1T1'), 0.090, 0.055); dim($('#sc1T1'), 0.175);
+      rise($('#sc1T2'), 0.165, 0.055); dim($('#sc1T2'), 0.230);
+      rise($('#sc1T3'), 0.230, 0.055);
 
-      /* ---- scene 3: service (text only for now) ---- */
-      const sc3 = $('#howSc3');
-      tw(sc3, 0.550, 0.570, { o: [0, 1] });
-      tw(sc3, 0.735, 0.753, { o: [1, 0] });
-      tw($('#sc3T1'), 0.585, 0.625, { o: [0, 1], y: [26, 0] });
-      tw($('#sc3T2'), 0.640, 0.680, { o: [0, 1], y: [26, 0] });
-      tw($('#sc3T3'), 0.685, 0.720, { o: [0, 1], y: [26, 0] });
+      /* ---- scene 2: arriving — single big lines that swap as the drive plays ---- */
+      tw($('#howSc2'), 0.270, 0.300, { o: [0, 1] });
+      tw($('#howSc2'), 0.510, 0.535, { o: [1, 0] });
+      rise($('#sc2T1'), 0.290, 0.05);  fade($('#sc2T1'), 0.360);
+      rise($('#sc2T2'), 0.405, 0.05);  fade($('#sc2T2'), 0.452);
+      rise($('#sc2T3'), 0.458, 0.05);
+
+      /* ---- scene 3: service — text only, big and staggered ---- */
+      tw($('#howSc3'), 0.520, 0.550, { o: [0, 1] });
+      tw($('#howSc3'), 0.715, 0.740, { o: [1, 0] });
+      rise($('#sc3T1'), 0.540, 0.06);
+      rise($('#sc3T2'), 0.605, 0.06);
+      rise($('#sc3T3'), 0.668, 0.06);
 
       /* ---- scene 4: cashback copy ---- */
-      const sc4 = $('#howSc4');
-      tw(sc4, 0.750, 0.770, { o: [0, 1] });
-      tw(sc4, 0.905, 0.923, { o: [1, 0] });
-      ['#sc4B1', '#sc4B2', '#sc4B3', '#sc4B4', '#sc4B5'].forEach((sel, i) => {
-        const a = 0.775 + i * 0.024;
-        tw($(sel), a, a + 0.020, { o: [0, 1], y: [22, 0] });
-      });
+      tw($('#howSc4'), 0.745, 0.775, { o: [0, 1] });
+      tw($('#howSc4'), 0.905, 0.928, { o: [1, 0] });
+      ['#sc4B1', '#sc4B2', '#sc4B3', '#sc4B4', '#sc4B5'].forEach((sel, i) => rise($(sel), 0.785 + i * 0.026, 0.045));
 
       /* ---- outro ---- */
-      tw($('#howFinal h3'), 0.928, 0.962, { o: [0, 1], y: [26, 0] });
-      tw($('#howFinal .btn'), 0.945, 0.975, { o: [0, 1], s: [0.9, 1], y: [18, 0] });
-      const bar = $('#howProgressBar');
-      fx(0, 1, (t) => { bar.style.transform = `scaleX(${t.toFixed(4)})`; });
+      tw($('#howFinal h3'), 0.930, 0.972, { o: [0, 1], y: [34, 0], s: [0.96, 1], b: [10, 0] }, smooth);
+      tw($('#howFinal .btn'), 0.950, 0.988, { o: [0, 1], s: [0.9, 1], y: [20, 0] }, back);
 
       // `val` walks segments in start order — guarantee it
-      els.forEach(rec => ['x', 'y', 's', 'r', 'o'].forEach(k => {
+      els.forEach(rec => ['x', 'y', 's', 'r', 'o', 'b'].forEach(k => {
         if (rec[k]) rec[k].sort((m, n) => m.a - n.a);
       }));
 

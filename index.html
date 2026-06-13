@@ -251,7 +251,7 @@
        timeline in main.js (setupHowScrub). Free scrubbing both ways, no lock. -->
   <div class="how-stage">
     <div class="how-head">
-      <div class="how-title"><h2>Как это работает в SPOT?</h2></div>
+      <div class="how-title"><h2>Как это работает в <span class="hl">SPOT</span>?</h2></div>
       <div class="how-chapter" aria-hidden="true">
         <span id="howCh1">01 · Записаться</span>
         <span id="howCh2">02 · Приехать</span>
@@ -269,16 +269,12 @@
       </div>
     </div>
 
-    <!-- ---- Scene 2: arriving (text only for now) ---- -->
-    <div class="how-scene how-scene--text" id="howSc2">
-      <div class="how-copy">
-        <p id="sc2T1">Подъезжайте к назначенному времени</p>
-        <p class="how-note" id="sc2T2">Бокс держим всего 3 минуты — не опаздывайте!</p>
-        <p class="how-note" id="sc2T3">Работаем с 9:00 до 21:00</p>
-        <div class="how-promo" id="sc2Promo">
-          <strong>Счастливые часы</strong>
-          <span>−10% на все услуги с 9:00 до 11:00</span>
-        </div>
+    <!-- ---- Scene 2: arriving (3D phone tilts into a hero pose, live nav map) ---- -->
+    <div class="how-scene how-scene--phone how-scene--map" id="howSc2">
+      <div class="how-copy how-copy--swap">
+        <p id="sc2T1">Едем к&nbsp;ближайшей точке <span class="hl">SPOT</span></p>
+        <p id="sc2T2">23 станции по&nbsp;городу — система выберет ближайшую к&nbsp;вам</p>
+        <p id="sc2T3"><span class="hl">Счастливые часы:</span> −10% на&nbsp;всё, если приехать до&nbsp;11:00</p>
       </div>
     </div>
 
@@ -303,11 +299,9 @@
     </div>
     <!-- ---- Outro ---- -->
     <div class="how-scene how-final" id="howFinal">
-      <h3>Вот так просто. Записывайтесь</h3>
+      <h3>Вот так просто.<br>Записывайтесь</h3>
       <button type="button" class="btn btn-primary big" data-open-booking>Записаться онлайн</button>
     </div>
-
-    <div class="how-progress" aria-hidden="true"><i id="howProgressBar"></i></div>
   </div>
 
   <!-- Mobile / reduced-motion / no-JS: plain stacked steps -->
