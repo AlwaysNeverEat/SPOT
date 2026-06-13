@@ -239,6 +239,7 @@
     setupMarkerCircle();
 
     setupRevealGate(revealObs);
+    setupHowScrub();
   }, 0);
 
   /* ---------- Hand-drawn red marker circle (draw-in + idle "boil") ---------- */
@@ -404,7 +405,6 @@
         sec.querySelectorAll('.line-reveal, .reveal').forEach(el => revealObs.observe(el));
         const mc = sec.querySelector('.mark-circle');
         if (mc && mc._gateDraw) { mc._gateDraw(); mc._gateDraw = null; }
-        if (sec._drawTree) sec._drawTree();           // "4 steps" branch draws itself
         const c = contentFor(sec);
         if (c.rise)  staggerIn(c.rise,  'g-rise',  80);
         if (c.left)  staggerIn(c.left,  'g-left',  0);
@@ -543,8 +543,6 @@
       lockSecs.forEach(sec => {
         if (sec.getBoundingClientRect().top <= window.innerHeight * 0.06) revealNow(sec);
       });
-
-      setupHowTree();
     } catch (err) {
       // Any failure: strip curtains / hidden states so nothing is stranded blank.
       document.querySelectorAll('.gate-curtain').forEach(c => c.remove());
@@ -556,44 +554,287 @@
     }
   }
 
-  /* ---------- "4 steps" tree: winding branch drawn on a timer at reveal ----------
-     The tree is now a normal full-screen lock section. When it reveals, the
-     branch draws itself once over ~1.7s (firefly riding the tip, nodes popping
-     in sequence). It's a one-shot — re-scrolling the section never re-pins or
-     re-draws it, so the page is never "held" on later passes. Mobile keeps the
-     plain stacked layout (the draw never runs there). */
-  function setupHowTree() {
+  /* ---------- "How it works" story: pinned stage scrubbed by scroll ----------
+     #how is a 700vh runway with a sticky 100vh stage. Scroll progress 0..1
+     drives a declarative timeline — fully reversible, no scroll lock. Per
+     element+property the segments chain (before the first one it holds its
+     "from", between/after segments it holds the latest "to"), so the engine
+     also establishes every initial state on the first render. Desktop fine
+     pointers only; mobile/reduced-motion keep the static .how-static list. */
+  function setupHowScrub() {
     const how = document.getElementById('how');
     if (!how) return;
-    const fill = how.querySelector('.how-path-fill');
-    const steps = Array.from(how.querySelectorAll('.how-step'));
-    if (!fill || !steps.length) return;
-    const tree = how.querySelector('.how-tree');
-    const dot = how.querySelector('.how-dot');
-    const realLen = fill.getTotalLength();    // viewBox units; coords map to CSS %
-    const TH = steps.map((_, i) => Math.max(0, (i + 0.55) / steps.length - 0.12));
-    let played = false;
-    how._drawTree = (duration = 1700) => {
-      if (played) return;
-      played = true;
-      const ease = (t) => 1 - Math.pow(1 - t, 2);   // easeOutQuad
-      const t0 = performance.now();
-      const frame = (now) => {
-        const t = Math.min((now - t0) / duration, 1);
-        const e = ease(t);
-        fill.style.strokeDashoffset = (1 - e).toFixed(4);
-        if (dot) {
-          const pt = fill.getPointAtLength(e * realLen);
-          dot.style.left = pt.x + '%';
-          dot.style.top = pt.y + '%';
-          dot.classList.toggle('on', e > 0.01 && e < 0.985);
+    const SCRUB_ON = window.matchMedia('(min-width: 1024px) and (pointer: fine)').matches
+      && !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!SCRUB_ON) return;
+    try {
+      const stage = how.querySelector('.how-stage');
+      const $ = (s) => stage.querySelector(s);
+      how.classList.add('is-scrub');          // CSS swaps static list → stage
+
+      const clamp01 = (v) => v < 0 ? 0 : v > 1 ? 1 : v;
+      const lin = (t) => t;
+      const easeOut = (t) => 1 - Math.pow(1 - t, 3);
+      const easeIO = (t) => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+      const smooth = (t) => t * t * t * (t * (t * 6 - 15) + 10);     // smootherstep, silky both ends
+      const back = (t) => { const c = 1.70158, c3 = c + 1; return 1 + c3 * Math.pow(t - 1, 3) + c * Math.pow(t - 1, 2); };
+      const tri = (p, a, b) => { const m = (a + b) / 2; return p < a || p > b ? 0 : p < m ? (p - a) / (m - a) : 1 - (p - m) / (b - m); };
+
+      /* props per tween: x/y px, s scale, r deg, o opacity — [from, to] */
+      const els = new Map();                  // el -> {x:[seg], y:[...], cache}
+      const tw = (el, a, b, props, ease = easeOut) => {
+        if (!el) return;
+        let rec = els.get(el);
+        if (!rec) { rec = { cache: '' }; els.set(el, rec); }
+        for (const k in props) {
+          (rec[k] || (rec[k] = [])).push({ a, b, f: props[k][0], t: props[k][1], e: ease });
         }
-        steps.forEach((s, i) => { if (e >= TH[i]) s.classList.add('in'); });
-        if (t < 1) requestAnimationFrame(frame);
-        else { if (dot) dot.classList.remove('on'); if (tree) tree.classList.add('done'); }
       };
-      requestAnimationFrame(frame);
-    };
+      const fxs = [];                         // custom segments (text, dashes)
+      const fx = (a, b, fn, ease = lin) => fxs.push({ a, b, fn, ease, last: -1 });
+
+      // active segment for a prop = the last one already started (else first)
+      const val = (segs, p) => {
+        let s = segs[0];
+        for (let i = 1; i < segs.length; i++) { if (segs[i].a <= p) s = segs[i]; else break; }
+        return s.f + (s.t - s.f) * s.e(clamp01((p - s.a) / (s.b - s.a)));
+      };
+
+      const render = (p) => {
+        els.forEach((rec, el) => {
+          const x = rec.x ? val(rec.x, p) : 0;
+          const y = rec.y ? val(rec.y, p) : 0;
+          const s = rec.s ? val(rec.s, p) : 1;
+          const r = rec.r ? val(rec.r, p) : 0;
+          const o = rec.o ? val(rec.o, p) : null;
+          const b = rec.b ? val(rec.b, p) : null;     // blur px (text entrances)
+          let css = `translate3d(${x.toFixed(2)}px,${y.toFixed(2)}px,0)`;
+          if (rec.s) css += ` scale(${s.toFixed(4)})`;
+          if (rec.r) css += ` rotate(${r.toFixed(2)}deg)`;
+          const key = css + '|' + (o === null ? '' : o.toFixed(3)) + '|' + (b === null ? '' : b.toFixed(2));
+          if (key === rec.cache) return;      // clamped tracks cost nothing
+          rec.cache = key;
+          el.style.transform = css;
+          if (o !== null) el.style.opacity = o.toFixed(3);
+          if (b !== null) el.style.filter = b > 0.04 ? `blur(${b.toFixed(2)}px)` : '';
+        });
+        for (const f of fxs) {
+          const t = f.ease(clamp01((p - f.a) / (f.b - f.a)));
+          if (t !== f.last) { f.last = t; f.fn(t); }
+        }
+      };
+
+      /* ---- title FLIP: laid out docked top-left, starts screen-centred ---- */
+      const title = $('.how-title');
+      const intro = { x: 0, y: 0 };
+      const measure = () => {
+        const prev = title.style.transform;
+        title.style.transform = 'none';
+        const tr = title.getBoundingClientRect();
+        const sr = stage.getBoundingClientRect();
+        title.style.transform = prev;
+        intro.x = (sr.width - tr.width) / 2 - (tr.left - sr.left);
+        intro.y = sr.height * 0.46 - tr.height / 2 - (tr.top - sr.top);
+      };
+      fx(0.018, 0.075, (t) => {
+        const e = smooth(t);
+        title.style.transform =
+          `translate3d(${(intro.x * (1 - e)).toFixed(1)}px,${(intro.y * (1 - e)).toFixed(1)}px,0) scale(${(1 - 0.55 * e).toFixed(4)})`;
+      });
+
+      /* ---- chapter label (in/out pairs at chapter bounds) ---- */
+      const chapter = (el, a1, a2, b1, b2) => {
+        tw(el, a1, a2, { o: [0, 1], y: [16, 0] }, smooth);
+        tw(el, b1, b2, { o: [1, 0], y: [0, -16] }, easeIO);
+      };
+      chapter($('#howCh1'), 0.050, 0.085, 0.245, 0.275);
+      chapter($('#howCh2'), 0.265, 0.300, 0.500, 0.530);
+      chapter($('#howCh3'), 0.520, 0.555, 0.720, 0.750);
+      chapter($('#howCh4'), 0.740, 0.775, 0.900, 0.930);
+
+      /* ---- scene layers: visibility per range + opacity tweens ---- */
+      const scenes = [
+        { el: $('#howSc1'),  a: 0.040, b: 0.300 },
+        { el: $('#howSc2'),  a: 0.260, b: 0.535 },
+        { el: $('#howSc3'),  a: 0.510, b: 0.740 },
+        { el: $('#howSc4'),  a: 0.730, b: 0.935 },
+        { el: $('#howFinal'), a: 0.905, b: 1.001 }
+      ];
+      const sceneVis = (p) => scenes.forEach(sc => {
+        const on = p >= sc.a && p <= sc.b;
+        if (on !== sc.on) { sc.on = on; sc.el.classList.toggle('is-on', on); }
+      });
+
+      /* ---- 3D phone (scenes 1 & 4) ----
+         Lazy ES-module import; until it resolves the copy plays on its own.
+         View props use the same chained-segment semantics as `tw` (via val);
+         screen state/balance derive from p directly. Everything is pushed to
+         the module which renders on demand (only when something changed). */
+      let phone = null, phoneCanvas = null;
+      const phsegs = {};                       // x/y/rx/ry/rz/s/o segment lists
+      const ptw = (key, a, b, f, t, e = smooth) =>
+        (phsegs[key] || (phsegs[key] = [])).push({ a, b, f, t, e });
+      // HERO_RX tilts the phone back so we look down onto the screen (scene 2 nav).
+      const HERO_RX = -0.52;
+      /* scenes 1→2 are one continuous shot: the phone rises with the booking,
+         glides to centre as the map opens, then tilts back into a big hero pose
+         for the drive. scene 4 is a separate slide-in for the cashback screen. */
+      // x
+      ptw('x', 0.060, 0.130, -0.90, -0.90);
+      ptw('x', 0.250, 0.320, -0.90, -0.52);    // glide toward centre for the map
+      ptw('x', 0.370, 0.435, -0.52, -0.98);    // settle left as it tilts (copy on the right)
+      ptw('x', 0.745, 0.795, -2.70, -0.86);    // scene 4 slide-in
+      // y
+      ptw('y', 0.060, 0.140, -5.0, 0.0, back);  // rise from below with a soft landing
+      ptw('y', 0.370, 0.435, 0.0, -0.50);       // drop down so the bottom runs off-frame
+      ptw('y', 0.500, 0.540, -0.50, -1.7);      // slides out
+      ptw('y', 0.745, 0.795, -0.40, 0.0);
+      // rx (pitch)
+      ptw('rx', 0.370, 0.435, 0.0, HERO_RX);
+      ptw('rx', 0.690, 0.740, HERO_RX, 0.0);    // reset while hidden, before scene 4
+      // ry (yaw)
+      ptw('ry', 0.060, 0.140, -0.62, -0.12);
+      ptw('ry', 0.140, 0.250, -0.12, 0.07);
+      ptw('ry', 0.250, 0.320, 0.07, 0.0);       // square up to camera for the map
+      ptw('ry', 0.745, 0.795, 0.52, 0.10);
+      ptw('ry', 0.795, 0.900, 0.10, -0.05);
+      // rz (roll)
+      ptw('rz', 0.060, 0.140, -0.09, -0.02);
+      ptw('rz', 0.250, 0.320, -0.02, 0.0);
+      // s (scale)
+      ptw('s', 0.060, 0.140, 1.16, 1.16);
+      ptw('s', 0.250, 0.320, 1.16, 1.28);       // closer when centred
+      ptw('s', 0.370, 0.435, 1.28, 1.58);       // big hero for the drive
+      ptw('s', 0.745, 0.795, 1.06, 1.20);
+      // o (canvas opacity — phone lives across scenes 1+2, then returns for 4)
+      ptw('o', 0.058, 0.100, 0, 1, easeOut);
+      ptw('o', 0.500, 0.540, 1, 0, easeIO);
+      ptw('o', 0.745, 0.780, 0, 1, easeOut);
+      ptw('o', 0.905, 0.930, 1, 0, easeIO);
+      Object.keys(phsegs).forEach(k => phsegs[k].sort((m, n) => m.a - n.a));
+      const vv = (k, p, d) => phsegs[k] ? val(phsegs[k], p) : d;
+      // screen states: 0 booking 1 call 2 price 3 confirmed 4 map 5 nav 6 bonuses
+      const SCREEN_PLAN = [
+        { a: 0.135, b: 0.165, from: 0, to: 1 },
+        { a: 0.205, b: 0.235, from: 1, to: 2 }, // call dwells so the slide can play
+        { a: 0.248, b: 0.275, from: 2, to: 3 },
+        { a: 0.292, b: 0.332, from: 3, to: 4 }, // confirmed → map as it centres
+        { a: 0.382, b: 0.418, from: 4, to: 5 }, // map → nav as it tilts back
+        { a: 0.640, b: 0.646, from: 5, to: 6 }  // nav → bonuses (hard swap while hidden)
+      ];
+      const screenAt = (p) => {
+        let a = 0, b = 0, mix = 0;
+        for (const tr of SCREEN_PLAN) {
+          if (p >= tr.b) { a = b = tr.to; }
+          else if (p > tr.a) { a = tr.from; b = tr.to; mix = easeIO((p - tr.a) / (tr.b - tr.a)); break; }
+          else break;
+        }
+        return { a, b, mix };
+      };
+      const updatePhone = (p) => {
+        if (!phone) return;
+        const o = vv('o', p, 0);
+        phoneCanvas.style.opacity = o.toFixed(3);
+        const ui = screenAt(p);
+        ui.balance = Math.round(easeOut(clamp01((p - 0.775) / 0.10)) * 1250);
+        ui.answerT = smooth(clamp01((p - 0.168) / 0.036)); // call slide-to-answer
+        ui.navT = smooth(clamp01((p - 0.408) / 0.092));    // arrow travels the route
+        ui.pressT = tri(p, 0.350, 0.376);                  // «Поехали» press
+        ui.notifT = smooth(clamp01((p - 0.430) / 0.040));  // «Скидка до 11:00» drops in
+        phone.update({
+          x: vv('x', p, 0), y: vv('y', p, 0), rx: vv('rx', p, 0),
+          ry: vv('ry', p, 0), rz: vv('rz', p, 0), s: vv('s', p, 1),
+          visible: o > 0.001
+        }, ui);
+      };
+
+      /* ---- text entrances: bigger, softer — rise + scale + blur ---- */
+      const rise = (el, a, w = 0.05) => tw(el, a, a + w, { o: [0, 1], y: [40, 0], s: [0.96, 1], b: [10, 0] }, smooth);
+      const fade = (el, a, w = 0.035) => tw(el, a, a + w, { o: [1, 0], y: [0, -28], b: [0, 8] }, easeIO);
+      const dim = (el, a, w = 0.04) => tw(el, a, a + w, { o: [1, 0.3] }, easeIO);
+
+      /* ---- scene 1: booking copy (checklist — done lines dim) ---- */
+      tw($('#howSc1'), 0.050, 0.085, { o: [0, 1] });
+      tw($('#howSc1'), 0.285, 0.310, { o: [1, 0] });
+      rise($('#sc1T1'), 0.090, 0.055); dim($('#sc1T1'), 0.170);
+      rise($('#sc1T2'), 0.168, 0.055); dim($('#sc1T2'), 0.250);
+      rise($('#sc1T3'), 0.250, 0.055);
+
+      /* ---- scene 2: arriving — single big lines that swap as the drive plays ---- */
+      tw($('#howSc2'), 0.270, 0.300, { o: [0, 1] });
+      tw($('#howSc2'), 0.510, 0.535, { o: [1, 0] });
+      rise($('#sc2T1'), 0.290, 0.05);  fade($('#sc2T1'), 0.360);
+      rise($('#sc2T2'), 0.405, 0.05);  fade($('#sc2T2'), 0.452);
+      rise($('#sc2T3'), 0.458, 0.05);
+
+      /* ---- scene 3: service — text only, big and staggered ---- */
+      tw($('#howSc3'), 0.520, 0.550, { o: [0, 1] });
+      tw($('#howSc3'), 0.715, 0.740, { o: [1, 0] });
+      rise($('#sc3T1'), 0.540, 0.06);
+      rise($('#sc3T2'), 0.605, 0.06);
+      rise($('#sc3T3'), 0.668, 0.06);
+
+      /* ---- scene 4: cashback copy ---- */
+      tw($('#howSc4'), 0.745, 0.775, { o: [0, 1] });
+      tw($('#howSc4'), 0.905, 0.928, { o: [1, 0] });
+      ['#sc4B1', '#sc4B2', '#sc4B3', '#sc4B4', '#sc4B5'].forEach((sel, i) => rise($(sel), 0.785 + i * 0.026, 0.045));
+
+      /* ---- outro ---- */
+      tw($('#howFinal h3'), 0.930, 0.972, { o: [0, 1], y: [34, 0], s: [0.96, 1], b: [10, 0] }, smooth);
+      tw($('#howFinal .btn'), 0.950, 0.988, { o: [0, 1], s: [0.9, 1], y: [20, 0] }, back);
+
+      // `val` walks segments in start order — guarantee it
+      els.forEach(rec => ['x', 'y', 's', 'r', 'o', 'b'].forEach(k => {
+        if (rec[k]) rec[k].sort((m, n) => m.a - n.a);
+      }));
+
+      /* ---- drive: rAF-throttled scroll, same pattern as updateHScroll ---- */
+      let raf = 0, lastP = -1;
+      const update = (force) => {
+        raf = 0;
+        const top = window.scrollY + how.getBoundingClientRect().top;
+        const p = clamp01((window.scrollY - top) / (how.offsetHeight - window.innerHeight));
+        if (!force && p === lastP) return;
+        lastP = p;
+        sceneVis(p);
+        render(p);
+        updatePhone(p);
+      };
+      const onScroll = () => { if (!raf) raf = requestAnimationFrame(() => update(false)); };
+      const refresh = () => {                  // resize / font load: re-measure + redraw
+        measure();
+        els.forEach(rec => { rec.cache = ''; });
+        fxs.forEach(f => { f.last = -1; });
+        if (phone) phone.setSize(stage.clientWidth, stage.clientHeight);
+        update(true);
+      };
+      window.addEventListener('scroll', onScroll, { passive: true });
+      window.addEventListener('resize', refresh);
+      if (document.fonts && document.fonts.ready) document.fonts.ready.then(refresh);
+      refresh();
+
+      /* lazy-load the 3D phone; on any failure the section just runs text-only */
+      if (location.protocol === 'file:') {
+        // double-clicked index.html: browsers block ES modules / model fetch from file://
+        console.warn('how 3d: страница открыта как file:// — браузер блокирует ES-модули и загрузку 3D-модели. Запусти локальный сервер в папке проекта: `npm run serve` или `py -m http.server 8080`, затем открой http://localhost:8080');
+      } else {
+      import('./assets/phone3d.js')
+        .then(m => m.createPhoneScene(stage))
+        .then(ph => {
+          phone = ph;
+          phoneCanvas = ph.canvas;
+          ph.setSize(stage.clientWidth, stage.clientHeight);
+          if (document.fonts && document.fonts.ready) {
+            document.fonts.ready.then(() => { if (phone) { phone.redraw(); updatePhone(lastP); } });
+          }
+          updatePhone(lastP < 0 ? 0 : lastP);
+        })
+        .catch(err => console.error('phone3d disabled:', err));
+      }
+    } catch (err) {
+      how.classList.remove('is-scrub');        // CSS falls back to the static list
+      console.error('how scrub disabled:', err);
+    }
   }
 
   /* ---------- Smooth-scroll polish for in-page links ---------- */

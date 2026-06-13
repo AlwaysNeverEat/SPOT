@@ -10,6 +10,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
 <link rel="stylesheet" href="styles.css" />
+<!-- resolves the bare 'three' specifier inside the vendored ES modules
+     (assets/vendor/*); the 3D phone module is lazy-imported by main.js -->
+<script type="importmap">{"imports":{"three":"./assets/vendor/three.module.min.js"}}</script>
 </head>
 <body>
 
@@ -242,43 +245,94 @@
   </div>
 </section>
 
-<!-- =========== HOW IT WORKS — VERTICAL PARALLAX =========== -->
-<section class="how" id="how" data-gate="lock" data-reveal="tree" data-reveal-ms="2300">
-  <div class="how-pin">
-    <h2>4 шага до чистого двигателя</h2>
-    <div class="how-tree">
-      <svg class="how-path" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-        <path class="how-path-bg"   d="M40 10 C40 23 60 24 60 37 C60 50 40 50 40 63 C40 77 60 77 60 90" pathLength="1"/>
-        <path class="how-path-fill" d="M40 10 C40 23 60 24 60 37 C60 50 40 50 40 63 C40 77 60 77 60 90" pathLength="1"/>
-      </svg>
-      <span class="how-dot" aria-hidden="true"></span>
-      <div class="how-step how-step--right" style="left:40%; top:10%">
-        <div class="step-num">1</div>
-        <div class="how-step-card">
-          <h4>Запись онлайн</h4>
-          <p>Выбираете удобную станцию, дату и время. Подбираем масло по VIN или марке.</p>
-        </div>
+<!-- =========== HOW IT WORKS — SCROLL-SCRUBBED STORY =========== -->
+<section class="how" id="how">
+  <!-- Desktop: 700vh runway, sticky 100vh stage, scroll progress drives the
+       timeline in main.js (setupHowScrub). Free scrubbing both ways, no lock. -->
+  <div class="how-stage">
+    <div class="how-head">
+      <div class="how-title"><h2>Как это работает в <span class="hl">SPOT</span>?</h2></div>
+      <div class="how-chapter" aria-hidden="true">
+        <span id="howCh1">01 · Записаться</span>
+        <span id="howCh2">02 · Приехать</span>
+        <span id="howCh3">03 · Обслуживание</span>
+        <span id="howCh4">04 · Кешбэк</span>
       </div>
-      <div class="how-step how-step--left" style="left:60%; top:37%">
-        <div class="step-num">2</div>
-        <div class="how-step-card">
-          <h4>Приезжаете к нам</h4>
-          <p>23 станции по городу — найдётся рядом с домом или работой. Без очередей.</p>
-        </div>
+    </div>
+
+    <!-- ---- Scene 1: booking (3D phone on the canvas, copy on the right) ---- -->
+    <div class="how-scene how-scene--phone" id="howSc1">
+      <div class="how-copy">
+        <p id="sc1T1">Записаться можно онлайн — на любое удобное время</p>
+        <p id="sc1T2">…или по телефону</p>
+        <p id="sc1T3">И сразу узнать предварительную стоимость работ</p>
       </div>
-      <div class="how-step how-step--right" style="left:40%; top:63%">
-        <div class="step-num">3</div>
-        <div class="how-step-card">
-          <h4>Замена за 30 минут</h4>
-          <p>Сертифицированный мастер делает работу при вас. Можно наблюдать через стекло.</p>
-        </div>
+    </div>
+
+    <!-- ---- Scene 2: arriving (3D phone tilts into a hero pose, live nav map) ---- -->
+    <div class="how-scene how-scene--phone how-scene--map" id="howSc2">
+      <div class="how-copy how-copy--swap">
+        <p id="sc2T1">Едем к&nbsp;ближайшей точке <span class="hl">SPOT</span></p>
+        <p id="sc2T2">23 станции по&nbsp;городу — система выберет ближайшую к&nbsp;вам</p>
+        <p id="sc2T3"><span class="hl">Приезжать утром выгодно</span> — и&nbsp;дорога свободнее, и&nbsp;цены ниже</p>
       </div>
-      <div class="how-step how-step--left" style="left:60%; top:90%">
-        <div class="step-num">4</div>
-        <div class="how-step-card">
-          <h4>Кешбэк и бонусы</h4>
-          <p>10% кешбэка за своевременную замену. Оплата бонусами до 100% следующего визита.</p>
-        </div>
+    </div>
+
+    <!-- ---- Scene 3: service (text only for now) ---- -->
+    <div class="how-scene how-scene--text" id="howSc3">
+      <div class="how-copy">
+        <p id="sc3T1">Замена масла — менее 30 минут</p>
+        <p id="sc3T2">Подождите в зоне отдыха</p>
+        <p id="sc3T3">…или наблюдайте за процессом</p>
+      </div>
+    </div>
+
+    <!-- ---- Scene 4: cashback (3D phone shows the bonus balance) ---- -->
+    <div class="how-scene how-scene--phone" id="howSc4">
+      <div class="how-copy how-copy--list">
+        <p id="sc4B1">10% кешбэка за своевременную замену масла</p>
+        <p id="sc4B2">1 бонус = 1 ₽</p>
+        <p id="sc4B3">Бонусы действуют 12 месяцев</p>
+        <p id="sc4B4">Начисляются в течение суток после визита</p>
+        <p id="sc4B5">Оплата бонусами — до 100% следующего визита</p>
+      </div>
+    </div>
+    <!-- ---- Outro ---- -->
+    <div class="how-scene how-final" id="howFinal">
+      <h3>Вот так просто.<br>Записывайтесь</h3>
+      <button type="button" class="btn btn-primary big" data-open-booking>Записаться онлайн</button>
+    </div>
+  </div>
+
+  <!-- Mobile / reduced-motion / no-JS: plain stacked steps -->
+  <div class="how-static">
+    <h2>Как это работает в SPOT?</h2>
+    <div class="how-step">
+      <div class="step-num">1</div>
+      <div class="how-step-card">
+        <h4>Записаться</h4>
+        <p>Онлайн на любое время или по телефону. Сразу узнаете предварительную стоимость работ.</p>
+      </div>
+    </div>
+    <div class="how-step">
+      <div class="step-num">2</div>
+      <div class="how-step-card">
+        <h4>Приехать</h4>
+        <p>Подъезжайте к назначенному времени — бокс держим 3 минуты. С 9:00 до 11:00 действуют «Счастливые часы»: −10% на всё.</p>
+      </div>
+    </div>
+    <div class="how-step">
+      <div class="step-num">3</div>
+      <div class="how-step-card">
+        <h4>Обслуживание</h4>
+        <p>Замена масла занимает менее 30 минут. Подождите в зоне отдыха или наблюдайте за процессом.</p>
+      </div>
+    </div>
+    <div class="how-step">
+      <div class="step-num">4</div>
+      <div class="how-step-card">
+        <h4>Кешбэк</h4>
+        <p>10% бонусами за своевременную замену. 1 бонус = 1 ₽, оплата до 100% следующего визита.</p>
       </div>
     </div>
   </div>
