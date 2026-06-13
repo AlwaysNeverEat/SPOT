@@ -33,8 +33,11 @@ const easeOutBack = (t) => { const c = 1.70158, c3 = c + 1; return 1 + c3 * Math
 
 function rr(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.roundRect(x, y, w, h, r); }
 
-/* ---- map geometry (texture coords), shared by overview + nav ---- */
-const ROUTE_PTS = [[256, 884], [256, 770], [170, 700], [170, 556], [318, 484], [318, 356], [262, 280]];
+/* ---- map geometry (texture coords), shared by overview + nav ----
+   Roads are a grid; the route runs ALONG road centrelines and only turns at
+   intersections, so it reads like a real navigation route. */
+const VX = [120, 256, 392], HY = [300, 470, 624, 800];   // road centrelines
+const ROUTE_PTS = [[256, 1040], [256, 624], [392, 624], [392, 300], [256, 300]];
 const ROUTE = (() => {
   const segs = []; let total = 0;
   for (let i = 0; i < ROUTE_PTS.length - 1; i++) {
@@ -44,6 +47,7 @@ const ROUTE = (() => {
   }
   return { segs, total, end: ROUTE_PTS[ROUTE_PTS.length - 1], start: ROUTE_PTS[0] };
 })();
+const METERS = 3200;                                      // route ≈ 3,2 км
 function routeAt(t) {
   const d = clamp01(t) * ROUTE.total;
   for (const s of ROUTE.segs) {
@@ -54,62 +58,111 @@ function routeAt(t) {
   }
   return { x: ROUTE.start[0], y: ROUTE.start[1], ang: -Math.PI / 2 };
 }
+// next manoeuvre ahead of the cursor: distance to the upcoming turn + side
+function maneuverAt(t) {
+  const segs = ROUTE.segs, d = clamp01(t) * ROUTE.total;
+  let k = 0; for (; k < segs.length; k++) if (d <= segs[k].acc + segs[k].len) break;
+  k = Math.min(k, segs.length - 1);
+  const rem = (segs[k].acc + segs[k].len) - d;
+  if (k >= segs.length - 1) return { arrive: true, dist: rem };
+  const a = segs[k], b = segs[k + 1];
+  const cross = (a.x2 - a.x1) * (b.y2 - b.y1) - (a.y2 - a.y1) * (b.x2 - b.x1);
+  return { arrive: false, dist: rem, right: cross > 0 };
+}
 
 function drawStreets(ctx) {
-  ctx.fillStyle = '#e9ece9';
-  ctx.fillRect(-500, -500, TEX_W + 1000, TEX_H + 1000);
-  ctx.fillStyle = '#e0e5df';                       // city blocks
-  [[28, 300, 150, 120], [336, 380, 150, 130], [56, 560, 120, 150], [300, 650, 170, 120], [120, 120, 150, 100]]
-    .forEach(([x, y, w, h]) => { rr(ctx, x, y, w, h, 16); ctx.fill(); });
-  ctx.fillStyle = '#d2e6cf'; rr(ctx, 330, 150, 175, 150, 20); ctx.fill();   // a park
-  const roads = [[-80, 470, 600, 470], [-80, 250, 600, 250], [-80, 760, 600, 760],
-                 [150, -80, 150, 1180], [402, -80, 402, 1180]];
-  ctx.lineCap = 'round';
-  ctx.strokeStyle = '#d6dad5'; ctx.lineWidth = 32;
-  roads.forEach(r => { ctx.beginPath(); ctx.moveTo(r[0], r[1]); ctx.lineTo(r[2], r[3]); ctx.stroke(); });
-  ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 23;
-  roads.forEach(r => { ctx.beginPath(); ctx.moveTo(r[0], r[1]); ctx.lineTo(r[2], r[3]); ctx.stroke(); });
+  ctx.fillStyle = '#e7eae5'; ctx.fillRect(-600, -600, TEX_W + 1200, TEX_H + 1200);
+  // building blocks fill the space between roads
+  ctx.fillStyle = '#dfe3dc';
+  [[150, 330, 76, 110], [286, 330, 76, 110], [30, 500, 60, 94], [150, 500, 76, 94],
+   [286, 500, 76, 94], [422, 500, 60, 94], [30, 654, 60, 116], [150, 654, 76, 116],
+   [422, 654, 60, 116], [150, 830, 76, 130], [286, 830, 76, 130]]
+    .forEach(([x, y, w, h]) => { rr(ctx, x, y, w, h, 12); ctx.fill(); });
+  ctx.fillStyle = '#d4e7cf'; rr(ctx, 30, 330, 60, 110, 14); ctx.fill();   // parks
+  rr(ctx, 286, 654, 76, 116, 14); ctx.fill();
+  // roads: grey casing then white fill, so the green route sits inside the road
+  ctx.lineCap = 'butt';
+  ctx.strokeStyle = '#d4d8d1'; ctx.lineWidth = 38;
+  VX.forEach(x => { ctx.beginPath(); ctx.moveTo(x, -300); ctx.lineTo(x, 1400); ctx.stroke(); });
+  HY.forEach(y => { ctx.beginPath(); ctx.moveTo(-300, y); ctx.lineTo(820, y); ctx.stroke(); });
+  ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 28;
+  VX.forEach(x => { ctx.beginPath(); ctx.moveTo(x, -300); ctx.lineTo(x, 1400); ctx.stroke(); });
+  HY.forEach(y => { ctx.beginPath(); ctx.moveTo(-300, y); ctx.lineTo(820, y); ctx.stroke(); });
 }
 function drawRouteLine(ctx) {
   ctx.lineCap = 'round'; ctx.lineJoin = 'round';
   ctx.beginPath(); ctx.moveTo(ROUTE.segs[0].x1, ROUTE.segs[0].y1);
   ROUTE.segs.forEach(s => ctx.lineTo(s.x2, s.y2));
-  ctx.strokeStyle = 'rgba(23,128,49,0.22)'; ctx.lineWidth = 24; ctx.stroke();
-  ctx.strokeStyle = C.green; ctx.lineWidth = 14; ctx.stroke();
+  ctx.strokeStyle = 'rgba(23,128,49,0.20)'; ctx.lineWidth = 22; ctx.stroke();
+  ctx.strokeStyle = C.green; ctx.lineWidth = 13; ctx.stroke();
 }
 function drawPin(ctx, x, y) {
-  ctx.fillStyle = 'rgba(0,0,0,0.12)'; ctx.beginPath(); ctx.ellipse(x, y + 2, 15, 6, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = 'rgba(0,0,0,0.12)'; ctx.beginPath(); ctx.ellipse(x, y + 2, 16, 6, 0, 0, 7); ctx.fill();
   ctx.fillStyle = C.green;
-  ctx.beginPath(); ctx.arc(x, y - 44, 25, 0, 7); ctx.fill();
-  ctx.beginPath(); ctx.moveTo(x - 17, y - 31); ctx.lineTo(x + 17, y - 31); ctx.lineTo(x, y); ctx.closePath(); ctx.fill();
-  ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(x, y - 44, 10, 0, 7); ctx.fill();
+  ctx.beginPath(); ctx.arc(x, y - 46, 27, 0, 7); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(x - 18, y - 32); ctx.lineTo(x + 18, y - 32); ctx.lineTo(x, y); ctx.closePath(); ctx.fill();
+  drawOil(ctx, x, y - 46, 1.6, '#fff');
 }
 function drawYou(ctx, x, y) {
   ctx.fillStyle = 'rgba(31,157,63,0.16)'; ctx.beginPath(); ctx.arc(x, y, 30, 0, 7); ctx.fill();
   ctx.fillStyle = C.green; ctx.beginPath(); ctx.arc(x, y, 14, 0, 7); ctx.fill();
   ctx.strokeStyle = '#fff'; ctx.lineWidth = 5; ctx.stroke();
 }
+// the «you are driving» cursor — deliberately much larger than the route line
 function drawArrow(ctx, x, y, ang) {
   ctx.save(); ctx.translate(x, y); ctx.rotate(ang + Math.PI / 2);
-  ctx.fillStyle = 'rgba(0,0,0,0.18)'; ctx.beginPath(); ctx.ellipse(0, 7, 20, 9, 0, 0, 7); ctx.fill();
-  ctx.fillStyle = C.yellow; ctx.strokeStyle = '#fff'; ctx.lineWidth = 5; ctx.lineJoin = 'round';
-  ctx.beginPath(); ctx.moveTo(0, -28); ctx.lineTo(22, 22); ctx.lineTo(0, 9); ctx.lineTo(-22, 22); ctx.closePath();
+  ctx.fillStyle = 'rgba(0,0,0,0.22)'; ctx.beginPath(); ctx.ellipse(0, 12, 34, 14, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = C.yellow; ctx.strokeStyle = '#fff'; ctx.lineWidth = 8; ctx.lineJoin = 'round';
+  ctx.beginPath(); ctx.moveTo(0, -52); ctx.lineTo(40, 40); ctx.lineTo(0, 18); ctx.lineTo(-40, 40); ctx.closePath();
   ctx.fill(); ctx.stroke();
   ctx.restore();
 }
-function infoCard(ctx, y, title, sub, accent, glyph) {
+// dashboard oil-can lamp icon, drawn around (cx,cy)
+function drawOil(ctx, cx, cy, s, color) {
+  ctx.save(); ctx.translate(cx, cy); ctx.scale(s, s);
+  ctx.fillStyle = color; ctx.strokeStyle = color; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  ctx.beginPath();                                   // lamp body
+  ctx.moveTo(-11, 1); ctx.quadraticCurveTo(-11, 7, -3, 7);
+  ctx.lineTo(8, 7); ctx.quadraticCurveTo(14, 7, 14, 2);
+  ctx.quadraticCurveTo(14, -3, 7, -3); ctx.lineTo(-2, -3);
+  ctx.quadraticCurveTo(-11, -3, -11, 1); ctx.fill();
+  ctx.lineWidth = 2.4;                               // spout + drop
+  ctx.beginPath(); ctx.moveTo(-7, -3); ctx.lineTo(-14, -10); ctx.stroke();
+  ctx.beginPath(); ctx.arc(-15, -7, 2.3, 0, 7); ctx.fill();
+  ctx.lineWidth = 2;                                 // waves under the lamp
+  ctx.beginPath(); ctx.moveTo(-9, 12); ctx.quadraticCurveTo(-6, 10, -3, 12); ctx.quadraticCurveTo(0, 14, 3, 12); ctx.stroke();
+  ctx.restore();
+}
+// white bent turn-arrow (or arrival flag) inside the manoeuvre chip
+function drawTurnArrow(ctx, cx, cy, mv) {
+  ctx.save(); ctx.translate(cx, cy); ctx.strokeStyle = '#fff'; ctx.fillStyle = '#fff';
+  ctx.lineWidth = 10; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  if (mv.arrive) {
+    ctx.beginPath(); ctx.arc(0, -10, 13, 0, 7); ctx.stroke();
+    ctx.beginPath(); ctx.arc(0, -10, 4, 0, 7); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(0, 3); ctx.lineTo(0, 24); ctx.stroke();
+  } else {
+    const d = mv.right ? 1 : -1;
+    ctx.beginPath(); ctx.moveTo(0, 26); ctx.lineTo(0, -4); ctx.lineTo(d * 16, -4); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(d * 14, -22); ctx.lineTo(d * 40, -4); ctx.lineTo(d * 14, 14); ctx.closePath(); ctx.fill();
+  }
+  ctx.restore();
+}
+function infoCard(ctx, y, title, sub) {
   const x = 40, w = TEX_W - 80, h = 116;
   ctx.save();
   ctx.shadowColor = 'rgba(0,0,0,0.16)'; ctx.shadowBlur = 22; ctx.shadowOffsetY = 7;
   ctx.fillStyle = '#fff'; rr(ctx, x, y, w, h, 26); ctx.fill();
   ctx.shadowColor = 'transparent';
-  ctx.fillStyle = accent || C.green; rr(ctx, x + 24, y + 28, 60, 60, 16); ctx.fill();
-  if (glyph) { ctx.fillStyle = '#fff'; ctx.font = FONT(800, 38); ctx.textAlign = 'center'; ctx.fillText(glyph, x + 54, y + 70); }
+  ctx.fillStyle = C.green; rr(ctx, x + 24, y + 28, 60, 60, 16); ctx.fill();
+  drawOil(ctx, x + 54, y + 58, 2.1, '#fff');
   ctx.textAlign = 'left';
-  ctx.fillStyle = C.ink; ctx.font = FONT(800, 30); ctx.fillText(title, x + 104, y + 52);
-  ctx.fillStyle = C.muted; ctx.font = FONT(600, 25); ctx.fillText(sub, x + 104, y + 86);
+  ctx.fillStyle = C.ink; ctx.font = FONT(800, 33); ctx.fillText(title, x + 104, y + 54);
+  ctx.fillStyle = C.muted; ctx.font = FONT(600, 25); ctx.fillText(sub, x + 104, y + 88);
   ctx.restore();
 }
+// classic phone-handset glyph (Material 24×24), filled at the knob centre
+const HANDSET = new Path2D('M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z');
 
 /* ---- screen states (each draws a full 512x1096 UI, reads from `ui`) ---- */
 
@@ -127,18 +180,28 @@ function drawBooking(ctx) {
   ctx.fillStyle = C.green; rr(ctx, 76, 700, TEX_W - 152, 104, 52); ctx.fill();
   ctx.fillStyle = '#fff'; ctx.font = FONT(700, 36); ctx.fillText('Записаться', TEX_W / 2, 765);
 }
-function drawCall(ctx) {
-  ctx.fillStyle = C.green; ctx.beginPath(); ctx.arc(TEX_W / 2, 360, 110, 0, 7); ctx.fill();
-  ctx.fillStyle = '#fff'; ctx.font = FONT(800, 96); ctx.textAlign = 'center'; ctx.fillText('S', TEX_W / 2, 394);
-  ctx.fillStyle = C.ink; ctx.font = FONT(800, 52); ctx.fillText('SPOT', TEX_W / 2, 560);
-  ctx.fillStyle = C.muted; ctx.font = FONT(600, 30); ctx.fillText('входящий звонок…', TEX_W / 2, 614);
-  ctx.fillStyle = C.green; ctx.beginPath(); ctx.arc(TEX_W / 2 - 90, 800, 56, 0, 7); ctx.fill();
-  ctx.strokeStyle = '#fff'; ctx.lineWidth = 9; ctx.lineCap = 'round';
-  ctx.beginPath(); ctx.moveTo(TEX_W / 2 - 110, 806); ctx.quadraticCurveTo(TEX_W / 2 - 90, 824, TEX_W / 2 - 70, 806); ctx.stroke();
-  ctx.fillStyle = C.line; ctx.beginPath(); ctx.arc(TEX_W / 2 + 90, 800, 56, 0, 7); ctx.fill();
-  ctx.strokeStyle = '#fff';
-  ctx.beginPath(); ctx.moveTo(TEX_W / 2 + 72, 782); ctx.lineTo(TEX_W / 2 + 108, 818);
-  ctx.moveTo(TEX_W / 2 + 108, 782); ctx.lineTo(TEX_W / 2 + 72, 818); ctx.stroke();
+function drawCall(ctx, ui) {
+  ctx.fillStyle = C.green; ctx.beginPath(); ctx.arc(TEX_W / 2, 300, 106, 0, 7); ctx.fill();
+  ctx.fillStyle = '#fff'; ctx.font = FONT(800, 92); ctx.textAlign = 'center'; ctx.fillText('S', TEX_W / 2, 334);
+  ctx.fillStyle = C.ink; ctx.font = FONT(800, 52); ctx.fillText('SPOT', TEX_W / 2, 500);
+  ctx.fillStyle = C.muted; ctx.font = FONT(600, 30); ctx.fillText('входящий звонок…', TEX_W / 2, 552);
+
+  // slide-to-answer track — the knob auto-slides across as we scroll
+  const tx = 54, tw = TEX_W - 108, ty = 800, th = 124, r = th / 2, at = clamp01(ui.answerT || 0);
+  ctx.fillStyle = '#edf0ec'; rr(ctx, tx, ty, tw, th, r); ctx.fill();
+  const knobR = r - 9, x0 = tx + r, travel = tw - 2 * r, kx = x0 + travel * at;
+  ctx.save(); rr(ctx, tx, ty, tw, th, r); ctx.clip();
+  ctx.fillStyle = 'rgba(31,157,63,0.18)'; rr(ctx, tx, ty, (kx - tx) + knobR + 9, th, r); ctx.fill();
+  ctx.fillStyle = 'rgba(31,157,63,0.55)'; ctx.font = FONT(700, 30); ctx.textAlign = 'center';
+  ctx.fillText('ответить', tx + tw * 0.62, ty + th / 2 + 11);
+  // chevrons hinting the slide direction
+  ctx.strokeStyle = 'rgba(31,157,63,0.35)'; ctx.lineWidth = 6; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  for (let i = 0; i < 3; i++) { const cx = tx + r + 84 + i * 30; ctx.beginPath(); ctx.moveTo(cx - 8, ty + th / 2 - 13); ctx.lineTo(cx + 8, ty + th / 2); ctx.lineTo(cx - 8, ty + th / 2 + 13); ctx.stroke(); }
+  ctx.restore();
+  // white knob with the green handset
+  ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(kx, ty + th / 2, knobR, 0, 7); ctx.fill();
+  ctx.save(); ctx.translate(kx, ty + th / 2); const hs = knobR * 1.5 / 24; ctx.scale(hs, hs); ctx.translate(-12, -12);
+  ctx.fillStyle = C.green; ctx.fill(HANDSET); ctx.restore();
 }
 function drawPrice(ctx) {
   ctx.fillStyle = C.muted; ctx.font = FONT(600, 28); ctx.textAlign = 'center';
@@ -162,7 +225,7 @@ function drawMap(ctx, ui) {
   drawRouteLine(ctx);
   drawYou(ctx, ROUTE.start[0], ROUTE.start[1]);
   drawPin(ctx, ROUTE.end[0], ROUTE.end[1]);
-  infoCard(ctx, 44, 'Ближайшая точка SPOT', '8 мин · 3,2 км', C.green, '◎');
+  infoCard(ctx, 44, 'СТО SPOT', '8 мин · 3,2 км');
   const pr = ui.pressT || 0, bx = 76, by = 936, bw = TEX_W - 152, bh = 104;
   ctx.save();
   ctx.translate(TEX_W / 2, by + bh / 2); ctx.scale(1 - 0.05 * pr, 1 - 0.05 * pr); ctx.translate(-TEX_W / 2, -(by + bh / 2));
@@ -177,11 +240,33 @@ function drawNav(ctx, ui) {
   drawStreets(ctx); drawRouteLine(ctx); drawPin(ctx, ROUTE.end[0], ROUTE.end[1]);
   ctx.restore();
   drawArrow(ctx, cx, cy, p.ang);
+
+  const nf = clamp01(ui.notifT || 0);
+  // turn-by-turn manoeuvre chip — slides down to make room when the toast drops in
+  const mv = maneuverAt(t), mY = 36 + nf * 168, mx = 36, mw = TEX_W - 72, mh = 150;
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,0.14)'; ctx.shadowBlur = 20; ctx.shadowOffsetY = 6;
+  ctx.fillStyle = '#fff'; rr(ctx, mx, mY, mw, mh, 28); ctx.fill(); ctx.shadowColor = 'transparent';
+  ctx.fillStyle = C.green; rr(ctx, mx + 24, mY + 25, 100, 100, 24); ctx.fill();
+  drawTurnArrow(ctx, mx + 74, mY + 75, mv);
+  ctx.textAlign = 'left'; ctx.fillStyle = C.ink;
+  if (mv.arrive) {
+    ctx.font = FONT(800, 42); ctx.fillText('Прибытие', mx + 150, mY + 72);
+    ctx.fillStyle = C.muted; ctx.font = FONT(600, 27); ctx.fillText('вы почти на месте', mx + 150, mY + 110);
+  } else {
+    const m = Math.max(0, Math.round(mv.dist / ROUTE.total * METERS / 10) * 10);
+    ctx.font = FONT(800, 54); ctx.fillText(m + ' м', mx + 150, mY + 74);
+    ctx.fillStyle = C.muted; ctx.font = FONT(600, 27); ctx.fillText('поворот ' + (mv.right ? 'направо' : 'налево'), mx + 150, mY + 110);
+  }
+  ctx.restore();
+
+  // bottom destination card — just «СТО SPOT» + ETA, no street
   const mins = Math.max(0, Math.round((1 - t) * 8));
-  infoCard(ctx, 928, 'СТО SPOT · ул. Примерная, 12', mins + ' мин до прибытия', C.ink, '↑');
-  const nf = ui.notifT || 0;
+  infoCard(ctx, 928, 'СТО SPOT', mins + ' мин до прибытия');
+
+  // «Скидка до 11:00» push notification drops in from the top
   if (nf > 0.001) {
-    const y = -134 + 174 * easeOutBack(clamp01(nf)), x = 40, w = TEX_W - 80, h = 120;
+    const y = -134 + 170 * easeOutBack(nf), x = 40, w = TEX_W - 80, h = 120;
     ctx.save(); ctx.globalAlpha = clamp01(nf * 1.6);
     ctx.shadowColor = 'rgba(0,0,0,0.20)'; ctx.shadowBlur = 26; ctx.shadowOffsetY = 9;
     ctx.fillStyle = '#fff'; rr(ctx, x, y, w, h, 28); ctx.fill(); ctx.shadowColor = 'transparent';
@@ -246,10 +331,10 @@ export async function createPhoneScene(host) {
   const screen = new THREE.Mesh(new THREE.PlaneGeometry(SCREEN_W, SCREEN_H), screenMat);
   screen.position.z = SCREEN_Z;
 
-  const ui = { a: 0, b: 0, mix: 0, balance: 0, navT: 0, pressT: 0, notifT: 0 };
+  const ui = { a: 0, b: 0, mix: 0, balance: 0, navT: 0, pressT: 0, notifT: 0, answerT: 0 };
   let uiKey = '';
   const drawUI = () => {
-    const k = `${ui.a}|${ui.b}|${ui.mix.toFixed(3)}|${ui.balance}|${ui.navT.toFixed(3)}|${ui.pressT.toFixed(3)}|${ui.notifT.toFixed(3)}`;
+    const k = `${ui.a}|${ui.b}|${ui.mix.toFixed(3)}|${ui.balance}|${ui.navT.toFixed(3)}|${ui.pressT.toFixed(3)}|${ui.notifT.toFixed(3)}|${ui.answerT.toFixed(3)}`;
     if (k === uiKey) return false;
     uiKey = k;
     ctx.clearRect(0, 0, TEX_W, TEX_H);

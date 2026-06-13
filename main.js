@@ -715,10 +715,10 @@
       const vv = (k, p, d) => phsegs[k] ? val(phsegs[k], p) : d;
       // screen states: 0 booking 1 call 2 price 3 confirmed 4 map 5 nav 6 bonuses
       const SCREEN_PLAN = [
-        { a: 0.140, b: 0.170, from: 0, to: 1 },
-        { a: 0.190, b: 0.220, from: 1, to: 2 },
-        { a: 0.232, b: 0.262, from: 2, to: 3 },
-        { a: 0.290, b: 0.330, from: 3, to: 4 }, // confirmed → map as it centres
+        { a: 0.135, b: 0.165, from: 0, to: 1 },
+        { a: 0.205, b: 0.235, from: 1, to: 2 }, // call dwells so the slide can play
+        { a: 0.248, b: 0.275, from: 2, to: 3 },
+        { a: 0.292, b: 0.332, from: 3, to: 4 }, // confirmed → map as it centres
         { a: 0.382, b: 0.418, from: 4, to: 5 }, // map → nav as it tilts back
         { a: 0.640, b: 0.646, from: 5, to: 6 }  // nav → bonuses (hard swap while hidden)
       ];
@@ -737,7 +737,8 @@
         phoneCanvas.style.opacity = o.toFixed(3);
         const ui = screenAt(p);
         ui.balance = Math.round(easeOut(clamp01((p - 0.775) / 0.10)) * 1250);
-        ui.navT = smooth(clamp01((p - 0.408) / 0.092));   // arrow travels the route
+        ui.answerT = smooth(clamp01((p - 0.168) / 0.036)); // call slide-to-answer
+        ui.navT = smooth(clamp01((p - 0.408) / 0.092));    // arrow travels the route
         ui.pressT = tri(p, 0.350, 0.376);                  // «Поехали» press
         ui.notifT = smooth(clamp01((p - 0.430) / 0.040));  // «Скидка до 11:00» drops in
         phone.update({
@@ -755,9 +756,9 @@
       /* ---- scene 1: booking copy (checklist — done lines dim) ---- */
       tw($('#howSc1'), 0.050, 0.085, { o: [0, 1] });
       tw($('#howSc1'), 0.285, 0.310, { o: [1, 0] });
-      rise($('#sc1T1'), 0.090, 0.055); dim($('#sc1T1'), 0.175);
-      rise($('#sc1T2'), 0.165, 0.055); dim($('#sc1T2'), 0.230);
-      rise($('#sc1T3'), 0.230, 0.055);
+      rise($('#sc1T1'), 0.090, 0.055); dim($('#sc1T1'), 0.170);
+      rise($('#sc1T2'), 0.168, 0.055); dim($('#sc1T2'), 0.250);
+      rise($('#sc1T3'), 0.250, 0.055);
 
       /* ---- scene 2: arriving — single big lines that swap as the drive plays ---- */
       tw($('#howSc2'), 0.270, 0.300, { o: [0, 1] });
