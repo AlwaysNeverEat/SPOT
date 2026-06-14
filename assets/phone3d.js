@@ -205,7 +205,7 @@ function drawCall(ctx, ui) {
   ctx.save(); rr(ctx, tx, ty, tw, th, r); ctx.clip();
   ctx.fillStyle = C.muted; ctx.font = FONT(700, 30); ctx.textAlign = 'center';
   ctx.fillText('ответить', tx + tw * 0.56, ty + th / 2 + 11);
-  ctx.fillStyle = C.green; rr(ctx, tx, ty, (kx - tx), th, r); ctx.fill();   // covers «ответить» behind the knob
+  ctx.fillStyle = C.green; ctx.beginPath(); ctx.roundRect(tx, ty, kx - tx, th, [r, 0, 0, r]); ctx.fill();   // green trails the knob, ends flat under it
   ctx.restore();
   // white knob with the green handset
   ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(kx, ty + th / 2, knobR, 0, 7); ctx.fill();
@@ -269,18 +269,28 @@ function drawNav(ctx, ui) {
   }
   ctx.restore();
 
-  // «Скидка до 11:00» push notification rises from the bottom
-  const nf = clamp01(ui.notifT || 0);
+  // «Скидка до 11:00» push notification rises from the bottom, then expands
+  // (as if tapped) to reveal the full Happy-Hours terms
+  const nf = clamp01(ui.notifT || 0), ex = clamp01(ui.notifExpand || 0);
   if (nf > 0.001) {
-    const yb = TEX_H + 12 - 200 * easeOutBack(nf), bx = 40, bw = TEX_W - 80, bh = 120;
+    const bx = 40, bw = TEX_W - 80, baseH = 120, H = baseH + 132 * ex;
+    const bottom = (TEX_H + 12 - 200 * easeOutBack(nf)) + baseH - 156 * ex; // whole card rises as it opens
+    const yb = bottom - H;
     ctx.save(); ctx.globalAlpha = clamp01(nf * 1.6);
     ctx.shadowColor = 'rgba(0,0,0,0.22)'; ctx.shadowBlur = 28; ctx.shadowOffsetY = 10;
-    ctx.fillStyle = '#fff'; rr(ctx, bx, yb, bw, bh, 28); ctx.fill(); ctx.shadowColor = 'transparent';
+    ctx.fillStyle = '#fff'; rr(ctx, bx, yb, bw, H, 28); ctx.fill(); ctx.shadowColor = 'transparent';
     ctx.fillStyle = C.yellow; rr(ctx, bx + 22, yb + 26, 68, 68, 20); ctx.fill();
     ctx.fillStyle = C.ink; ctx.font = FONT(800, 40); ctx.textAlign = 'center'; ctx.fillText('%', bx + 56, yb + 71);
     ctx.textAlign = 'left';
-    ctx.fillStyle = C.ink; ctx.font = FONT(800, 31); ctx.fillText('Скидка до 11:00', bx + 110, yb + 52);
-    ctx.fillStyle = C.muted; ctx.font = FONT(600, 25); ctx.fillText('−10% · Счастливые часы', bx + 110, yb + 88);
+    ctx.fillStyle = C.ink; ctx.font = FONT(800, 31); ctx.fillText('Счастливые часы', bx + 110, yb + 52);
+    ctx.fillStyle = C.muted; ctx.font = FONT(600, 25); ctx.fillText('−10% на весь чек', bx + 110, yb + 88);
+    if (ex > 0.01) {
+      ctx.globalAlpha = clamp01(nf * 1.6) * ex;
+      ctx.strokeStyle = C.line; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(bx + 26, yb + 124); ctx.lineTo(bx + bw - 26, yb + 124); ctx.stroke();
+      ctx.fillStyle = C.ink; ctx.font = FONT(700, 28); ctx.fillText('Каждый день, 9:00–11:00', bx + 28, yb + 168);
+      ctx.fillStyle = C.muted; ctx.font = FONT(600, 25); ctx.fillText('Скидка 10% на весь чек', bx + 28, yb + 210);
+    }
     ctx.restore();
   }
 }
@@ -337,10 +347,10 @@ export async function createPhoneScene(host) {
   const screen = new THREE.Mesh(new THREE.PlaneGeometry(SCREEN_W, SCREEN_H), screenMat);
   screen.position.z = SCREEN_Z;
 
-  const ui = { a: 0, b: 0, mix: 0, balance: 0, navT: 0, pressT: 0, notifT: 0, answerT: 0 };
+  const ui = { a: 0, b: 0, mix: 0, balance: 0, navT: 0, pressT: 0, notifT: 0, answerT: 0, notifExpand: 0 };
   let uiKey = '';
   const drawUI = () => {
-    const k = `${ui.a}|${ui.b}|${ui.mix.toFixed(3)}|${ui.balance}|${ui.navT.toFixed(3)}|${ui.pressT.toFixed(3)}|${ui.notifT.toFixed(3)}|${ui.answerT.toFixed(3)}`;
+    const k = `${ui.a}|${ui.b}|${ui.mix.toFixed(3)}|${ui.balance}|${ui.navT.toFixed(3)}|${ui.pressT.toFixed(3)}|${ui.notifT.toFixed(3)}|${ui.answerT.toFixed(3)}|${ui.notifExpand.toFixed(3)}`;
     if (k === uiKey) return false;
     uiKey = k;
     ctx.clearRect(0, 0, TEX_W, TEX_H);
