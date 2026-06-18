@@ -3,6 +3,16 @@
    Palette:  white #ffffff, black #0d0d0d, green #1f9d3f, yellow #f5d22a
    =================================================================== */
 
+/* Display face for the #how scrollytelling headlines (self-hosted, subset
+   to Latin+Cyrillic so it works offline and renders the Russian copy). */
+@font-face {
+  font-family: 'Climate Crisis';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('assets/fonts/climate-crisis.woff2') format('woff2');
+}
+
 :root {
   --white: #ffffff;
   --bg: #fafafa;
@@ -19,6 +29,7 @@
   --shadow-lg: 0 30px 80px rgba(13,13,13,0.12);
   --radius: 18px;
   --radius-sm: 10px;
+  --display: 'Climate Crisis', 'Inter', system-ui, sans-serif;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -595,7 +606,7 @@ body.menu-open { overflow: hidden; }
      transforms .how-title from screen-centre (scale 1) to here (scale .45) */
   .how-head { position: absolute; top: 104px; left: 56px; right: 56px; z-index: 5; pointer-events: none; }
   .how-title { will-change: transform; transform-origin: top left; width: max-content; }
-  .how-title h2 { margin: 0; white-space: nowrap; }
+  .how-title h2 { margin: 0; white-space: nowrap; font-family: var(--display); font-weight: 400; }
   .how-title .hl, .how-copy .hl { color: var(--green); }
   .how-chapter { position: absolute; left: 1px; top: 52px; height: 1.6rem; }
   .how-chapter span {
@@ -632,28 +643,31 @@ body.menu-open { overflow: hidden; }
      so the copy column sits on the right half */
   .how-scene--phone { justify-content: flex-start; padding-left: 55vw; }
 
-  .how-copy { max-width: 480px; display: flex; flex-direction: column; gap: 1.5rem; }
+  .how-copy { max-width: 520px; display: flex; flex-direction: column; gap: 1.5rem; }
   .how-copy p {
     margin: 0;
-    font-size: clamp(1.5rem, 2.1vw, 2rem); font-weight: 800;
-    line-height: 1.18; letter-spacing: -0.01em;
+    font-family: var(--display); font-weight: 400;
+    font-size: clamp(1.25rem, 1.7vw, 1.7rem);
+    line-height: 1.16; letter-spacing: 0;
     color: var(--ink);
     will-change: transform, opacity, filter;
   }
+  /* keep small list items in the readable UI face */
   .how-copy--list { gap: 1.15rem; }
-  .how-copy--list p { font-size: clamp(1.2rem, 1.5vw, 1.5rem); font-weight: 700; }
+  .how-copy--list p { font-family: 'Inter', system-ui, sans-serif; font-size: clamp(1.2rem, 1.5vw, 1.5rem); font-weight: 700; }
   /* swap scenes: every line stacked in one cell, engine fades them one by one */
   .how-copy--swap { display: grid; }
   .how-copy--swap > p { grid-area: 1 / 1; align-self: center; }
   /* text-only scenes: centred, even bigger */
-  .how-scene--text .how-copy { max-width: 760px; gap: 1.8rem; }
-  .how-scene--text .how-copy p { font-size: clamp(2rem, 3vw, 2.9rem); }
+  .how-scene--text .how-copy { max-width: 820px; gap: 1.8rem; }
+  .how-scene--text .how-copy p { font-size: clamp(1.7rem, 2.4vw, 2.4rem); }
 
   .how-final { flex-direction: column; gap: 2.2rem; text-align: center; }
   .how-final.is-on { pointer-events: auto; }
   .how-final h3 {
-    margin: 0; font-size: clamp(2.4rem, 4.4vw, 4rem); font-weight: 800;
-    line-height: 1.05; letter-spacing: -0.025em;
+    margin: 0; font-family: var(--display); font-weight: 400;
+    font-size: clamp(2rem, 3.6vw, 3.4rem);
+    line-height: 1.05; letter-spacing: 0;
     will-change: transform, opacity, filter;
   }
 }

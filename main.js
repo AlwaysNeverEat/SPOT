@@ -647,18 +647,18 @@
         tw(el, a1, a2, { o: [0, 1], y: [16, 0] }, smooth);
         tw(el, b1, b2, { o: [1, 0], y: [0, -16] }, easeIO);
       };
-      chapter($('#howCh1'), 0.050, 0.085, 0.360, 0.390);
-      chapter($('#howCh2'), 0.375, 0.405, 0.625, 0.655);
-      chapter($('#howCh3'), 0.645, 0.675, 0.800, 0.830);
-      chapter($('#howCh4'), 0.815, 0.845, 0.905, 0.932);
+      chapter($('#howCh1'), 0.050, 0.085, 0.355, 0.385);
+      chapter($('#howCh2'), 0.370, 0.400, 0.690, 0.720);
+      chapter($('#howCh3'), 0.708, 0.738, 0.818, 0.846);
+      chapter($('#howCh4'), 0.836, 0.864, 0.916, 0.940);
 
       /* ---- scene layers: visibility per range + opacity tweens ---- */
       const scenes = [
-        { el: $('#howSc1'),  a: 0.040, b: 0.388 },
-        { el: $('#howSc2'),  a: 0.372, b: 0.662 },
-        { el: $('#howSc3'),  a: 0.645, b: 0.818 },
-        { el: $('#howSc4'),  a: 0.805, b: 0.935 },
-        { el: $('#howFinal'), a: 0.898, b: 1.001 }
+        { el: $('#howSc1'),  a: 0.040, b: 0.385 },
+        { el: $('#howSc2'),  a: 0.368, b: 0.728 },
+        { el: $('#howSc3'),  a: 0.705, b: 0.840 },
+        { el: $('#howSc4'),  a: 0.828, b: 0.945 },
+        { el: $('#howFinal'), a: 0.910, b: 1.001 }
       ];
       const sceneVis = (p) => scenes.forEach(sc => {
         const on = p >= sc.a && p <= sc.b;
@@ -683,21 +683,23 @@
       ptw('x', 0.060, 0.130, -0.90, -0.90);
       ptw('x', 0.360, 0.420, -0.90, -0.52);    // glide toward centre for the map
       ptw('x', 0.480, 0.535, -0.52, -0.98);    // settle left as it tilts (copy on the right)
-      ptw('x', 0.812, 0.860, -2.70, -0.86);    // scene 4 slide-in
+      ptw('x', 0.595, 0.650, -0.98, -0.06);    // recentre, facing us, for the full-screen promo
+      ptw('x', 0.840, 0.888, -2.70, -0.86);    // scene 4 slide-in
       // y
       ptw('y', 0.060, 0.140, -5.0, 0.0, back);  // rise from below with a soft landing
       ptw('y', 0.480, 0.535, 0.0, -0.50);       // drop down so the bottom runs off-frame
-      ptw('y', 0.640, 0.675, -0.50, -1.7);      // slides out
-      ptw('y', 0.812, 0.860, -0.40, 0.0);
+      ptw('y', 0.595, 0.650, -0.50, 0.0);       // recentre for the promo
+      ptw('y', 0.690, 0.725, 0.0, -1.7);        // slides out
+      ptw('y', 0.840, 0.888, -0.40, 0.0);
       // rx (pitch)
       ptw('rx', 0.480, 0.535, 0.0, HERO_RX);
-      ptw('rx', 0.765, 0.812, HERO_RX, 0.0);    // reset while hidden, before scene 4
+      ptw('rx', 0.595, 0.650, HERO_RX, 0.0);    // untilt to face us for the promo
       // ry (yaw)
       ptw('ry', 0.060, 0.140, -0.62, -0.12);
       ptw('ry', 0.140, 0.330, -0.12, 0.07);
       ptw('ry', 0.330, 0.420, 0.07, 0.0);       // square up to camera for the map
-      ptw('ry', 0.812, 0.860, 0.52, 0.10);
-      ptw('ry', 0.860, 0.905, 0.10, -0.05);
+      ptw('ry', 0.840, 0.888, 0.52, 0.10);
+      ptw('ry', 0.888, 0.935, 0.10, -0.05);
       // rz (roll)
       ptw('rz', 0.060, 0.140, -0.09, -0.02);
       ptw('rz', 0.330, 0.420, -0.02, 0.0);
@@ -705,22 +707,24 @@
       ptw('s', 0.060, 0.140, 1.16, 1.16);
       ptw('s', 0.360, 0.420, 1.16, 1.28);       // closer when centred
       ptw('s', 0.480, 0.535, 1.28, 1.58);       // big hero for the drive
-      ptw('s', 0.812, 0.860, 1.06, 1.20);
+      ptw('s', 0.595, 0.650, 1.58, 1.34);       // settle for the promo front view
+      ptw('s', 0.840, 0.888, 1.06, 1.20);
       // o (canvas opacity — phone lives across scenes 1+2, then returns for 4)
       ptw('o', 0.058, 0.100, 0, 1, easeOut);
-      ptw('o', 0.640, 0.675, 1, 0, easeIO);
-      ptw('o', 0.812, 0.848, 0, 1, easeOut);
-      ptw('o', 0.905, 0.930, 1, 0, easeIO);
+      ptw('o', 0.690, 0.725, 1, 0, easeIO);
+      ptw('o', 0.840, 0.876, 0, 1, easeOut);
+      ptw('o', 0.916, 0.940, 1, 0, easeIO);
       Object.keys(phsegs).forEach(k => phsegs[k].sort((m, n) => m.a - n.a));
       const vv = (k, p, d) => phsegs[k] ? val(phsegs[k], p) : d;
-      // screen states: 0 booking 1 call 2 price 3 confirmed 4 map 5 nav 6 bonuses
+      // screen states: 0 booking 1 call 2 price 3 confirmed 4 map 5 nav 6 bonuses 7 promo
       const SCREEN_PLAN = [
         { a: 0.130, b: 0.160, from: 0, to: 1 },
         { a: 0.225, b: 0.255, from: 1, to: 2 }, // call dwells so the slide can play
         { a: 0.310, b: 0.340, from: 2, to: 3 }, // price gets a real beat of its own
         { a: 0.365, b: 0.405, from: 3, to: 4 }, // confirmed → map as it centres
         { a: 0.480, b: 0.525, from: 4, to: 5 }, // map → nav as it tilts back
-        { a: 0.730, b: 0.736, from: 5, to: 6 }  // nav → bonuses (hard swap while hidden)
+        { a: 0.595, b: 0.640, from: 5, to: 7 }, // nav → full-screen promo at arrival
+        { a: 0.760, b: 0.766, from: 7, to: 6 }  // promo → bonuses (hard swap while hidden)
       ];
       const screenAt = (p) => {
         let a = 0, b = 0, mix = 0;
@@ -736,12 +740,12 @@
         const o = vv('o', p, 0);
         phoneCanvas.style.opacity = o.toFixed(3);
         const ui = screenAt(p);
-        ui.balance = Math.round(easeOut(clamp01((p - 0.845) / 0.10)) * 1250);
+        ui.balance = Math.round(easeOut(clamp01((p - 0.858) / 0.062)) * 1250);
         ui.answerT = smooth(clamp01((p - 0.165) / 0.052)); // call slide-to-answer
-        ui.navT = smooth(clamp01((p - 0.495) / 0.110));    // arrow travels the route
+        ui.navT = smooth(clamp01((p - 0.495) / 0.092));    // arrow travels the route
         ui.pressT = tri(p, 0.450, 0.476);                  // «Поехали» press
-        ui.notifT = smooth(clamp01((p - 0.545) / 0.040));  // «Скидка до 11:00» rises from the bottom
-        ui.notifExpand = smooth(clamp01((p - 0.598) / 0.034)); // taps open to reveal the full terms
+        ui.notifT = smooth(clamp01((p - 0.535) / 0.038));  // «Скидка до 11:00» toast during the drive
+        ui.promoT = smooth(clamp01((p - 0.600) / 0.045));  // full-screen promo content opens
         phone.update({
           x: vv('x', p, 0), y: vv('y', p, 0), rx: vv('rx', p, 0),
           ry: vv('ry', p, 0), rz: vv('rz', p, 0), s: vv('s', p, 1),
@@ -754,35 +758,35 @@
       const fade = (el, a, w = 0.035) => tw(el, a, a + w, { o: [1, 0], y: [0, -28], b: [0, 8] }, easeIO);
       const dim = (el, a, w = 0.04) => tw(el, a, a + w, { o: [1, 0.3] }, easeIO);
 
-      /* ---- scene 1: booking copy (checklist — each line lands with its screen) ---- */
+      /* ---- scene 1: booking copy (one phrase per screen, swapped) ---- */
       tw($('#howSc1'), 0.050, 0.085, { o: [0, 1] });
-      tw($('#howSc1'), 0.360, 0.385, { o: [1, 0] });
-      rise($('#sc1T1'), 0.085, 0.055); dim($('#sc1T1'), 0.165);   // with the booking grid
-      rise($('#sc1T2'), 0.150, 0.055); dim($('#sc1T2'), 0.255);   // with the incoming call
-      rise($('#sc1T3'), 0.250, 0.055);                            // with the price screen
+      tw($('#howSc1'), 0.355, 0.380, { o: [1, 0] });
+      rise($('#sc1T1'), 0.085, 0.05);  fade($('#sc1T1'), 0.150);   // booking
+      rise($('#sc1T2'), 0.160, 0.05);  fade($('#sc1T2'), 0.250);   // call
+      rise($('#sc1T3'), 0.255, 0.05);                              // price
 
-      /* ---- scene 2: arriving — single big lines that swap as the drive plays ---- */
+      /* ---- scene 2: arriving — one big line per beat ---- */
       tw($('#howSc2'), 0.378, 0.408, { o: [0, 1] });
-      tw($('#howSc2'), 0.632, 0.658, { o: [1, 0] });
-      rise($('#sc2T1'), 0.400, 0.05);  fade($('#sc2T1'), 0.478);
-      rise($('#sc2T2'), 0.495, 0.05);  fade($('#sc2T2'), 0.562);
-      rise($('#sc2T3'), 0.575, 0.05);
+      tw($('#howSc2'), 0.598, 0.626, { o: [1, 0] });
+      rise($('#sc2T1'), 0.400, 0.05);  fade($('#sc2T1'), 0.470);
+      rise($('#sc2T2'), 0.488, 0.05);  fade($('#sc2T2'), 0.548);
+      rise($('#sc2T3'), 0.552, 0.05);
 
-      /* ---- scene 3: service — text only, big and staggered ---- */
-      tw($('#howSc3'), 0.650, 0.680, { o: [0, 1] });
-      tw($('#howSc3'), 0.795, 0.818, { o: [1, 0] });
-      rise($('#sc3T1'), 0.665, 0.06);
-      rise($('#sc3T2'), 0.715, 0.06);
-      rise($('#sc3T3'), 0.762, 0.06);
+      /* ---- scene 3: service — one phrase per beat, swapped ---- */
+      tw($('#howSc3'), 0.712, 0.742, { o: [0, 1] });
+      tw($('#howSc3'), 0.818, 0.840, { o: [1, 0] });
+      rise($('#sc3T1'), 0.722, 0.05);  fade($('#sc3T1'), 0.762);
+      rise($('#sc3T2'), 0.765, 0.05);  fade($('#sc3T2'), 0.802);
+      rise($('#sc3T3'), 0.805, 0.05);
 
-      /* ---- scene 4: cashback copy ---- */
-      tw($('#howSc4'), 0.812, 0.842, { o: [0, 1] });
-      tw($('#howSc4'), 0.905, 0.928, { o: [1, 0] });
-      ['#sc4B1', '#sc4B2', '#sc4B3', '#sc4B4', '#sc4B5'].forEach((sel, i) => rise($(sel), 0.846 + i * 0.020, 0.04));
+      /* ---- scene 4: cashback copy (building list) ---- */
+      tw($('#howSc4'), 0.840, 0.870, { o: [0, 1] });
+      tw($('#howSc4'), 0.916, 0.938, { o: [1, 0] });
+      ['#sc4B1', '#sc4B2', '#sc4B3', '#sc4B4', '#sc4B5'].forEach((sel, i) => rise($(sel), 0.866 + i * 0.012, 0.035));
 
       /* ---- outro ---- */
-      tw($('#howFinal h3'), 0.930, 0.972, { o: [0, 1], y: [34, 0], s: [0.96, 1], b: [10, 0] }, smooth);
-      tw($('#howFinal .btn'), 0.950, 0.988, { o: [0, 1], s: [0.9, 1], y: [20, 0] }, back);
+      tw($('#howFinal h3'), 0.918, 0.960, { o: [0, 1], y: [34, 0], s: [0.96, 1], b: [10, 0] }, smooth);
+      tw($('#howFinal .btn'), 0.940, 0.978, { o: [0, 1], s: [0.9, 1], y: [20, 0] }, back);
 
       // `val` walks segments in start order — guarantee it
       els.forEach(rec => ['x', 'y', 's', 'r', 'o', 'b'].forEach(k => {
