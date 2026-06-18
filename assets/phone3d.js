@@ -291,23 +291,30 @@ function fitText(ctx, text, cx, y, maxW, weight, size, fam) {
   do { ctx.font = `${weight} ${s}px ${fam}`; if (ctx.measureText(text).width <= maxW) break; s -= 2; } while (s > 12);
   ctx.fillText(text, cx, y);
 }
-// full-screen «Счастливые часы» promo — opens as the phone turns to face us
+// full-screen «Счастливые часы» promo — opens as the phone turns to face us.
+// Only the title uses Climate Crisis; everything else stays in the UI face.
 function drawPromo(ctx, ui) {
-  const e = clamp01(ui.promoT != null ? ui.promoT : 1), cx = TEX_W / 2, maxW = TEX_W - 72;
+  const e = clamp01(ui.promoT != null ? ui.promoT : 1), cx = TEX_W / 2, maxW = TEX_W - 96;
   ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, TEX_W, TEX_H);
   ctx.save();
   ctx.globalAlpha = e;
-  ctx.translate(cx, TEX_H / 2); ctx.scale(0.92 + 0.08 * e, 0.92 + 0.08 * e); ctx.translate(-cx, -TEX_H / 2);
+  ctx.translate(cx, TEX_H / 2); ctx.scale(0.94 + 0.06 * e, 0.94 + 0.06 * e); ctx.translate(-cx, -TEX_H / 2);
   ctx.textAlign = 'center';
-  ctx.fillStyle = C.yellow; ctx.beginPath(); ctx.arc(cx, 268, 128, 0, 7); ctx.fill();
-  ctx.fillStyle = C.ink; ctx.font = FONT(800, 150); ctx.fillText('%', cx, 322);
+  // yellow % badge
+  ctx.fillStyle = C.yellow; ctx.beginPath(); ctx.arc(cx, 244, 116, 0, 7); ctx.fill();
+  ctx.fillStyle = C.ink; ctx.font = FONT(800, 132); ctx.fillText('%', cx, 292);
+  // title — Climate Crisis
   ctx.fillStyle = C.ink;
-  fitText(ctx, 'СЧАСТЛИВЫЕ', cx, 484, maxW, 400, 66, "'Climate Crisis', Inter, sans-serif");
-  fitText(ctx, 'ЧАСЫ', cx, 556, maxW, 400, 66, "'Climate Crisis', Inter, sans-serif");
-  ctx.fillStyle = C.green; ctx.font = FONT(800, 100); ctx.fillText('−10%', cx, 700);
-  ctx.fillStyle = C.muted; ctx.font = FONT(600, 34); ctx.fillText('на весь чек', cx, 748);
-  ctx.fillStyle = C.soft; rr(ctx, 80, 824, TEX_W - 160, 92, 46); ctx.fill();
-  ctx.fillStyle = C.ink; ctx.font = FONT(700, 33); ctx.fillText('каждый день · 9:00–11:00', cx, 880);
+  fitText(ctx, 'СЧАСТЛИВЫЕ', cx, 446, maxW, 400, 62, "'Climate Crisis', Inter, sans-serif");
+  fitText(ctx, 'ЧАСЫ', cx, 512, maxW, 400, 62, "'Climate Crisis', Inter, sans-serif");
+  // headline discount
+  ctx.fillStyle = C.green; ctx.font = FONT(800, 108); ctx.fillText('−10%', cx, 664);
+  ctx.fillStyle = C.muted; ctx.font = FONT(600, 36); ctx.fillText('на весь чек', cx, 716);
+  // schedule pill (text fit to the pill)
+  const pw = TEX_W - 132, px = (TEX_W - pw) / 2, py = 800, ph = 98;
+  ctx.fillStyle = C.soft; rr(ctx, px, py, pw, ph, 49); ctx.fill();
+  ctx.fillStyle = C.ink;
+  fitText(ctx, 'каждый день · 9:00–11:00', cx, py + 62, pw - 64, 700, 34, 'Inter, sans-serif');
   ctx.restore();
 }
 function drawBonuses(ctx, ui) {

@@ -3,14 +3,18 @@
    Palette:  white #ffffff, black #0d0d0d, green #1f9d3f, yellow #f5d22a
    =================================================================== */
 
-/* Display face for the #how scrollytelling headlines (self-hosted, subset
-   to Latin+Cyrillic so it works offline and renders the Russian copy). */
+/* Display faces for the #how scrollytelling (self-hosted, subset to
+   Latin+Cyrillic). Dela Gothic One for the headlines; Climate Crisis is used
+   only for the on-screen «Счастливые часы» promo (drawn on the phone canvas). */
 @font-face {
   font-family: 'Climate Crisis';
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
+  font-style: normal; font-weight: 400; font-display: swap;
   src: url('assets/fonts/climate-crisis.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Dela Gothic One';
+  font-style: normal; font-weight: 400; font-display: swap;
+  src: url('assets/fonts/dela-gothic-one.woff2') format('woff2');
 }
 
 :root {
@@ -29,7 +33,7 @@
   --shadow-lg: 0 30px 80px rgba(13,13,13,0.12);
   --radius: 18px;
   --radius-sm: 10px;
-  --display: 'Climate Crisis', 'Inter', system-ui, sans-serif;
+  --display: 'Dela Gothic One', 'Inter', system-ui, sans-serif;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -593,7 +597,7 @@ body.menu-open { overflow: hidden; }
 @media (min-width: 1024px) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
   /* must mirror SCRUB_ON in main.js (setupHowScrub).
      Tall on purpose — more scroll distance = slower, calmer scrubbing. */
-  .how.is-scrub { height: 1280vh; }
+  .how.is-scrub { height: 1500vh; }
   .how.is-scrub .how-static { display: none; }
   .how.is-scrub .how-stage {
     display: block;
