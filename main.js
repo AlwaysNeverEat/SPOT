@@ -627,6 +627,14 @@
       /* ---- title FLIP: laid out docked top-left, starts screen-centred ---- */
       const title = $('.how-title');
       const intro = { x: 0, y: 0 };
+      /* ---- hand cursor geometry (scene 1) ----
+         The phone sits centred; the centre slot and the «Записаться» button
+         project to a near-constant fraction of the stage. CUR_HOT is the
+         cursor sprite's fingertip hotspot as a fraction of its drawn size. */
+      const cursor = document.getElementById('howCursor');
+      const CUR_HOT_X = 0.344, CUR_HOT_Y = 0.031, CUR_RATIO = 360 / 297;
+      const cur = { ready: false };
+      const lerp = (a, b, t) => a + (b - a) * t;
       const measure = () => {
         const prev = title.style.transform;
         title.style.transform = 'none';
@@ -635,12 +643,52 @@
         title.style.transform = prev;
         intro.x = (sr.width - tr.width) / 2 - (tr.left - sr.left);
         intro.y = sr.height * 0.46 - tr.height / 2 - (tr.top - sr.top);
+        if (cursor) {
+          const W = sr.width, H = sr.height, cx = W / 2, cy = H / 2;
+          cur.sw = cursor.offsetWidth || 78;
+          cur.sh = cursor.offsetHeight || (cur.sw * CUR_RATIO);
+          cur.slotX = cx;            cur.slotY = cy - 0.112 * H;   // centre time slot
+          cur.btnX = cx;             cur.btnY = cy + 0.122 * H;    // «Записаться» button
+          cur.parkX = cx + 0.40 * W; cur.parkY = cy + 0.58 * H;    // off-stage entry/exit
+          cur.ready = true;
+        }
       };
       fx(0.018, 0.075, (t) => {
         const e = smooth(t);
         title.style.transform =
           `translate3d(${(intro.x * (1 - e)).toFixed(1)}px,${(intro.y * (1 - e)).toFixed(1)}px,0) scale(${(1 - 0.55 * e).toFixed(4)})`;
       });
+
+      /* ---- hand cursor: flies in, taps the centre slot, then the button,
+         then flies back out. Driven straight from p (cheap, clamps off-window). */
+      let curShown = false;
+      const cursorFrame = (p) => {
+        if (!cursor || !cur.ready) return;
+        if (p < 0.244 || p > 0.398) {
+          if (curShown) { curShown = false; cursor.style.opacity = '0'; }
+          return;
+        }
+        curShown = true;
+        let x, y, op = 1, dip = 0;
+        if (p < 0.286) {                                   // fly in to the slot
+          const t = easeOut(clamp01((p - 0.250) / 0.036));
+          op = clamp01(t * 1.6);
+          x = lerp(cur.parkX, cur.slotX, t); y = lerp(cur.parkY, cur.slotY, t);
+        } else if (p < 0.314) {                            // tap the slot
+          x = cur.slotX; y = cur.slotY; dip = tri(p, 0.286, 0.314);
+        } else if (p < 0.330) {                            // glide to the button
+          const t = smooth(clamp01((p - 0.314) / 0.016));
+          x = lerp(cur.slotX, cur.btnX, t); y = lerp(cur.slotY, cur.btnY, t);
+        } else if (p < 0.358) {                            // tap «Записаться»
+          x = cur.btnX; y = cur.btnY; dip = tri(p, 0.330, 0.358);
+        } else {                                           // fly back out
+          const t = clamp01((p - 0.358) / 0.040), e = t * t;
+          x = lerp(cur.btnX, cur.parkX, e); y = lerp(cur.btnY, cur.parkY, e); op = 1 - t;
+        }
+        const tx = x - CUR_HOT_X * cur.sw, ty = y - CUR_HOT_Y * cur.sh + dip * 16;
+        cursor.style.opacity = op.toFixed(3);
+        cursor.style.transform = `translate3d(${tx.toFixed(1)}px,${ty.toFixed(1)}px,0) scale(${(1 - dip * 0.12).toFixed(3)})`;
+      };
 
       /* ---- chapter label (in/out pairs at chapter bounds) ---- */
       const chapter = (el, a1, a2, b1, b2) => {
@@ -679,14 +727,15 @@
       /* scenes 1→2 are one continuous shot: the phone rises with the booking,
          glides to centre as the map opens, then tilts back into a big hero pose
          for the drive. scene 4 is a separate slide-in for the cashback screen. */
-      // x
-      ptw('x', 0.060, 0.130, -0.90, -0.90);
+      // x — scene 1 holds the phone centred over the headline, then it slides
+      // left into scene 2's start pose as the text flies off behind it.
+      ptw('x', 0.342, 0.360, 0.0, -0.90);      // hand off to scene 2 (slide left)
       ptw('x', 0.360, 0.420, -0.90, -0.52);    // glide toward centre for the map
       ptw('x', 0.480, 0.535, -0.52, -0.98);    // settle left as it tilts (copy on the right)
       ptw('x', 0.595, 0.650, -0.98, -0.06);    // recentre, facing us, for the full-screen promo
       ptw('x', 0.882, 0.930, -2.70, -0.86);    // scene 4 slide-in
       // y
-      ptw('y', 0.060, 0.140, -5.0, 0.0, back);  // rise from below with a soft landing
+      ptw('y', 0.105, 0.160, 1.6, 0.0, back);   // drops from above and plops onto the headline
       ptw('y', 0.480, 0.535, 0.0, -0.50);       // drop down so the bottom runs off-frame
       ptw('y', 0.595, 0.650, -0.50, 0.0);       // recentre for the promo
       ptw('y', 0.690, 0.722, 0.0, -1.7);        // slides out
@@ -694,23 +743,22 @@
       // rx (pitch)
       ptw('rx', 0.480, 0.535, 0.0, HERO_RX);
       ptw('rx', 0.595, 0.650, HERO_RX, 0.0);    // untilt to face us for the promo
-      // ry (yaw)
-      ptw('ry', 0.060, 0.140, -0.62, -0.12);
-      ptw('ry', 0.140, 0.330, -0.12, 0.07);
-      ptw('ry', 0.330, 0.420, 0.07, 0.0);       // square up to camera for the map
+      // ry (yaw) — near-front through the booking so the UI faces the cursor
+      ptw('ry', 0.105, 0.160, 0.18, 0.04, back);
+      ptw('ry', 0.342, 0.360, 0.04, 0.0);       // square up to camera for the map
       ptw('ry', 0.882, 0.930, 0.52, 0.10);
       ptw('ry', 0.930, 0.975, 0.10, -0.05);
       // rz (roll)
-      ptw('rz', 0.060, 0.140, -0.09, -0.02);
-      ptw('rz', 0.330, 0.420, -0.02, 0.0);
-      // s (scale)
-      ptw('s', 0.060, 0.140, 1.16, 1.16);
+      ptw('rz', 0.105, 0.160, -0.06, 0.0, back);
+      // s (scale) — hero size centred over the headline, then settle for scene 2
+      ptw('s', 0.105, 0.160, 0.72, 1.5, back);
+      ptw('s', 0.342, 0.360, 1.5, 1.16);
       ptw('s', 0.360, 0.420, 1.16, 1.28);       // closer when centred
       ptw('s', 0.480, 0.535, 1.28, 1.58);       // big hero for the drive
       ptw('s', 0.595, 0.650, 1.58, 1.34);       // settle for the promo front view
       ptw('s', 0.882, 0.930, 1.06, 1.20);
       // o (canvas opacity — phone lives across scenes 1+2, holds the promo, returns for 4)
-      ptw('o', 0.058, 0.100, 0, 1, easeOut);
+      ptw('o', 0.100, 0.150, 0, 1, easeOut);
       ptw('o', 0.688, 0.722, 1, 0, easeIO);
       ptw('o', 0.882, 0.918, 0, 1, easeOut);
       ptw('o', 0.948, 0.968, 1, 0, easeIO);
@@ -718,9 +766,7 @@
       const vv = (k, p, d) => phsegs[k] ? val(phsegs[k], p) : d;
       // screen states: 0 booking 1 call 2 price 3 confirmed 4 map 5 nav 6 bonuses 7 promo
       const SCREEN_PLAN = [
-        { a: 0.130, b: 0.160, from: 0, to: 1 },
-        { a: 0.225, b: 0.255, from: 1, to: 2 }, // call dwells so the slide can play
-        { a: 0.310, b: 0.340, from: 2, to: 3 }, // price gets a real beat of its own
+        { a: 0.344, b: 0.363, from: 0, to: 3 }, // booking → «Запись подтверждена» after the tap
         { a: 0.365, b: 0.405, from: 3, to: 4 }, // confirmed → map as it centres
         { a: 0.480, b: 0.525, from: 4, to: 5 }, // map → nav as it tilts back
         { a: 0.595, b: 0.640, from: 5, to: 7 }, // nav → full-screen promo at arrival
@@ -740,6 +786,12 @@
         const o = vv('o', p, 0);
         phoneCanvas.style.opacity = o.toFixed(3);
         const ui = screenAt(p);
+        // scene 1 booking: slots pop in (staggered inside drawBooking), then the
+        // button, then the cursor taps the centre slot and the button.
+        ui.slotsT = smooth(clamp01((p - 0.150) / 0.095));
+        ui.btnT = smooth(clamp01((p - 0.230) / 0.045));
+        ui.slotPressT = tri(p, 0.286, 0.314);
+        ui.btnPressT = tri(p, 0.330, 0.358);
         ui.balance = Math.round(easeOut(clamp01((p - 0.900) / 0.050)) * 1250);
         ui.answerT = smooth(clamp01((p - 0.165) / 0.052)); // call slide-to-answer
         ui.navT = smooth(clamp01((p - 0.495) / 0.092));    // arrow travels the route
@@ -758,12 +810,31 @@
       const fade = (el, a, w = 0.035) => tw(el, a, a + w, { o: [1, 0], y: [0, -28], b: [0, 8] }, easeIO);
       const dim = (el, a, w = 0.04) => tw(el, a, a + w, { o: [1, 0.3] }, easeIO);
 
-      /* ---- scene 1: booking copy (one phrase per screen, swapped) ---- */
-      tw($('#howSc1'), 0.050, 0.085, { o: [0, 1] });
-      tw($('#howSc1'), 0.350, 0.375, { o: [1, 0] });
-      rise($('#sc1T1'), 0.085, 0.05);  fade($('#sc1T1'), 0.150);   // booking
-      rise($('#sc1T2'), 0.160, 0.05);  fade($('#sc1T2'), 0.250);   // call
-      rise($('#sc1T3'), 0.255, 0.05);                              // price
+      /* ---- scene 1: giant «ОНЛАЙН ЗАПИСЬ» headline ----
+         slides boldly to centre, the phone plops onto it and pushes the two
+         lines apart, then it all slides off behind the phone at the handoff. */
+      const big = document.getElementById('howBig');
+      const bigA = document.getElementById('howBigA');
+      const bigB = document.getElementById('howBigB');
+      if (big && bigA && bigB) {
+        fx(0.055, 0.112, (t) => {                       // bold slide-in
+          const e = back(t);
+          big.style.opacity = clamp01(t * 1.4).toFixed(3);
+          big.style.transform = `translate3d(0,${((1 - e) * 240).toFixed(1)}px,0) scale(${(0.86 + 0.14 * e).toFixed(4)})`;
+        });
+        fx(0.106, 0.172, (t) => {                       // phone plops between the lines
+          const e = smooth(t);
+          bigA.style.transform = `translate3d(0,${(-e * 92).toFixed(1)}px,0)`;
+          bigB.style.transform = `translate3d(0,${(e * 92).toFixed(1)}px,0)`;
+          big.style.opacity = (1 - 0.12 * e).toFixed(3);
+        });
+        fx(0.330, 0.374, (t) => {                       // outro: slides off behind the phone
+          const e = smooth(t), dx = -e * 200;
+          big.style.opacity = (0.88 * (1 - e)).toFixed(3);
+          bigA.style.transform = `translate3d(${dx.toFixed(1)}px,${(-92 - e * 60).toFixed(1)}px,0)`;
+          bigB.style.transform = `translate3d(${dx.toFixed(1)}px,${(92 + e * 60).toFixed(1)}px,0)`;
+        });
+      }
 
       /* ---- scene 2: arriving — one big line per beat ---- */
       tw($('#howSc2'), 0.378, 0.408, { o: [0, 1] });
@@ -804,6 +875,7 @@
         sceneVis(p);
         render(p);
         updatePhone(p);
+        cursorFrame(p);
       };
       const onScroll = () => { if (!raf) raf = requestAnimationFrame(() => update(false)); };
       const refresh = () => {                  // resize / font load: re-measure + redraw

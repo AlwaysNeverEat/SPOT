@@ -632,6 +632,32 @@ body.menu-open { overflow: hidden; }
     pointer-events: none;
   }
 
+  /* scene 1: giant «ОНЛАЙН ЗАПИСЬ» headline — sits UNDER the phone canvas so
+     the phone drops on top of it; the engine drives transform/opacity per line */
+  .how-bigtext {
+    position: absolute; inset: 0; z-index: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 0.2vw; pointer-events: none; opacity: 0;
+    will-change: opacity;
+  }
+  .how-bigtext__line {
+    font-family: 'Climate Crisis', 'Dela Gothic One', system-ui, sans-serif;
+    font-weight: 400; line-height: 0.82; letter-spacing: 0.01em;
+    font-size: clamp(3.2rem, 8vw, 7.5rem);
+    color: var(--green); text-transform: uppercase; white-space: nowrap;
+    will-change: transform, opacity;
+  }
+
+  /* scene 1: hand cursor — ABOVE the phone canvas; the engine flies it in,
+     taps the centre slot, then the button, and flies it back out */
+  .how-cursor {
+    position: absolute; top: 0; left: 0; z-index: 4;
+    width: 78px; height: auto;
+    pointer-events: none; opacity: 0;
+    will-change: transform, opacity;
+    -webkit-user-select: none; user-select: none;
+  }
+
   /* scenes: stacked full-stage layers, engine toggles .is-on per range */
   .how-scene {
     position: absolute; inset: 0;

@@ -177,19 +177,51 @@ const HANDSET = new Path2D('M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.2
 
 /* ---- screen states (each draws a full 512x1096 UI, reads from `ui`) ---- */
 
-function drawBooking(ctx) {
-  ctx.fillStyle = C.muted; ctx.font = FONT(600, 30); ctx.textAlign = 'center';
+function drawBooking(ctx, ui) {
+  // staggered pop-in of the whole booking UI, driven by the scrub:
+  //   slotsT 0→1 reveals header + 9 time slots one after another,
+  //   btnT   0→1 pops the «Записаться» button, and the press progresses
+  //   (slotPressT on the centre slot, btnPressT on the button) read as taps.
+  const slotsT = clamp01(ui && ui.slotsT || 0);
+  const btnT = clamp01(ui && ui.btnT || 0);
+  const slotPress = clamp01(ui && ui.slotPressT || 0);
+  const btnPress = clamp01(ui && ui.btnPressT || 0);
+
+  ctx.textAlign = 'center';
+  ctx.globalAlpha = clamp01(slotsT * 4);
+  ctx.fillStyle = C.muted; ctx.font = FONT(600, 30);
   ctx.fillText('Выберите время', TEX_W / 2, 200);
+  ctx.globalAlpha = 1;
+
   const slots = ['9:00', '10:30', '11:00', '12:30', '14:00', '15:30', '17:00', '18:30', '20:00'];
   const gw = 124, gh = 96, gap = 18, x0 = (TEX_W - gw * 3 - gap * 2) / 2, y0 = 260;
   ctx.font = FONT(700, 30);
+  const STAG = 0.07, DUR = 0.42, span = STAG * (slots.length - 1) + DUR;
   slots.forEach((s, i) => {
-    const x = x0 + (i % 3) * (gw + gap), y = y0 + ((i / 3) | 0) * (gh + gap), sel = i === 4;
-    ctx.fillStyle = sel ? C.green : C.soft; rr(ctx, x, y, gw, gh, 20); ctx.fill();
-    ctx.fillStyle = sel ? '#fff' : C.ink; ctx.fillText(s, x + gw / 2, y + gh / 2 + 11);
+    const local = clamp01((slotsT * span - i * STAG) / DUR);
+    if (local <= 0.001) return;
+    const pop = easeOutBack(local), sel = i === 4;
+    const cx = x0 + (i % 3) * (gw + gap) + gw / 2;
+    const cy = y0 + ((i / 3) | 0) * (gh + gap) + gh / 2;
+    const press = sel ? 1 - 0.10 * slotPress : 1;
+    ctx.save();
+    ctx.globalAlpha = clamp01(local * 1.6);
+    ctx.translate(cx, cy); ctx.scale(pop * press, pop * press); ctx.translate(-cx, -cy);
+    ctx.fillStyle = sel ? C.green : C.soft; rr(ctx, cx - gw / 2, cy - gh / 2, gw, gh, 20); ctx.fill();
+    ctx.fillStyle = sel ? '#fff' : C.ink; ctx.fillText(s, cx, cy + 11);
+    ctx.restore();
   });
-  ctx.fillStyle = C.green; rr(ctx, 76, 700, TEX_W - 152, 104, 52); ctx.fill();
-  ctx.fillStyle = '#fff'; ctx.font = FONT(700, 36); ctx.fillText('Записаться', TEX_W / 2, 765);
+
+  if (btnT > 0.001) {
+    const pop = easeOutBack(btnT), bx = 76, by = 700, bw = TEX_W - 152, bh = 104;
+    const press = 1 - 0.05 * btnPress;
+    ctx.save();
+    ctx.globalAlpha = clamp01(btnT * 1.6);
+    ctx.translate(TEX_W / 2, by + bh / 2); ctx.scale(pop * press, pop * press); ctx.translate(-TEX_W / 2, -(by + bh / 2));
+    ctx.fillStyle = btnPress > 0.45 ? C.greenDark : C.green; rr(ctx, bx, by, bw, bh, 52); ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.font = FONT(700, 36); ctx.fillText('Записаться', TEX_W / 2, 765);
+    ctx.restore();
+  }
 }
 function drawCall(ctx, ui) {
   ctx.fillStyle = C.green; ctx.beginPath(); ctx.arc(TEX_W / 2, 300, 106, 0, 7); ctx.fill();
@@ -224,6 +256,7 @@ function drawPrice(ctx) {
   rr(ctx, 76, 640, TEX_W - 184, 30, 15); ctx.fill();
 }
 function drawConfirmed(ctx) {
+  ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, TEX_W, TEX_H);   // occludes the booking UI as it crossfades in
   ctx.fillStyle = C.green; ctx.beginPath(); ctx.arc(TEX_W / 2, 420, 120, 0, 7); ctx.fill();
   ctx.strokeStyle = '#fff'; ctx.lineWidth = 18; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
   ctx.beginPath(); ctx.moveTo(TEX_W / 2 - 50, 424); ctx.lineTo(TEX_W / 2 - 12, 466); ctx.lineTo(TEX_W / 2 + 56, 376); ctx.stroke();
@@ -370,10 +403,11 @@ export async function createPhoneScene(host) {
   const screen = new THREE.Mesh(new THREE.PlaneGeometry(SCREEN_W, SCREEN_H), screenMat);
   screen.position.z = SCREEN_Z;
 
-  const ui = { a: 0, b: 0, mix: 0, balance: 0, navT: 0, pressT: 0, notifT: 0, answerT: 0, promoT: 0 };
+  const ui = { a: 0, b: 0, mix: 0, balance: 0, navT: 0, pressT: 0, notifT: 0, answerT: 0, promoT: 0,
+    slotsT: 0, btnT: 0, slotPressT: 0, btnPressT: 0 };
   let uiKey = '';
   const drawUI = () => {
-    const k = `${ui.a}|${ui.b}|${ui.mix.toFixed(3)}|${ui.balance}|${ui.navT.toFixed(3)}|${ui.pressT.toFixed(3)}|${ui.notifT.toFixed(3)}|${ui.answerT.toFixed(3)}|${ui.promoT.toFixed(3)}`;
+    const k = `${ui.a}|${ui.b}|${ui.mix.toFixed(3)}|${ui.balance}|${ui.navT.toFixed(3)}|${ui.pressT.toFixed(3)}|${ui.notifT.toFixed(3)}|${ui.answerT.toFixed(3)}|${ui.promoT.toFixed(3)}|${ui.slotsT.toFixed(3)}|${ui.btnT.toFixed(3)}|${ui.slotPressT.toFixed(3)}|${ui.btnPressT.toFixed(3)}`;
     if (k === uiKey) return false;
     uiKey = k;
     ctx.clearRect(0, 0, TEX_W, TEX_H);
