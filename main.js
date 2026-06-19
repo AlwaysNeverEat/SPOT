@@ -634,6 +634,7 @@
       const cursor = document.getElementById('howCursor');
       const CUR_HOT_X = 0.344, CUR_HOT_Y = 0.031, CUR_RATIO = 360 / 297;
       const cur = { ready: false };
+      const bt = { dx: 120 };                 // headline split distance (set in measure)
       const lerp = (a, b, t) => a + (b - a) * t;
       const measure = () => {
         const prev = title.style.transform;
@@ -652,6 +653,9 @@
           cur.parkX = cx + 0.40 * W; cur.parkY = cy + 0.58 * H;    // off-stage entry/exit
           cur.ready = true;
         }
+        // phone width on screen tracks the stage height (vertical-FOV camera);
+        // open the channel a touch narrower than the phone so it overlaps the text
+        bt.dx = sr.height * 0.150;
       };
       fx(0.018, 0.075, (t) => {
         const e = smooth(t);
@@ -735,7 +739,7 @@
       ptw('x', 0.595, 0.650, -0.98, -0.06);    // recentre, facing us, for the full-screen promo
       ptw('x', 0.882, 0.930, -2.70, -0.86);    // scene 4 slide-in
       // y
-      ptw('y', 0.105, 0.160, 1.6, 0.0, back);   // drops from above and plops onto the headline
+      ptw('y', 0.116, 0.152, 0.55, 0.0, back);  // quick drop into the open channel
       ptw('y', 0.480, 0.535, 0.0, -0.50);       // drop down so the bottom runs off-frame
       ptw('y', 0.595, 0.650, -0.50, 0.0);       // recentre for the promo
       ptw('y', 0.690, 0.722, 0.0, -1.7);        // slides out
@@ -744,21 +748,21 @@
       ptw('rx', 0.480, 0.535, 0.0, HERO_RX);
       ptw('rx', 0.595, 0.650, HERO_RX, 0.0);    // untilt to face us for the promo
       // ry (yaw) — near-front through the booking so the UI faces the cursor
-      ptw('ry', 0.105, 0.160, 0.18, 0.04, back);
+      ptw('ry', 0.116, 0.152, 0.12, 0.04, back);
       ptw('ry', 0.342, 0.360, 0.04, 0.0);       // square up to camera for the map
       ptw('ry', 0.882, 0.930, 0.52, 0.10);
       ptw('ry', 0.930, 0.975, 0.10, -0.05);
       // rz (roll)
-      ptw('rz', 0.105, 0.160, -0.06, 0.0, back);
-      // s (scale) — hero size centred over the headline, then settle for scene 2
-      ptw('s', 0.105, 0.160, 0.72, 1.5, back);
+      ptw('rz', 0.116, 0.152, -0.05, 0.0, back);
+      // s (scale) — pops to hero size in the channel, then settles for scene 2
+      ptw('s', 0.116, 0.152, 1.28, 1.5, back);
       ptw('s', 0.342, 0.360, 1.5, 1.16);
       ptw('s', 0.360, 0.420, 1.16, 1.28);       // closer when centred
       ptw('s', 0.480, 0.535, 1.28, 1.58);       // big hero for the drive
       ptw('s', 0.595, 0.650, 1.58, 1.34);       // settle for the promo front view
       ptw('s', 0.882, 0.930, 1.06, 1.20);
       // o (canvas opacity — phone lives across scenes 1+2, holds the promo, returns for 4)
-      ptw('o', 0.100, 0.150, 0, 1, easeOut);
+      ptw('o', 0.118, 0.138, 0, 1, easeOut);    // very short — sudden, unexpected appearance
       ptw('o', 0.688, 0.722, 1, 0, easeIO);
       ptw('o', 0.882, 0.918, 0, 1, easeOut);
       ptw('o', 0.948, 0.968, 1, 0, easeIO);
@@ -811,28 +815,28 @@
       const dim = (el, a, w = 0.04) => tw(el, a, a + w, { o: [1, 0.3] }, easeIO);
 
       /* ---- scene 1: giant «ОНЛАЙН ЗАПИСЬ» headline ----
-         slides boldly to centre, the phone plops onto it and pushes the two
-         lines apart, then it all slides off behind the phone at the handoff. */
+         each word is two 3-char halves; they slide in whole, then split apart
+         to open a phone-wide channel dead-centre that the phone drops into.
+         At the handoff the channel closes back behind the phone and fades. */
       const big = document.getElementById('howBig');
-      const bigA = document.getElementById('howBigA');
-      const bigB = document.getElementById('howBigB');
-      if (big && bigA && bigB) {
-        fx(0.055, 0.112, (t) => {                       // bold slide-in
+      const btA1 = document.getElementById('btA1'), btA2 = document.getElementById('btA2');
+      const btB1 = document.getElementById('btB1'), btB2 = document.getElementById('btB2');
+      if (big && btA1 && btB1) {
+        const split = (dx) => {
+          const L = `translate3d(${(-dx).toFixed(1)}px,0,0)`, R = `translate3d(${dx.toFixed(1)}px,0,0)`;
+          btA1.style.transform = L; btB1.style.transform = L;
+          btA2.style.transform = R; btB2.style.transform = R;
+        };
+        fx(0.045, 0.094, (t) => {                       // bold slide-in, words still whole
           const e = back(t);
-          big.style.opacity = clamp01(t * 1.4).toFixed(3);
-          big.style.transform = `translate3d(0,${((1 - e) * 240).toFixed(1)}px,0) scale(${(0.86 + 0.14 * e).toFixed(4)})`;
+          big.style.opacity = clamp01(t * 1.5).toFixed(3);
+          big.style.transform = `translate3d(0,${((1 - e) * 200).toFixed(1)}px,0)`;
         });
-        fx(0.106, 0.172, (t) => {                       // phone plops between the lines
+        fx(0.092, 0.150, (t) => split(smooth(t) * bt.dx));   // split open the channel
+        fx(0.330, 0.372, (t) => {                       // outro: close behind the phone & fade
           const e = smooth(t);
-          bigA.style.transform = `translate3d(0,${(-e * 92).toFixed(1)}px,0)`;
-          bigB.style.transform = `translate3d(0,${(e * 92).toFixed(1)}px,0)`;
-          big.style.opacity = (1 - 0.12 * e).toFixed(3);
-        });
-        fx(0.330, 0.374, (t) => {                       // outro: slides off behind the phone
-          const e = smooth(t), dx = -e * 200;
-          big.style.opacity = (0.88 * (1 - e)).toFixed(3);
-          bigA.style.transform = `translate3d(${dx.toFixed(1)}px,${(-92 - e * 60).toFixed(1)}px,0)`;
-          bigB.style.transform = `translate3d(${dx.toFixed(1)}px,${(92 + e * 60).toFixed(1)}px,0)`;
+          big.style.opacity = (1 - e).toFixed(3);
+          split(bt.dx * (1 - 0.85 * e));
         });
       }
 
