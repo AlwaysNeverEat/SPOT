@@ -451,6 +451,53 @@ export async function createPhoneScene(host) {
   root.position.add(center.negate().applyQuaternion(BASE_QUAT.clone().invert()));
   pivot.add(screen);                       // UI plane lives in the UPRIGHT frame
 
+  /* ---- hand cursor (scene 1) ----
+     A real model in the SAME scene, parented to the phone frame so it shares
+     the lighting/perspective and presses INTO the screen along Z. Position is
+     given in screen fractions (tx,ty ∈ 0..1); poke 0..1 drives the press. */
+  const HOVER = 0.20, POKE = 0.15, CAM_Z = camera.position.z;
+  const cursorPivot = new THREE.Group();
+  cursorPivot.visible = false;
+  pivot.add(cursorPivot);
+  let cursorLoaded = false;
+  const cstate = { visible: false, tx: 0.5, ty: 0.5, poke: 0 };
+  let cursorKey = '';
+  const applyCursor = () => {
+    const k = `${cstate.visible}|${cursorLoaded}|${cstate.tx.toFixed(3)}|${cstate.ty.toFixed(3)}|${cstate.poke.toFixed(3)}`;
+    if (k === cursorKey) return false;
+    cursorKey = k;
+    cursorPivot.visible = cstate.visible && cursorLoaded;
+    if (cursorPivot.visible) {
+      const localZ = SCREEN_Z + HOVER - cstate.poke * POKE;
+      // the hand floats in FRONT of the screen, so perspective shifts it away
+      // from centre — pull its in-plane target back toward centre to land the
+      // fingertip on the right pixel (parallax compensation; s = phone scale)
+      const s = view.s || 1, par = (CAM_Z - s * localZ) / (CAM_Z - s * SCREEN_Z);
+      cursorPivot.position.set(
+        (cstate.tx - 0.5) * SCREEN_W * par,
+        (0.5 - cstate.ty) * SCREEN_H * par,
+        localZ
+      );
+      cursorPivot.rotation.set(-0.20 - cstate.poke * 0.14, 0.16, 0);   // slight 3D tilt; bows in on press
+    }
+    return true;
+  };
+  new GLTFLoader().load(new URL('./models/cursor.glb', import.meta.url).href, (cg) => {
+    const grp = new THREE.Group();
+    grp.add(cg.scene);
+    grp.updateMatrixWorld(true);
+    const cbox = new THREE.Box3().setFromObject(grp);
+    const csize = cbox.getSize(new THREE.Vector3());
+    const ccenter = cbox.getCenter(new THREE.Vector3());
+    cg.scene.position.sub(ccenter);                    // centre the model on the group origin
+    cg.scene.position.y -= csize.y * 0.62;             // drop it so the FINGERTIP sits at origin
+    const maxDim = Math.max(csize.x, csize.y, csize.z) || 1;
+    grp.scale.setScalar((SCREEN_H * 0.30) / maxDim);   // sized against screen height
+    cursorPivot.add(grp);
+    cursorLoaded = true;
+    cursorKey = '';                                    // force re-apply now that it exists
+  }, undefined, (e) => console.warn('cursor model failed:', e));
+
   const view = { x: 0, y: 0, rx: 0, ry: 0, rz: 0, s: 1, visible: false };
   let viewKey = '';
   const applyView = () => {
@@ -473,12 +520,13 @@ export async function createPhoneScene(host) {
   return {
     canvas,
     setSize,
-    update(viewPatch, uiPatch) {
+    update(viewPatch, uiPatch, cursorPatch) {
       if (viewPatch) Object.assign(view, viewPatch);
       if (uiPatch) Object.assign(ui, uiPatch);
-      const changed = drawUI() | applyView();
+      if (cursorPatch) Object.assign(cstate, cursorPatch);
+      const changed = drawUI() | applyView() | applyCursor();
       if (changed || !this._first) { this._first = true; renderer.render(scene, camera); }
     },
-    redraw() { uiKey = ''; viewKey = ''; this.update(); }
+    redraw() { uiKey = ''; viewKey = ''; cursorKey = ''; this.update(); }
   };
 }

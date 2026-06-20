@@ -658,15 +658,9 @@ body.menu-open { overflow: hidden; }
     will-change: transform;
   }
 
-  /* scene 1: hand cursor — ABOVE the phone canvas; the engine flies it in,
-     taps the centre slot, then the button, and flies it back out */
-  .how-cursor {
-    position: absolute; top: 0; left: 0; z-index: 4;
-    width: 78px; height: auto;
-    pointer-events: none; opacity: 0;
-    will-change: transform, opacity;
-    -webkit-user-select: none; user-select: none;
-  }
+  /* scene 1: the hand cursor is a real 3D model rendered inside the phone
+     canvas (.how-3d) — see assets/phone3d.js — so it shares the lighting and
+     presses into the screen on Z. No DOM element needed. */
 
   /* scenes: stacked full-stage layers, engine toggles .is-on per range */
   .how-scene {

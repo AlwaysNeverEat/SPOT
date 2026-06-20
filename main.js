@@ -627,15 +627,7 @@
       /* ---- title FLIP: laid out docked top-left, starts screen-centred ---- */
       const title = $('.how-title');
       const intro = { x: 0, y: 0 };
-      /* ---- hand cursor geometry (scene 1) ----
-         The phone sits centred; the centre slot and the «Записаться» button
-         project to a near-constant fraction of the stage. CUR_HOT is the
-         cursor sprite's fingertip hotspot as a fraction of its drawn size. */
-      const cursor = document.getElementById('howCursor');
-      const CUR_HOT_X = 0.344, CUR_HOT_Y = 0.031, CUR_RATIO = 360 / 297;
-      const cur = { ready: false };
-      const bt = { dx: 120 };                 // headline split distance (set in measure)
-      const lerp = (a, b, t) => a + (b - a) * t;
+      const bt = { dx: 120, W: 1280 };        // headline split distance / stage width (set in measure)
       const measure = () => {
         const prev = title.style.transform;
         title.style.transform = 'none';
@@ -644,15 +636,6 @@
         title.style.transform = prev;
         intro.x = (sr.width - tr.width) / 2 - (tr.left - sr.left);
         intro.y = sr.height * 0.46 - tr.height / 2 - (tr.top - sr.top);
-        if (cursor) {
-          const W = sr.width, H = sr.height, cx = W / 2, cy = H / 2;
-          cur.sw = cursor.offsetWidth || 78;
-          cur.sh = cursor.offsetHeight || (cur.sw * CUR_RATIO);
-          cur.slotX = cx;            cur.slotY = cy - 0.112 * H;   // centre time slot
-          cur.btnX = cx;             cur.btnY = cy + 0.122 * H;    // «Записаться» button
-          cur.parkX = cx + 0.40 * W; cur.parkY = cy + 0.58 * H;    // off-stage entry/exit
-          cur.ready = true;
-        }
         // phone width on screen tracks the stage height (vertical-FOV camera);
         // open the channel a touch narrower than the phone so it overlaps the text
         bt.dx = sr.height * 0.150;
@@ -664,35 +647,32 @@
           `translate3d(${(intro.x * (1 - e)).toFixed(1)}px,${(intro.y * (1 - e)).toFixed(1)}px,0) scale(${(1 - 0.55 * e).toFixed(4)})`;
       });
 
-      /* ---- hand cursor: flies in, taps the centre slot, then the button,
-         then flies back out. Driven straight from p (cheap, clamps off-window). */
-      let curShown = false;
-      const cursorFrame = (p) => {
-        if (!cursor || !cur.ready) return;
-        if (p < 0.206 || p > 0.372) {
-          if (curShown) { curShown = false; cursor.style.opacity = '0'; }
-          return;
-        }
-        curShown = true;
-        let x, y, op = 1, dip = 0;
+      /* ---- hand cursor (3D, lives in the phone scene) ----
+         Returns a screen-fraction target (tx,ty ∈ 0..1 of the phone screen) and
+         a poke 0..1; phone3d parents the model to the phone and presses it in on
+         Z. Coords are slot/button positions in the booking texture. */
+      const SLOT_TX = 0.5, SLOT_TY = 0.322;     // 14:00 centre (tuned to land the fingertip)
+      const BTN_TX = 0.5, BTN_TY = 0.595;       // «Записаться»
+      const PARK_TX = 1.32, PARK_TY = 1.18;     // off the screen, lower-right
+      const lerp2 = (a, b, t) => a + (b - a) * t;
+      const cursor3D = (p) => {
+        if (p < 0.206 || p > 0.372) return { visible: false };
+        let tx, ty, poke = 0;
         if (p < 0.250) {                                   // fly in to the slot
-          const t = easeOut(clamp01((p - 0.210) / 0.040));
-          op = clamp01(t * 1.6);
-          x = lerp(cur.parkX, cur.slotX, t); y = lerp(cur.parkY, cur.slotY, t);
+          const t = easeOut(clamp01((p - 0.206) / 0.044));
+          tx = lerp2(PARK_TX, SLOT_TX, t); ty = lerp2(PARK_TY, SLOT_TY, t);
         } else if (p < 0.282) {                            // tap the slot
-          x = cur.slotX; y = cur.slotY; dip = tri(p, 0.250, 0.282);
+          tx = SLOT_TX; ty = SLOT_TY; poke = tri(p, 0.250, 0.282);
         } else if (p < 0.300) {                            // glide to the button
           const t = smooth(clamp01((p - 0.282) / 0.018));
-          x = lerp(cur.slotX, cur.btnX, t); y = lerp(cur.slotY, cur.btnY, t);
+          tx = lerp2(SLOT_TX, BTN_TX, t); ty = lerp2(SLOT_TY, BTN_TY, t);
         } else if (p < 0.330) {                            // tap «Записаться»
-          x = cur.btnX; y = cur.btnY; dip = tri(p, 0.300, 0.330);
+          tx = BTN_TX; ty = BTN_TY; poke = tri(p, 0.300, 0.330);
         } else {                                           // fly back out
-          const t = clamp01((p - 0.330) / 0.040), e = t * t;
-          x = lerp(cur.btnX, cur.parkX, e); y = lerp(cur.btnY, cur.parkY, e); op = 1 - t;
+          const t = clamp01((p - 0.330) / 0.042), e = t * t;
+          tx = lerp2(BTN_TX, PARK_TX, e); ty = lerp2(BTN_TY, PARK_TY, e);
         }
-        const tx = x - CUR_HOT_X * cur.sw, ty = y - CUR_HOT_Y * cur.sh + dip * 16;
-        cursor.style.opacity = op.toFixed(3);
-        cursor.style.transform = `translate3d(${tx.toFixed(1)}px,${ty.toFixed(1)}px,0) scale(${(1 - dip * 0.12).toFixed(3)})`;
+        return { visible: true, tx, ty, poke };
       };
 
       /* ---- chapter label (in/out pairs at chapter bounds) ---- */
@@ -809,7 +789,7 @@
           x: vv('x', p, 0), y: vv('y', p, 0), rx: vv('rx', p, 0),
           ry: vv('ry', p, 0), rz: vv('rz', p, 0), s: vv('s', p, 1),
           visible: o > 0.001
-        }, ui);
+        }, ui, cursor3D(p));
       };
 
       /* ---- text entrances: bigger, softer — rise + scale + blur ---- */
@@ -821,7 +801,7 @@
          each word is two 3-char halves; they slide in whole, then split apart
          to open a phone-wide channel dead-centre that the phone drops into.
          At the handoff the channel closes back behind the phone and fades. */
-      /* the whole headline runs off p (one function, like cursorFrame) so the
+      /* the whole headline runs off p (one function, like cursor3D) so the
          phases can't fight each other:
            in   — whole word slides up, still un-split
            cover— the phone drops onto the (whole) word
@@ -892,7 +872,6 @@
         render(p);
         updatePhone(p);
         textFrame(p);
-        cursorFrame(p);
       };
       const onScroll = () => { if (!raf) raf = requestAnimationFrame(() => update(false)); };
       const refresh = () => {                  // resize / font load: re-measure + redraw
