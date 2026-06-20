@@ -26,6 +26,11 @@
  *   --selector  element to screenshot (default: full page)
  *   --center    selector to scroll to viewport centre first (triggers
  *               scroll-based animations / IntersectionObservers)
+ *   --progress  "<selector>:<0..1>" — scroll INSIDE a tall scrub section to a
+ *               given progress, e.g. --progress "#how:0.42" lands at 42% of
+ *               the #how scrollytelling timeline (instant, bypasses smooth).
+ *               Open the page WITH the hash (…/index.html#how) so the gate
+ *               sections above are deep-link-revealed and can't snap back.
  *   --out       output PNG path (default /tmp/shot.png)
  *   --width/--height  viewport size (default 1280x820)
  *   --wait      ms to wait after scroll, for animations (default 1500)
@@ -53,6 +58,17 @@ if (args.center) {
   await page.evaluate((sel) => {
     document.querySelector(sel)?.scrollIntoView({ block: 'center' });
   }, args.center);
+}
+
+if (args.progress) {
+  const i = args.progress.lastIndexOf(':');
+  const [sel, p] = [args.progress.slice(0, i), parseFloat(args.progress.slice(i + 1))];
+  await page.evaluate(({ sel, p }) => {
+    const el = document.querySelector(sel);
+    if (!el) return;
+    const top = window.scrollY + el.getBoundingClientRect().top;
+    window.scrollTo({ top: top + p * (el.offsetHeight - innerHeight), behavior: 'instant' });
+  }, { sel, p });
 }
 await page.waitForTimeout(Number(args.wait) || 1500);
 

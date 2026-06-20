@@ -239,6 +239,7 @@
     setupMarkerCircle();
 
     setupRevealGate(revealObs);
+    setupHowScrub();
   }, 0);
 
   /* ---------- Hand-drawn red marker circle (draw-in + idle "boil") ---------- */
@@ -404,7 +405,6 @@
         sec.querySelectorAll('.line-reveal, .reveal').forEach(el => revealObs.observe(el));
         const mc = sec.querySelector('.mark-circle');
         if (mc && mc._gateDraw) { mc._gateDraw(); mc._gateDraw = null; }
-        if (sec._drawTree) sec._drawTree();           // "4 steps" branch draws itself
         const c = contentFor(sec);
         if (c.rise)  staggerIn(c.rise,  'g-rise',  80);
         if (c.left)  staggerIn(c.left,  'g-left',  0);
@@ -543,8 +543,6 @@
       lockSecs.forEach(sec => {
         if (sec.getBoundingClientRect().top <= window.innerHeight * 0.06) revealNow(sec);
       });
-
-      setupHowTree();
     } catch (err) {
       // Any failure: strip curtains / hidden states so nothing is stranded blank.
       document.querySelectorAll('.gate-curtain').forEach(c => c.remove());
@@ -556,44 +554,378 @@
     }
   }
 
-  /* ---------- "4 steps" tree: winding branch drawn on a timer at reveal ----------
-     The tree is now a normal full-screen lock section. When it reveals, the
-     branch draws itself once over ~1.7s (firefly riding the tip, nodes popping
-     in sequence). It's a one-shot — re-scrolling the section never re-pins or
-     re-draws it, so the page is never "held" on later passes. Mobile keeps the
-     plain stacked layout (the draw never runs there). */
-  function setupHowTree() {
+  /* ---------- "How it works" story: pinned stage scrubbed by scroll ----------
+     #how is a 700vh runway with a sticky 100vh stage. Scroll progress 0..1
+     drives a declarative timeline — fully reversible, no scroll lock. Per
+     element+property the segments chain (before the first one it holds its
+     "from", between/after segments it holds the latest "to"), so the engine
+     also establishes every initial state on the first render. Desktop fine
+     pointers only; mobile/reduced-motion keep the static .how-static list. */
+  function setupHowScrub() {
     const how = document.getElementById('how');
     if (!how) return;
-    const fill = how.querySelector('.how-path-fill');
-    const steps = Array.from(how.querySelectorAll('.how-step'));
-    if (!fill || !steps.length) return;
-    const tree = how.querySelector('.how-tree');
-    const dot = how.querySelector('.how-dot');
-    const realLen = fill.getTotalLength();    // viewBox units; coords map to CSS %
-    const TH = steps.map((_, i) => Math.max(0, (i + 0.55) / steps.length - 0.12));
-    let played = false;
-    how._drawTree = (duration = 1700) => {
-      if (played) return;
-      played = true;
-      const ease = (t) => 1 - Math.pow(1 - t, 2);   // easeOutQuad
-      const t0 = performance.now();
-      const frame = (now) => {
-        const t = Math.min((now - t0) / duration, 1);
-        const e = ease(t);
-        fill.style.strokeDashoffset = (1 - e).toFixed(4);
-        if (dot) {
-          const pt = fill.getPointAtLength(e * realLen);
-          dot.style.left = pt.x + '%';
-          dot.style.top = pt.y + '%';
-          dot.classList.toggle('on', e > 0.01 && e < 0.985);
+    const SCRUB_ON = window.matchMedia('(min-width: 1024px) and (pointer: fine)').matches
+      && !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!SCRUB_ON) return;
+    try {
+      const stage = how.querySelector('.how-stage');
+      const $ = (s) => stage.querySelector(s);
+      how.classList.add('is-scrub');          // CSS swaps static list → stage
+
+      const clamp01 = (v) => v < 0 ? 0 : v > 1 ? 1 : v;
+      const lin = (t) => t;
+      const easeOut = (t) => 1 - Math.pow(1 - t, 3);
+      const easeIO = (t) => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+      const smooth = (t) => t * t * t * (t * (t * 6 - 15) + 10);     // smootherstep, silky both ends
+      const back = (t) => { const c = 1.70158, c3 = c + 1; return 1 + c3 * Math.pow(t - 1, 3) + c * Math.pow(t - 1, 2); };
+      const tri = (p, a, b) => { const m = (a + b) / 2; return p < a || p > b ? 0 : p < m ? (p - a) / (m - a) : 1 - (p - m) / (b - m); };
+
+      /* props per tween: x/y px, s scale, r deg, o opacity — [from, to] */
+      const els = new Map();                  // el -> {x:[seg], y:[...], cache}
+      const tw = (el, a, b, props, ease = easeOut) => {
+        if (!el) return;
+        let rec = els.get(el);
+        if (!rec) { rec = { cache: '' }; els.set(el, rec); }
+        for (const k in props) {
+          (rec[k] || (rec[k] = [])).push({ a, b, f: props[k][0], t: props[k][1], e: ease });
         }
-        steps.forEach((s, i) => { if (e >= TH[i]) s.classList.add('in'); });
-        if (t < 1) requestAnimationFrame(frame);
-        else { if (dot) dot.classList.remove('on'); if (tree) tree.classList.add('done'); }
       };
-      requestAnimationFrame(frame);
-    };
+      const fxs = [];                         // custom segments (text, dashes)
+      const fx = (a, b, fn, ease = lin) => fxs.push({ a, b, fn, ease, last: -1 });
+
+      // active segment for a prop = the last one already started (else first)
+      const val = (segs, p) => {
+        let s = segs[0];
+        for (let i = 1; i < segs.length; i++) { if (segs[i].a <= p) s = segs[i]; else break; }
+        return s.f + (s.t - s.f) * s.e(clamp01((p - s.a) / (s.b - s.a)));
+      };
+
+      const render = (p) => {
+        els.forEach((rec, el) => {
+          const x = rec.x ? val(rec.x, p) : 0;
+          const y = rec.y ? val(rec.y, p) : 0;
+          const s = rec.s ? val(rec.s, p) : 1;
+          const r = rec.r ? val(rec.r, p) : 0;
+          const o = rec.o ? val(rec.o, p) : null;
+          const b = rec.b ? val(rec.b, p) : null;     // blur px (text entrances)
+          let css = `translate3d(${x.toFixed(2)}px,${y.toFixed(2)}px,0)`;
+          if (rec.s) css += ` scale(${s.toFixed(4)})`;
+          if (rec.r) css += ` rotate(${r.toFixed(2)}deg)`;
+          const key = css + '|' + (o === null ? '' : o.toFixed(3)) + '|' + (b === null ? '' : b.toFixed(2));
+          if (key === rec.cache) return;      // clamped tracks cost nothing
+          rec.cache = key;
+          el.style.transform = css;
+          if (o !== null) el.style.opacity = o.toFixed(3);
+          if (b !== null) el.style.filter = b > 0.04 ? `blur(${b.toFixed(2)}px)` : '';
+        });
+        for (const f of fxs) {
+          const t = f.ease(clamp01((p - f.a) / (f.b - f.a)));
+          if (t !== f.last) { f.last = t; f.fn(t); }
+        }
+      };
+
+      /* ---- title FLIP: laid out docked top-left, starts screen-centred ---- */
+      const title = $('.how-title');
+      const intro = { x: 0, y: 0 };
+      const bt = { dx: 120, W: 1280 };        // headline split distance / stage width (set in measure)
+      const measure = () => {
+        const prev = title.style.transform;
+        title.style.transform = 'none';
+        const tr = title.getBoundingClientRect();
+        const sr = stage.getBoundingClientRect();
+        title.style.transform = prev;
+        intro.x = (sr.width - tr.width) / 2 - (tr.left - sr.left);
+        intro.y = sr.height * 0.46 - tr.height / 2 - (tr.top - sr.top);
+        // phone width on screen tracks the stage height (vertical-FOV camera);
+        // open the channel a touch narrower than the phone so it overlaps the text
+        bt.dx = sr.height * 0.150;
+        bt.W = sr.width;
+      };
+      fx(0.018, 0.075, (t) => {
+        const e = smooth(t);
+        title.style.transform =
+          `translate3d(${(intro.x * (1 - e)).toFixed(1)}px,${(intro.y * (1 - e)).toFixed(1)}px,0) scale(${(1 - 0.55 * e).toFixed(4)})`;
+      });
+
+      /* ---- hand cursor (3D, lives in the phone scene) ----
+         Returns a screen-fraction target (tx,ty), a poke 0..1, and a heading
+         (dirX,dirY) so phone3d can tilt the finger toward where it travels and
+         bow it into the screen on press. PARK is well off-screen so the exit
+         flies fully out of view instead of vanishing mid-screen. */
+      const SLOT_TX = 0.5, SLOT_TY = 0.385;     // 14:00 centre (tuned to land the fingertip)
+      const BTN_TX = 0.5, BTN_TY = 0.655;       // «Записаться»
+      const PARK_TX = 1.55, PARK_TY = 1.95;     // far off-screen, lower-right
+      const lerp2 = (a, b, t) => a + (b - a) * t;
+      const cursorPos = (p) => {
+        let tx, ty, poke = 0;
+        if (p < 0.250) {                                   // fly in to the slot
+          const t = easeOut(clamp01((p - 0.206) / 0.044));
+          tx = lerp2(PARK_TX, SLOT_TX, t); ty = lerp2(PARK_TY, SLOT_TY, t);
+        } else if (p < 0.282) {                            // tap the slot
+          tx = SLOT_TX; ty = SLOT_TY; poke = tri(p, 0.250, 0.282);
+        } else if (p < 0.300) {                            // glide to the button
+          const t = smooth(clamp01((p - 0.282) / 0.018));
+          tx = lerp2(SLOT_TX, BTN_TX, t); ty = lerp2(SLOT_TY, BTN_TY, t);
+        } else if (p < 0.330) {                            // tap «Записаться»
+          tx = BTN_TX; ty = BTN_TY; poke = tri(p, 0.300, 0.330);
+        } else {                                           // fly back out, all the way off-screen
+          const t = clamp01((p - 0.330) / 0.046), e = t * (2 - t);
+          tx = lerp2(BTN_TX, PARK_TX, e); ty = lerp2(BTN_TY, PARK_TY, e);
+        }
+        return { tx, ty, poke };
+      };
+      const cursor3D = (p) => {
+        if (p < 0.206 || p > 0.380) return { visible: false };
+        const a = cursorPos(p), b = cursorPos(p + 0.004);  // finite-difference heading
+        let dirX = (b.tx - a.tx) * 9, dirY = (b.ty - a.ty) * 9;
+        const m = Math.hypot(dirX, dirY);
+        if (m > 1) { dirX /= m; dirY /= m; }               // 0 at rest, 1 at full speed
+        return { visible: true, tx: a.tx, ty: a.ty, poke: a.poke, dirX, dirY };
+      };
+
+      /* ---- chapter label (in/out pairs at chapter bounds) ---- */
+      const chapter = (el, a1, a2, b1, b2) => {
+        tw(el, a1, a2, { o: [0, 1], y: [16, 0] }, smooth);
+        tw(el, b1, b2, { o: [1, 0], y: [0, -16] }, easeIO);
+      };
+      chapter($('#howCh1'), 0.050, 0.085, 0.358, 0.388);
+      chapter($('#howCh2'), 0.374, 0.402, 0.660, 0.690);
+      chapter($('#howCh3'), 0.690, 0.720, 0.860, 0.888);
+      chapter($('#howCh4'), 0.878, 0.906, 0.940, 0.962);
+
+      /* ---- scene layers: visibility per range + opacity tweens ---- */
+      const scenes = [
+        { el: $('#howSc1'),  a: 0.040, b: 0.388 },
+        { el: $('#howSc2'),  a: 0.372, b: 0.665 },
+        { el: $('#howSc3'),  a: 0.682, b: 0.882 },
+        { el: $('#howSc4'),  a: 0.870, b: 0.960 },
+        { el: $('#howFinal'), a: 0.945, b: 1.001 }
+      ];
+      const sceneVis = (p) => scenes.forEach(sc => {
+        const on = p >= sc.a && p <= sc.b;
+        if (on !== sc.on) { sc.on = on; sc.el.classList.toggle('is-on', on); }
+      });
+
+      /* ---- 3D phone (scenes 1 & 4) ----
+         Lazy ES-module import; until it resolves the copy plays on its own.
+         View props use the same chained-segment semantics as `tw` (via val);
+         screen state/balance derive from p directly. Everything is pushed to
+         the module which renders on demand (only when something changed). */
+      let phone = null, phoneCanvas = null;
+      const phsegs = {};                       // x/y/rx/ry/rz/s/o segment lists
+      const ptw = (key, a, b, f, t, e = smooth) =>
+        (phsegs[key] || (phsegs[key] = [])).push({ a, b, f, t, e });
+      // HERO_RX tilts the phone back so we look down onto the screen (scene 2 nav).
+      const HERO_RX = -0.52;
+      /* scenes 1→2 are one continuous shot: the phone rises with the booking,
+         glides to centre as the map opens, then tilts back into a big hero pose
+         for the drive. scene 4 is a separate slide-in for the cashback screen. */
+      // x — scene 1 holds the phone centred until the headline has fully gone
+      // behind it, THEN it slides left into scene 2's start pose.
+      ptw('x', 0.356, 0.372, 0.0, -0.90);      // hand off to scene 2 (slide left)
+      ptw('x', 0.372, 0.420, -0.90, -0.52);    // glide toward centre for the map
+      ptw('x', 0.480, 0.535, -0.52, -0.98);    // settle left as it tilts (copy on the right)
+      ptw('x', 0.595, 0.650, -0.98, -0.06);    // recentre, facing us, for the full-screen promo
+      ptw('x', 0.882, 0.930, -2.70, -0.86);    // scene 4 slide-in
+      // y — settles as it appears; holds through the recede
+      ptw('y', 0.082, 0.100, 0.30, 0.0, easeOut);
+      ptw('y', 0.480, 0.535, 0.0, -0.50);       // drop down so the bottom runs off-frame
+      ptw('y', 0.595, 0.650, -0.50, 0.0);       // recentre for the promo
+      ptw('y', 0.690, 0.722, 0.0, -1.7);        // slides out
+      ptw('y', 0.882, 0.930, -0.40, 0.0);
+      // rx (pitch) — a nod as the phone tips back away from us (recede wobble)
+      ptw('rx', 0.100, 0.132, 0.13, -0.06, easeIO);
+      ptw('rx', 0.132, 0.174, -0.06, 0.0, easeIO);
+      ptw('rx', 0.480, 0.535, 0.0, HERO_RX);
+      ptw('rx', 0.595, 0.650, HERO_RX, 0.0);    // untilt to face us for the promo
+      // ry (yaw) — appears big & turned, then wobbles as it recedes to the text
+      ptw('ry', 0.100, 0.128, 0.28, -0.14, easeIO);
+      ptw('ry', 0.128, 0.152, -0.14, 0.06, easeIO);
+      ptw('ry', 0.152, 0.176, 0.06, 0.0, easeIO);
+      ptw('ry', 0.356, 0.372, 0.0, 0.0);        // square up to camera for the map
+      ptw('ry', 0.882, 0.930, 0.52, 0.10);
+      ptw('ry', 0.930, 0.975, 0.10, -0.05);
+      // rz (roll) — part of the recede wobble
+      ptw('rz', 0.100, 0.128, -0.12, 0.07, easeIO);
+      ptw('rz', 0.128, 0.152, 0.07, -0.03, easeIO);
+      ptw('rz', 0.152, 0.176, -0.03, 0.0, easeIO);
+      // s (scale) — appears BIG (close to the camera), then recedes to landing size
+      ptw('s', 0.100, 0.176, 2.05, 1.5, easeOut);
+      ptw('s', 0.356, 0.372, 1.5, 1.16);
+      ptw('s', 0.372, 0.420, 1.16, 1.28);       // closer when centred
+      ptw('s', 0.480, 0.535, 1.28, 1.58);       // big hero for the drive
+      ptw('s', 0.595, 0.650, 1.58, 1.34);       // settle for the promo front view
+      ptw('s', 0.882, 0.930, 1.06, 1.20);
+      // o (canvas opacity) — very short, sudden appearance while big
+      ptw('o', 0.080, 0.098, 0, 1, easeOut);
+      ptw('o', 0.688, 0.722, 1, 0, easeIO);
+      ptw('o', 0.882, 0.918, 0, 1, easeOut);
+      ptw('o', 0.948, 0.968, 1, 0, easeIO);
+      Object.keys(phsegs).forEach(k => phsegs[k].sort((m, n) => m.a - n.a));
+      const vv = (k, p, d) => phsegs[k] ? val(phsegs[k], p) : d;
+      // screen states: 0 booking 1 call 2 price 3 confirmed 4 map 5 nav 6 bonuses 7 promo
+      const SCREEN_PLAN = [
+        { a: 0.318, b: 0.342, from: 0, to: 3 }, // booking → «Запись подтверждена» right after the tap
+        { a: 0.372, b: 0.408, from: 3, to: 4 }, // confirmed → map as it centres
+        { a: 0.480, b: 0.525, from: 4, to: 5 }, // map → nav as it tilts back
+        { a: 0.595, b: 0.640, from: 5, to: 7 }, // nav → full-screen promo at arrival
+        { a: 0.800, b: 0.806, from: 7, to: 6 }  // promo → bonuses (hard swap while hidden)
+      ];
+      const screenAt = (p) => {
+        let a = 0, b = 0, mix = 0;
+        for (const tr of SCREEN_PLAN) {
+          if (p >= tr.b) { a = b = tr.to; }
+          else if (p > tr.a) { a = tr.from; b = tr.to; mix = easeIO((p - tr.a) / (tr.b - tr.a)); break; }
+          else break;
+        }
+        return { a, b, mix };
+      };
+      const updatePhone = (p) => {
+        if (!phone) return;
+        const o = vv('o', p, 0);
+        phoneCanvas.style.opacity = o.toFixed(3);
+        const ui = screenAt(p);
+        // scene 1 booking: the UI is already drawing in as the phone appears,
+        // then the cursor taps the centre slot (which only now turns green) and
+        // the button.
+        ui.slotsT = smooth(clamp01((p - 0.092) / 0.085));   // starts the moment the phone shows
+        ui.btnT = smooth(clamp01((p - 0.170) / 0.038));
+        ui.slotPressT = tri(p, 0.250, 0.282);
+        ui.selectT = smooth(clamp01((p - 0.260) / 0.024));  // 14:00 colours in only on tap
+        ui.btnPressT = tri(p, 0.300, 0.330);
+        ui.balance = Math.round(easeOut(clamp01((p - 0.900) / 0.050)) * 1250);
+        ui.answerT = smooth(clamp01((p - 0.165) / 0.052)); // call slide-to-answer
+        ui.navT = smooth(clamp01((p - 0.495) / 0.092));    // arrow travels the route
+        ui.pressT = tri(p, 0.450, 0.476);                  // «Поехали» press
+        ui.notifT = smooth(clamp01((p - 0.535) / 0.038));  // «Скидка до 11:00» toast during the drive
+        ui.promoT = smooth(clamp01((p - 0.600) / 0.045));  // full-screen promo content opens
+        phone.update({
+          x: vv('x', p, 0), y: vv('y', p, 0), rx: vv('rx', p, 0),
+          ry: vv('ry', p, 0), rz: vv('rz', p, 0), s: vv('s', p, 1),
+          visible: o > 0.001
+        }, ui, cursor3D(p));
+      };
+
+      /* ---- text entrances: bigger, softer — rise + scale + blur ---- */
+      const rise = (el, a, w = 0.05) => tw(el, a, a + w, { o: [0, 1], y: [40, 0], s: [0.96, 1], b: [10, 0] }, smooth);
+      const fade = (el, a, w = 0.035) => tw(el, a, a + w, { o: [1, 0], y: [0, -28], b: [0, 8] }, easeIO);
+      const dim = (el, a, w = 0.04) => tw(el, a, a + w, { o: [1, 0.3] }, easeIO);
+
+      /* ---- scene 1: giant «ОНЛАЙН ЗАПИСЬ» headline ----
+         each word is two 3-char halves; they slide in whole, then split apart
+         to open a phone-wide channel dead-centre that the phone drops into.
+         At the handoff the channel closes back behind the phone and fades. */
+      /* the whole headline runs off p (one function, like cursor3D) so the
+         phases can't fight each other:
+           in   — whole word slides up, still un-split
+           cover— the phone drops onto the (whole) word
+           open — halves part from behind the phone, opening the channel
+           hold — open through the booking
+           close— halves slide back in behind the phone (NO fade)
+           ride — the block rides left, hidden by the phone, gone before scene 2 */
+      const big = document.getElementById('howBig');
+      const bigInner = document.getElementById('howBigInner');
+      const btA1 = document.getElementById('btA1'), btA2 = document.getElementById('btA2');
+      const btB1 = document.getElementById('btB1'), btB2 = document.getElementById('btB2');
+      const splitAt = (p) => {
+        if (p < 0.176) return 0;                                   // closed until the phone has receded
+        if (p < 0.230) return smooth((p - 0.176) / 0.054) * bt.dx; // opening
+        return bt.dx;                                              // held open (the squash closes it)
+      };
+      // outro: the halves get squashed flat (scaleX → 0) toward the centre, so
+      // the text compresses straight UNDER the phone and vanishes there — no
+      // fade, no sliding off; to the user it just tucks under the phone.
+      const squashAt = (p) => {
+        if (p < 0.327) return 1;
+        if (p < 0.353) return 1 - smooth((p - 0.327) / 0.026);
+        return 0;
+      };
+      const textFrame = (p) => {
+        if (!big) return;
+        big.style.opacity = clamp01((p - 0.040) / 0.045 * 1.6).toFixed(3);   // fade in only
+        const inE = back(clamp01((p - 0.040) / 0.045));
+        bigInner.style.transform = `translate3d(0,${((1 - inE) * 200).toFixed(1)}px,0) scaleX(${squashAt(p).toFixed(3)})`;
+        const dx = splitAt(p);
+        btA1.style.transform = btB1.style.transform = `translate3d(${(-dx).toFixed(1)}px,0,0)`;
+        btA2.style.transform = btB2.style.transform = `translate3d(${dx.toFixed(1)}px,0,0)`;
+      };
+
+      /* ---- scene 2: arriving — one big line per beat ---- */
+      tw($('#howSc2'), 0.378, 0.408, { o: [0, 1] });
+      tw($('#howSc2'), 0.598, 0.626, { o: [1, 0] });
+      rise($('#sc2T1'), 0.400, 0.05);  fade($('#sc2T1'), 0.470);
+      rise($('#sc2T2'), 0.488, 0.05);  fade($('#sc2T2'), 0.548);
+      rise($('#sc2T3'), 0.552, 0.05);
+
+      /* ---- scene 3: service — one phrase per beat, with room to read ---- */
+      tw($('#howSc3'), 0.692, 0.726, { o: [0, 1] });
+      tw($('#howSc3'), 0.860, 0.882, { o: [1, 0] });
+      rise($('#sc3T1'), 0.704, 0.05);  fade($('#sc3T1'), 0.766);
+      rise($('#sc3T2'), 0.772, 0.05);  fade($('#sc3T2'), 0.828);
+      rise($('#sc3T3'), 0.834, 0.05);
+
+      /* ---- scene 4: cashback copy (building list) ---- */
+      tw($('#howSc4'), 0.882, 0.912, { o: [0, 1] });
+      tw($('#howSc4'), 0.948, 0.966, { o: [1, 0] });
+      ['#sc4B1', '#sc4B2', '#sc4B3', '#sc4B4', '#sc4B5'].forEach((sel, i) => rise($(sel), 0.906 + i * 0.010, 0.032));
+
+      /* ---- outro ---- */
+      tw($('#howFinal h3'), 0.950, 0.984, { o: [0, 1], y: [34, 0], s: [0.96, 1], b: [10, 0] }, smooth);
+      tw($('#howFinal .btn'), 0.966, 0.996, { o: [0, 1], s: [0.9, 1], y: [20, 0] }, back);
+
+      // `val` walks segments in start order — guarantee it
+      els.forEach(rec => ['x', 'y', 's', 'r', 'o', 'b'].forEach(k => {
+        if (rec[k]) rec[k].sort((m, n) => m.a - n.a);
+      }));
+
+      /* ---- drive: rAF-throttled scroll, same pattern as updateHScroll ---- */
+      let raf = 0, lastP = -1;
+      const update = (force) => {
+        raf = 0;
+        const top = window.scrollY + how.getBoundingClientRect().top;
+        const p = clamp01((window.scrollY - top) / (how.offsetHeight - window.innerHeight));
+        if (!force && p === lastP) return;
+        lastP = p;
+        sceneVis(p);
+        render(p);
+        updatePhone(p);
+        textFrame(p);
+      };
+      const onScroll = () => { if (!raf) raf = requestAnimationFrame(() => update(false)); };
+      const refresh = () => {                  // resize / font load: re-measure + redraw
+        measure();
+        els.forEach(rec => { rec.cache = ''; });
+        fxs.forEach(f => { f.last = -1; });
+        if (phone) phone.setSize(stage.clientWidth, stage.clientHeight);
+        update(true);
+      };
+      window.addEventListener('scroll', onScroll, { passive: true });
+      window.addEventListener('resize', refresh);
+      if (document.fonts && document.fonts.ready) document.fonts.ready.then(refresh);
+      refresh();
+
+      /* lazy-load the 3D phone; on any failure the section just runs text-only */
+      if (location.protocol === 'file:') {
+        // double-clicked index.html: browsers block ES modules / model fetch from file://
+        console.warn('how 3d: страница открыта как file:// — браузер блокирует ES-модули и загрузку 3D-модели. Запусти локальный сервер в папке проекта: `npm run serve` или `py -m http.server 8080`, затем открой http://localhost:8080');
+      } else {
+      import('./assets/phone3d.js')
+        .then(m => m.createPhoneScene(stage))
+        .then(ph => {
+          phone = ph;
+          phoneCanvas = ph.canvas;
+          ph.setSize(stage.clientWidth, stage.clientHeight);
+          if (document.fonts && document.fonts.ready) {
+            document.fonts.ready.then(() => { if (phone) { phone.redraw(); updatePhone(lastP); } });
+          }
+          updatePhone(lastP < 0 ? 0 : lastP);
+        })
+        .catch(err => console.error('phone3d disabled:', err));
+      }
+    } catch (err) {
+      how.classList.remove('is-scrub');        // CSS falls back to the static list
+      console.error('how scrub disabled:', err);
+    }
   }
 
   /* ---------- Smooth-scroll polish for in-page links ---------- */
