@@ -453,19 +453,19 @@ export async function createPhoneScene(host) {
 
   /* ---- hand cursor (scene 1) ----
      A real model in the SAME scene, parented to the phone frame so it shares
-     the lighting/perspective and presses INTO the screen along Z. Position is
-     given in screen fractions (tx,ty ∈ 0..1); poke 0..1 drives the press. */
-  const HOVER = 0.20, POKE = 0.15, CAM_Z = camera.position.z;
+     the lighting/perspective. It rotates around the WRIST (not the fingertip),
+     so the FINGER leads the lean while the wrist stays put — and the fingertip
+     never dips below the glass (Z is compensated), so it can't clip the UI. */
+  const HOVER = 0.22, POKE = 0.17, CAM_Z = camera.position.z;
   const cursorPivot = new THREE.Group();
   cursorPivot.visible = false;
   pivot.add(cursorPivot);
   let cursorLoaded = false;
+  const fingerOffset = new THREE.Vector3(0, 1, 0);     // wrist→fingertip, set on load
+  const _euler = new THREE.Euler();
+  const _fo = new THREE.Vector3();
   const cstate = { visible: false, tx: 0.5, ty: 0.5, poke: 0, dirX: 0, dirY: 0 };
   let cursorKey = '';
-  /* The cursor doesn't idle on its own — it's parented to the phone, so the
-     phone's idle float carries it. It DOES tilt: the finger leans toward the
-     point it's travelling to (dirX/dirY) and bows down into the screen when it
-     presses (poke), which sells the 3D-ness. */
   const applyCursor = () => {
     const k = `${cstate.visible}|${cursorLoaded}|${cstate.tx.toFixed(3)}|${cstate.ty.toFixed(3)}|${cstate.poke.toFixed(3)}|${cstate.dirX.toFixed(2)}|${cstate.dirY.toFixed(2)}`;
     if (k === cursorKey) return false;
@@ -473,36 +473,54 @@ export async function createPhoneScene(host) {
     const vis = cstate.visible && cursorLoaded;
     cursorPivot.visible = vis;
     if (vis) {
-      const localZ = SCREEN_Z + HOVER - cstate.poke * POKE;
-      // the hand floats in FRONT of the screen, so perspective shifts it away
-      // from centre — pull its in-plane target back toward centre to land the
-      // fingertip on the right pixel (parallax compensation; s = phone scale)
+      const localZ = SCREEN_Z + HOVER - cstate.poke * POKE;     // fingertip depth (always above glass)
+      // the hand floats in front of the screen — pull its in-plane target back
+      // toward centre so the fingertip projects onto the right pixel (parallax)
       const s = view.s || 1, par = (CAM_Z - s * localZ) / (CAM_Z - s * SCREEN_Z);
-      cursorPivot.position.set(
-        (cstate.tx - 0.5) * SCREEN_W * par,
-        (0.5 - cstate.ty) * SCREEN_H * par,
-        localZ
+      const tgX = (cstate.tx - 0.5) * SCREEN_W * par;
+      const tgY = (0.5 - cstate.ty) * SCREEN_H * par;
+      // lean: finger leads toward the heading; bows a touch on press
+      _euler.set(
+        -0.08 + cstate.dirY * 0.30 - cstate.poke * 0.16,   // pitch
+        0.12 + cstate.dirX * 0.16,                         // yaw (3D flavour)
+        -cstate.dirX * 0.42                                // roll — the finger leans into horizontal travel
       );
-      cursorPivot.rotation.set(
-        -0.14 + cstate.dirY * 0.52 + cstate.poke * 0.28,   // pitch: lean toward vertical heading / bow in on press
-        0.14 + cstate.dirX * 0.38,                         // yaw: turn toward horizontal heading
-        -cstate.dirX * 0.48                                // roll: lean toward horizontal heading
-      );
+      cursorPivot.rotation.copy(_euler);
+      _fo.copy(fingerOffset).applyEuler(_euler);           // rotated wrist→fingertip
+      // wrist sits below the target; the rotation swings the fingertip toward
+      // the heading. Z is compensated so the fingertip stays exactly at localZ.
+      cursorPivot.position.set(tgX, tgY - fingerOffset.y, localZ - _fo.z);
     }
     return true;
   };
   new GLTFLoader().load(new URL('./models/cursor.glb', import.meta.url).href, (cg) => {
-    const grp = new THREE.Group();
-    grp.add(cg.scene);
-    grp.updateMatrixWorld(true);
-    const cbox = new THREE.Box3().setFromObject(grp);
-    const csize = cbox.getSize(new THREE.Vector3());
-    const ccenter = cbox.getCenter(new THREE.Vector3());
-    cg.scene.position.sub(ccenter);                    // centre the model on the group origin
-    cg.scene.position.y -= csize.y * 0.62;             // drop it so the FINGERTIP sits at origin
-    const maxDim = Math.max(csize.x, csize.y, csize.z) || 1;
-    grp.scale.setScalar((SCREEN_H * 0.235) / maxDim);  // sized against screen height
-    cursorPivot.add(grp);
+    const m = cg.scene;
+    cursorPivot.add(m);
+    cursorPivot.updateWorldMatrix(true, false);
+    // scan all vertices in cursorPivot-local space → bounds + fingertip (top vertex)
+    const lo = new THREE.Vector3(), hi = new THREE.Vector3(), ft = new THREE.Vector3(), v = new THREE.Vector3();
+    const scan = () => {
+      lo.set(Infinity, Infinity, Infinity); hi.set(-Infinity, -Infinity, -Infinity);
+      let my = -Infinity;
+      m.updateWorldMatrix(true, true);
+      m.traverse((o) => {
+        if (!o.isMesh || !o.geometry || !o.geometry.attributes.position) return;
+        const pos = o.geometry.attributes.position;
+        for (let i = 0; i < pos.count; i++) {
+          v.fromBufferAttribute(pos, i).applyMatrix4(o.matrixWorld);
+          cursorPivot.worldToLocal(v);
+          lo.min(v); hi.max(v);
+          if (v.y > my) { my = v.y; ft.copy(v); }
+        }
+      });
+    };
+    scan();
+    m.scale.setScalar((SCREEN_H * 0.235) / (Math.max(hi.x - lo.x, hi.y - lo.y, hi.z - lo.z) || 1));
+    scan();                                             // re-measure after scaling
+    // put the WRIST (directly below the fingertip, at the bottom of the hand) at
+    // the pivot origin, so rotations swing the FINGER while the wrist stays put
+    m.position.x -= ft.x; m.position.y -= lo.y; m.position.z -= ft.z;
+    fingerOffset.set(0, ft.y - lo.y, 0);
     cursorLoaded = true;
     cursorKey = '';                                    // force re-apply now that it exists
   }, undefined, (e) => console.warn('cursor model failed:', e));
