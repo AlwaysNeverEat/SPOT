@@ -456,7 +456,7 @@ export async function createPhoneScene(host) {
      the lighting/perspective. It rotates around the WRIST (not the fingertip),
      so the FINGER leads the lean while the wrist stays put — and the fingertip
      never dips below the glass (Z is compensated), so it can't clip the UI. */
-  const HOVER = 0.22, POKE = 0.17, CAM_Z = camera.position.z;
+  const HOVER = 0.46, POKE = 0.12, CAM_Z = camera.position.z;   // floats well clear of the glass; the tap is a small dip
   const cursorPivot = new THREE.Group();
   cursorPivot.visible = false;
   pivot.add(cursorPivot);
@@ -515,7 +515,7 @@ export async function createPhoneScene(host) {
       });
     };
     scan();
-    m.scale.setScalar((SCREEN_H * 0.235) / (Math.max(hi.x - lo.x, hi.y - lo.y, hi.z - lo.z) || 1));
+    m.scale.setScalar((SCREEN_H * 0.19) / (Math.max(hi.x - lo.x, hi.y - lo.y, hi.z - lo.z) || 1));
     scan();                                             // re-measure after scaling
     // put the WRIST (directly below the fingertip, at the bottom of the hand) at
     // the pivot origin, so rotations swing the FINGER while the wrist stays put

@@ -652,8 +652,8 @@
          (dirX,dirY) so phone3d can tilt the finger toward where it travels and
          bow it into the screen on press. PARK is well off-screen so the exit
          flies fully out of view instead of vanishing mid-screen. */
-      const SLOT_TX = 0.5, SLOT_TY = 0.322;     // 14:00 centre
-      const BTN_TX = 0.5, BTN_TY = 0.595;       // «Записаться»
+      const SLOT_TX = 0.5, SLOT_TY = 0.385;     // 14:00 centre (tuned to land the fingertip)
+      const BTN_TX = 0.5, BTN_TY = 0.655;       // «Записаться»
       const PARK_TX = 1.55, PARK_TY = 1.95;     // far off-screen, lower-right
       const lerp2 = (a, b, t) => a + (b - a) * t;
       const cursorPos = (p) => {
