@@ -656,6 +656,7 @@
         // phone width on screen tracks the stage height (vertical-FOV camera);
         // open the channel a touch narrower than the phone so it overlaps the text
         bt.dx = sr.height * 0.150;
+        bt.W = sr.width;
       };
       fx(0.018, 0.075, (t) => {
         const e = smooth(t);
@@ -668,25 +669,25 @@
       let curShown = false;
       const cursorFrame = (p) => {
         if (!cursor || !cur.ready) return;
-        if (p < 0.244 || p > 0.398) {
+        if (p < 0.206 || p > 0.372) {
           if (curShown) { curShown = false; cursor.style.opacity = '0'; }
           return;
         }
         curShown = true;
         let x, y, op = 1, dip = 0;
-        if (p < 0.286) {                                   // fly in to the slot
-          const t = easeOut(clamp01((p - 0.250) / 0.036));
+        if (p < 0.250) {                                   // fly in to the slot
+          const t = easeOut(clamp01((p - 0.210) / 0.040));
           op = clamp01(t * 1.6);
           x = lerp(cur.parkX, cur.slotX, t); y = lerp(cur.parkY, cur.slotY, t);
-        } else if (p < 0.314) {                            // tap the slot
-          x = cur.slotX; y = cur.slotY; dip = tri(p, 0.286, 0.314);
-        } else if (p < 0.330) {                            // glide to the button
-          const t = smooth(clamp01((p - 0.314) / 0.016));
+        } else if (p < 0.282) {                            // tap the slot
+          x = cur.slotX; y = cur.slotY; dip = tri(p, 0.250, 0.282);
+        } else if (p < 0.300) {                            // glide to the button
+          const t = smooth(clamp01((p - 0.282) / 0.018));
           x = lerp(cur.slotX, cur.btnX, t); y = lerp(cur.slotY, cur.btnY, t);
-        } else if (p < 0.358) {                            // tap «Записаться»
-          x = cur.btnX; y = cur.btnY; dip = tri(p, 0.330, 0.358);
+        } else if (p < 0.330) {                            // tap «Записаться»
+          x = cur.btnX; y = cur.btnY; dip = tri(p, 0.300, 0.330);
         } else {                                           // fly back out
-          const t = clamp01((p - 0.358) / 0.040), e = t * t;
+          const t = clamp01((p - 0.330) / 0.040), e = t * t;
           x = lerp(cur.btnX, cur.parkX, e); y = lerp(cur.btnY, cur.parkY, e); op = 1 - t;
         }
         const tx = x - CUR_HOT_X * cur.sw, ty = y - CUR_HOT_Y * cur.sh + dip * 16;
@@ -699,15 +700,15 @@
         tw(el, a1, a2, { o: [0, 1], y: [16, 0] }, smooth);
         tw(el, b1, b2, { o: [1, 0], y: [0, -16] }, easeIO);
       };
-      chapter($('#howCh1'), 0.050, 0.085, 0.350, 0.380);
-      chapter($('#howCh2'), 0.365, 0.395, 0.660, 0.690);
+      chapter($('#howCh1'), 0.050, 0.085, 0.358, 0.388);
+      chapter($('#howCh2'), 0.374, 0.402, 0.660, 0.690);
       chapter($('#howCh3'), 0.690, 0.720, 0.860, 0.888);
       chapter($('#howCh4'), 0.878, 0.906, 0.940, 0.962);
 
       /* ---- scene layers: visibility per range + opacity tweens ---- */
       const scenes = [
-        { el: $('#howSc1'),  a: 0.040, b: 0.380 },
-        { el: $('#howSc2'),  a: 0.363, b: 0.665 },
+        { el: $('#howSc1'),  a: 0.040, b: 0.388 },
+        { el: $('#howSc2'),  a: 0.372, b: 0.665 },
         { el: $('#howSc3'),  a: 0.682, b: 0.882 },
         { el: $('#howSc4'),  a: 0.870, b: 0.960 },
         { el: $('#howFinal'), a: 0.945, b: 1.001 }
@@ -731,15 +732,15 @@
       /* scenes 1→2 are one continuous shot: the phone rises with the booking,
          glides to centre as the map opens, then tilts back into a big hero pose
          for the drive. scene 4 is a separate slide-in for the cashback screen. */
-      // x — scene 1 holds the phone centred over the headline, then it slides
-      // left into scene 2's start pose as the text flies off behind it.
-      ptw('x', 0.342, 0.360, 0.0, -0.90);      // hand off to scene 2 (slide left)
-      ptw('x', 0.360, 0.420, -0.90, -0.52);    // glide toward centre for the map
+      // x — scene 1 holds the phone centred until the headline has fully gone
+      // behind it, THEN it slides left into scene 2's start pose.
+      ptw('x', 0.356, 0.372, 0.0, -0.90);      // hand off to scene 2 (slide left)
+      ptw('x', 0.372, 0.420, -0.90, -0.52);    // glide toward centre for the map
       ptw('x', 0.480, 0.535, -0.52, -0.98);    // settle left as it tilts (copy on the right)
       ptw('x', 0.595, 0.650, -0.98, -0.06);    // recentre, facing us, for the full-screen promo
       ptw('x', 0.882, 0.930, -2.70, -0.86);    // scene 4 slide-in
       // y
-      ptw('y', 0.116, 0.152, 0.55, 0.0, back);  // quick drop into the open channel
+      ptw('y', 0.086, 0.124, 0.55, 0.0, back);  // quick drop onto the (still whole) headline
       ptw('y', 0.480, 0.535, 0.0, -0.50);       // drop down so the bottom runs off-frame
       ptw('y', 0.595, 0.650, -0.50, 0.0);       // recentre for the promo
       ptw('y', 0.690, 0.722, 0.0, -1.7);        // slides out
@@ -748,21 +749,21 @@
       ptw('rx', 0.480, 0.535, 0.0, HERO_RX);
       ptw('rx', 0.595, 0.650, HERO_RX, 0.0);    // untilt to face us for the promo
       // ry (yaw) — near-front through the booking so the UI faces the cursor
-      ptw('ry', 0.116, 0.152, 0.12, 0.04, back);
-      ptw('ry', 0.342, 0.360, 0.04, 0.0);       // square up to camera for the map
+      ptw('ry', 0.086, 0.124, 0.12, 0.04, back);
+      ptw('ry', 0.356, 0.372, 0.04, 0.0);       // square up to camera for the map
       ptw('ry', 0.882, 0.930, 0.52, 0.10);
       ptw('ry', 0.930, 0.975, 0.10, -0.05);
       // rz (roll)
-      ptw('rz', 0.116, 0.152, -0.05, 0.0, back);
-      // s (scale) — pops to hero size in the channel, then settles for scene 2
-      ptw('s', 0.116, 0.152, 1.28, 1.5, back);
-      ptw('s', 0.342, 0.360, 1.5, 1.16);
-      ptw('s', 0.360, 0.420, 1.16, 1.28);       // closer when centred
+      ptw('rz', 0.086, 0.124, -0.05, 0.0, back);
+      // s (scale) — pops to hero size over the headline, then settles for scene 2
+      ptw('s', 0.086, 0.124, 1.28, 1.5, back);
+      ptw('s', 0.356, 0.372, 1.5, 1.16);
+      ptw('s', 0.372, 0.420, 1.16, 1.28);       // closer when centred
       ptw('s', 0.480, 0.535, 1.28, 1.58);       // big hero for the drive
       ptw('s', 0.595, 0.650, 1.58, 1.34);       // settle for the promo front view
       ptw('s', 0.882, 0.930, 1.06, 1.20);
       // o (canvas opacity — phone lives across scenes 1+2, holds the promo, returns for 4)
-      ptw('o', 0.118, 0.138, 0, 1, easeOut);    // very short — sudden, unexpected appearance
+      ptw('o', 0.088, 0.106, 0, 1, easeOut);    // very short — sudden, covers the whole word
       ptw('o', 0.688, 0.722, 1, 0, easeIO);
       ptw('o', 0.882, 0.918, 0, 1, easeOut);
       ptw('o', 0.948, 0.968, 1, 0, easeIO);
@@ -770,8 +771,8 @@
       const vv = (k, p, d) => phsegs[k] ? val(phsegs[k], p) : d;
       // screen states: 0 booking 1 call 2 price 3 confirmed 4 map 5 nav 6 bonuses 7 promo
       const SCREEN_PLAN = [
-        { a: 0.344, b: 0.363, from: 0, to: 3 }, // booking → «Запись подтверждена» after the tap
-        { a: 0.365, b: 0.405, from: 3, to: 4 }, // confirmed → map as it centres
+        { a: 0.318, b: 0.342, from: 0, to: 3 }, // booking → «Запись подтверждена» right after the tap
+        { a: 0.372, b: 0.408, from: 3, to: 4 }, // confirmed → map as it centres
         { a: 0.480, b: 0.525, from: 4, to: 5 }, // map → nav as it tilts back
         { a: 0.595, b: 0.640, from: 5, to: 7 }, // nav → full-screen promo at arrival
         { a: 0.800, b: 0.806, from: 7, to: 6 }  // promo → bonuses (hard swap while hidden)
@@ -790,12 +791,14 @@
         const o = vv('o', p, 0);
         phoneCanvas.style.opacity = o.toFixed(3);
         const ui = screenAt(p);
-        // scene 1 booking: slots pop in (staggered inside drawBooking), then the
-        // button, then the cursor taps the centre slot and the button.
-        ui.slotsT = smooth(clamp01((p - 0.150) / 0.095));
-        ui.btnT = smooth(clamp01((p - 0.230) / 0.045));
-        ui.slotPressT = tri(p, 0.286, 0.314);
-        ui.btnPressT = tri(p, 0.330, 0.358);
+        // scene 1 booking: the UI is already drawing in as the phone appears,
+        // then the cursor taps the centre slot (which only now turns green) and
+        // the button.
+        ui.slotsT = smooth(clamp01((p - 0.092) / 0.085));   // starts the moment the phone shows
+        ui.btnT = smooth(clamp01((p - 0.170) / 0.038));
+        ui.slotPressT = tri(p, 0.250, 0.282);
+        ui.selectT = smooth(clamp01((p - 0.260) / 0.024));  // 14:00 colours in only on tap
+        ui.btnPressT = tri(p, 0.300, 0.330);
         ui.balance = Math.round(easeOut(clamp01((p - 0.900) / 0.050)) * 1250);
         ui.answerT = smooth(clamp01((p - 0.165) / 0.052)); // call slide-to-answer
         ui.navT = smooth(clamp01((p - 0.495) / 0.092));    // arrow travels the route
@@ -818,27 +821,36 @@
          each word is two 3-char halves; they slide in whole, then split apart
          to open a phone-wide channel dead-centre that the phone drops into.
          At the handoff the channel closes back behind the phone and fades. */
+      /* the whole headline runs off p (one function, like cursorFrame) so the
+         phases can't fight each other:
+           in   — whole word slides up, still un-split
+           cover— the phone drops onto the (whole) word
+           open — halves part from behind the phone, opening the channel
+           hold — open through the booking
+           close— halves slide back in behind the phone (NO fade)
+           ride — the block rides left, hidden by the phone, gone before scene 2 */
       const big = document.getElementById('howBig');
+      const bigInner = document.getElementById('howBigInner');
       const btA1 = document.getElementById('btA1'), btA2 = document.getElementById('btA2');
       const btB1 = document.getElementById('btB1'), btB2 = document.getElementById('btB2');
-      if (big && btA1 && btB1) {
-        const split = (dx) => {
-          const L = `translate3d(${(-dx).toFixed(1)}px,0,0)`, R = `translate3d(${dx.toFixed(1)}px,0,0)`;
-          btA1.style.transform = L; btB1.style.transform = L;
-          btA2.style.transform = R; btB2.style.transform = R;
-        };
-        fx(0.045, 0.094, (t) => {                       // bold slide-in, words still whole
-          const e = back(t);
-          big.style.opacity = clamp01(t * 1.5).toFixed(3);
-          big.style.transform = `translate3d(0,${((1 - e) * 200).toFixed(1)}px,0)`;
-        });
-        fx(0.092, 0.150, (t) => split(smooth(t) * bt.dx));   // split open the channel
-        fx(0.330, 0.372, (t) => {                       // outro: close behind the phone & fade
-          const e = smooth(t);
-          big.style.opacity = (1 - e).toFixed(3);
-          split(bt.dx * (1 - 0.85 * e));
-        });
-      }
+      const splitAt = (p) => {
+        if (p < 0.125) return 0;                                        // closed (covered whole)
+        if (p < 0.180) return smooth((p - 0.125) / 0.055) * bt.dx;      // opening
+        if (p < 0.300) return bt.dx;                                    // held open through booking
+        if (p < 0.330) return bt.dx * (1 - smooth((p - 0.300) / 0.030));// closing behind phone
+        return 0;
+      };
+      const textFrame = (p) => {
+        if (!big) return;
+        big.style.opacity = clamp01((p - 0.040) / 0.045 * 1.6).toFixed(3);   // fade in only
+        const inE = back(clamp01((p - 0.040) / 0.045));
+        bigInner.style.transform = `translate3d(0,${((1 - inE) * 200).toFixed(1)}px,0)`;
+        const dx = splitAt(p);
+        btA1.style.transform = btB1.style.transform = `translate3d(${(-dx).toFixed(1)}px,0,0)`;
+        btA2.style.transform = btB2.style.transform = `translate3d(${dx.toFixed(1)}px,0,0)`;
+        const rl = smooth(clamp01((p - 0.328) / 0.026));                // outro: whoosh off while the phone still holds centre
+        big.style.transform = `translate3d(${(-rl * bt.W * 1.4).toFixed(1)}px,0,0)`;
+      };
 
       /* ---- scene 2: arriving — one big line per beat ---- */
       tw($('#howSc2'), 0.378, 0.408, { o: [0, 1] });
@@ -879,6 +891,7 @@
         sceneVis(p);
         render(p);
         updatePhone(p);
+        textFrame(p);
         cursorFrame(p);
       };
       const onScroll = () => { if (!raf) raf = requestAnimationFrame(() => update(false)); };

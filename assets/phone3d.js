@@ -186,6 +186,7 @@ function drawBooking(ctx, ui) {
   const btnT = clamp01(ui && ui.btnT || 0);
   const slotPress = clamp01(ui && ui.slotPressT || 0);
   const btnPress = clamp01(ui && ui.btnPressT || 0);
+  const selectT = clamp01(ui && ui.selectT || 0);    // centre slot colours in only on tap
 
   ctx.textAlign = 'center';
   ctx.globalAlpha = clamp01(slotsT * 4);
@@ -207,8 +208,15 @@ function drawBooking(ctx, ui) {
     ctx.save();
     ctx.globalAlpha = clamp01(local * 1.6);
     ctx.translate(cx, cy); ctx.scale(pop * press, pop * press); ctx.translate(-cx, -cy);
-    ctx.fillStyle = sel ? C.green : C.soft; rr(ctx, cx - gw / 2, cy - gh / 2, gw, gh, 20); ctx.fill();
-    ctx.fillStyle = sel ? '#fff' : C.ink; ctx.fillText(s, cx, cy + 11);
+    // base chip: every slot (incl. 14:00) starts neutral
+    ctx.fillStyle = C.soft; rr(ctx, cx - gw / 2, cy - gh / 2, gw, gh, 20); ctx.fill();
+    ctx.fillStyle = C.ink; ctx.fillText(s, cx, cy + 11);
+    // 14:00 crossfades to green once tapped
+    if (sel && selectT > 0.001) {
+      ctx.globalAlpha = clamp01(local * 1.6) * selectT;
+      ctx.fillStyle = C.green; rr(ctx, cx - gw / 2, cy - gh / 2, gw, gh, 20); ctx.fill();
+      ctx.fillStyle = '#fff'; ctx.fillText(s, cx, cy + 11);
+    }
     ctx.restore();
   });
 
@@ -404,10 +412,10 @@ export async function createPhoneScene(host) {
   screen.position.z = SCREEN_Z;
 
   const ui = { a: 0, b: 0, mix: 0, balance: 0, navT: 0, pressT: 0, notifT: 0, answerT: 0, promoT: 0,
-    slotsT: 0, btnT: 0, slotPressT: 0, btnPressT: 0 };
+    slotsT: 0, btnT: 0, slotPressT: 0, btnPressT: 0, selectT: 0 };
   let uiKey = '';
   const drawUI = () => {
-    const k = `${ui.a}|${ui.b}|${ui.mix.toFixed(3)}|${ui.balance}|${ui.navT.toFixed(3)}|${ui.pressT.toFixed(3)}|${ui.notifT.toFixed(3)}|${ui.answerT.toFixed(3)}|${ui.promoT.toFixed(3)}|${ui.slotsT.toFixed(3)}|${ui.btnT.toFixed(3)}|${ui.slotPressT.toFixed(3)}|${ui.btnPressT.toFixed(3)}`;
+    const k = `${ui.a}|${ui.b}|${ui.mix.toFixed(3)}|${ui.balance}|${ui.navT.toFixed(3)}|${ui.pressT.toFixed(3)}|${ui.notifT.toFixed(3)}|${ui.answerT.toFixed(3)}|${ui.promoT.toFixed(3)}|${ui.slotsT.toFixed(3)}|${ui.btnT.toFixed(3)}|${ui.slotPressT.toFixed(3)}|${ui.btnPressT.toFixed(3)}|${ui.selectT.toFixed(3)}`;
     if (k === uiKey) return false;
     uiKey = k;
     ctx.clearRect(0, 0, TEX_W, TEX_H);

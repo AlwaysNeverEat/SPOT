@@ -636,9 +636,13 @@ body.menu-open { overflow: hidden; }
      the phone drops on top of it; the engine drives transform/opacity per line */
   .how-bigtext {
     position: absolute; inset: 0; z-index: 0;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    gap: 0.1vw; pointer-events: none; opacity: 0;
-    will-change: opacity;
+    display: flex; align-items: center; justify-content: center;
+    pointer-events: none; opacity: 0;
+    will-change: opacity, transform;        /* transform = outro ride-left behind the phone */
+  }
+  .how-bigtext__inner {
+    display: flex; flex-direction: column; align-items: center; gap: 0.1vw;
+    will-change: transform;                 /* transform = slide-in */
   }
   /* each word is two halves (3+3 chars); the engine slides them apart so a
      phone-wide channel opens dead-centre, then the phone drops into it */
