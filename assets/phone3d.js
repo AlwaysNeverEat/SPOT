@@ -462,23 +462,53 @@ export async function createPhoneScene(host) {
   let cursorLoaded = false;
   const cstate = { visible: false, tx: 0.5, ty: 0.5, poke: 0 };
   let cursorKey = '';
+  /* the cursor gets a continuous idle wobble so it feels alive even when the
+     scroll is still — a small scoped rAF runs only while it's visible. The
+     scroll sets the BASE pose; the wobble adds a gentle sway on top. */
+  const cursorBase = { px: 0, py: 0, pz: 0, rx: 0, ry: 0, rz: 0 };
+  let cursorRAF = 0;
+  const composeCursor = () => {
+    const t = performance.now() / 1000;
+    cursorPivot.position.set(
+      cursorBase.px + Math.sin(t * 1.7) * 0.010,
+      cursorBase.py + Math.sin(t * 2.3 + 1.1) * 0.010,
+      cursorBase.pz
+    );
+    cursorPivot.rotation.set(
+      cursorBase.rx + Math.sin(t * 1.9 + 0.5) * 0.05,
+      cursorBase.ry + Math.sin(t * 1.4) * 0.06,
+      cursorBase.rz + Math.sin(t * 2.1 + 2.0) * 0.04
+    );
+  };
+  const cursorLoop = () => {
+    cursorRAF = 0;
+    if (!cursorPivot.visible) return;
+    composeCursor();
+    renderer.render(scene, camera);
+    cursorRAF = requestAnimationFrame(cursorLoop);
+  };
   const applyCursor = () => {
     const k = `${cstate.visible}|${cursorLoaded}|${cstate.tx.toFixed(3)}|${cstate.ty.toFixed(3)}|${cstate.poke.toFixed(3)}`;
     if (k === cursorKey) return false;
     cursorKey = k;
-    cursorPivot.visible = cstate.visible && cursorLoaded;
-    if (cursorPivot.visible) {
+    const vis = cstate.visible && cursorLoaded;
+    cursorPivot.visible = vis;
+    if (vis) {
       const localZ = SCREEN_Z + HOVER - cstate.poke * POKE;
       // the hand floats in FRONT of the screen, so perspective shifts it away
       // from centre — pull its in-plane target back toward centre to land the
       // fingertip on the right pixel (parallax compensation; s = phone scale)
       const s = view.s || 1, par = (CAM_Z - s * localZ) / (CAM_Z - s * SCREEN_Z);
-      cursorPivot.position.set(
-        (cstate.tx - 0.5) * SCREEN_W * par,
-        (0.5 - cstate.ty) * SCREEN_H * par,
-        localZ
-      );
-      cursorPivot.rotation.set(-0.20 - cstate.poke * 0.14, 0.16, 0);   // slight 3D tilt; bows in on press
+      cursorBase.px = (cstate.tx - 0.5) * SCREEN_W * par;
+      cursorBase.py = (0.5 - cstate.ty) * SCREEN_H * par;
+      cursorBase.pz = localZ;
+      cursorBase.rx = -0.20 - cstate.poke * 0.14;       // slight 3D tilt; bows in on press
+      cursorBase.ry = 0.16;
+      cursorBase.rz = 0;
+      composeCursor();                                  // apply now for this scroll frame
+      if (!cursorRAF) cursorRAF = requestAnimationFrame(cursorLoop);   // keep it alive
+    } else if (cursorRAF) {
+      cancelAnimationFrame(cursorRAF); cursorRAF = 0;
     }
     return true;
   };
@@ -492,7 +522,7 @@ export async function createPhoneScene(host) {
     cg.scene.position.sub(ccenter);                    // centre the model on the group origin
     cg.scene.position.y -= csize.y * 0.62;             // drop it so the FINGERTIP sits at origin
     const maxDim = Math.max(csize.x, csize.y, csize.z) || 1;
-    grp.scale.setScalar((SCREEN_H * 0.30) / maxDim);   // sized against screen height
+    grp.scale.setScalar((SCREEN_H * 0.235) / maxDim);  // sized against screen height
     cursorPivot.add(grp);
     cursorLoaded = true;
     cursorKey = '';                                    // force re-apply now that it exists

@@ -719,31 +719,37 @@
       ptw('x', 0.480, 0.535, -0.52, -0.98);    // settle left as it tilts (copy on the right)
       ptw('x', 0.595, 0.650, -0.98, -0.06);    // recentre, facing us, for the full-screen promo
       ptw('x', 0.882, 0.930, -2.70, -0.86);    // scene 4 slide-in
-      // y
-      ptw('y', 0.086, 0.124, 0.55, 0.0, back);  // quick drop onto the (still whole) headline
+      // y — settles as it appears; holds through the recede
+      ptw('y', 0.082, 0.100, 0.30, 0.0, easeOut);
       ptw('y', 0.480, 0.535, 0.0, -0.50);       // drop down so the bottom runs off-frame
       ptw('y', 0.595, 0.650, -0.50, 0.0);       // recentre for the promo
       ptw('y', 0.690, 0.722, 0.0, -1.7);        // slides out
       ptw('y', 0.882, 0.930, -0.40, 0.0);
-      // rx (pitch)
+      // rx (pitch) — a nod as the phone tips back away from us (recede wobble)
+      ptw('rx', 0.100, 0.132, 0.13, -0.06, easeIO);
+      ptw('rx', 0.132, 0.174, -0.06, 0.0, easeIO);
       ptw('rx', 0.480, 0.535, 0.0, HERO_RX);
       ptw('rx', 0.595, 0.650, HERO_RX, 0.0);    // untilt to face us for the promo
-      // ry (yaw) — near-front through the booking so the UI faces the cursor
-      ptw('ry', 0.086, 0.124, 0.12, 0.04, back);
-      ptw('ry', 0.356, 0.372, 0.04, 0.0);       // square up to camera for the map
+      // ry (yaw) — appears big & turned, then wobbles as it recedes to the text
+      ptw('ry', 0.100, 0.128, 0.28, -0.14, easeIO);
+      ptw('ry', 0.128, 0.152, -0.14, 0.06, easeIO);
+      ptw('ry', 0.152, 0.176, 0.06, 0.0, easeIO);
+      ptw('ry', 0.356, 0.372, 0.0, 0.0);        // square up to camera for the map
       ptw('ry', 0.882, 0.930, 0.52, 0.10);
       ptw('ry', 0.930, 0.975, 0.10, -0.05);
-      // rz (roll)
-      ptw('rz', 0.086, 0.124, -0.05, 0.0, back);
-      // s (scale) — pops to hero size over the headline, then settles for scene 2
-      ptw('s', 0.086, 0.124, 1.28, 1.5, back);
+      // rz (roll) — part of the recede wobble
+      ptw('rz', 0.100, 0.128, -0.12, 0.07, easeIO);
+      ptw('rz', 0.128, 0.152, 0.07, -0.03, easeIO);
+      ptw('rz', 0.152, 0.176, -0.03, 0.0, easeIO);
+      // s (scale) — appears BIG (close to the camera), then recedes to landing size
+      ptw('s', 0.100, 0.176, 2.05, 1.5, easeOut);
       ptw('s', 0.356, 0.372, 1.5, 1.16);
       ptw('s', 0.372, 0.420, 1.16, 1.28);       // closer when centred
       ptw('s', 0.480, 0.535, 1.28, 1.58);       // big hero for the drive
       ptw('s', 0.595, 0.650, 1.58, 1.34);       // settle for the promo front view
       ptw('s', 0.882, 0.930, 1.06, 1.20);
-      // o (canvas opacity — phone lives across scenes 1+2, holds the promo, returns for 4)
-      ptw('o', 0.088, 0.106, 0, 1, easeOut);    // very short — sudden, covers the whole word
+      // o (canvas opacity) — very short, sudden appearance while big
+      ptw('o', 0.080, 0.098, 0, 1, easeOut);
       ptw('o', 0.688, 0.722, 1, 0, easeIO);
       ptw('o', 0.882, 0.918, 0, 1, easeOut);
       ptw('o', 0.948, 0.968, 1, 0, easeIO);
@@ -814,22 +820,26 @@
       const btA1 = document.getElementById('btA1'), btA2 = document.getElementById('btA2');
       const btB1 = document.getElementById('btB1'), btB2 = document.getElementById('btB2');
       const splitAt = (p) => {
-        if (p < 0.125) return 0;                                        // closed (covered whole)
-        if (p < 0.180) return smooth((p - 0.125) / 0.055) * bt.dx;      // opening
-        if (p < 0.300) return bt.dx;                                    // held open through booking
-        if (p < 0.330) return bt.dx * (1 - smooth((p - 0.300) / 0.030));// closing behind phone
+        if (p < 0.176) return 0;                                   // closed until the phone has receded
+        if (p < 0.230) return smooth((p - 0.176) / 0.054) * bt.dx; // opening
+        return bt.dx;                                              // held open (the squash closes it)
+      };
+      // outro: the halves get squashed flat (scaleX → 0) toward the centre, so
+      // the text compresses straight UNDER the phone and vanishes there — no
+      // fade, no sliding off; to the user it just tucks under the phone.
+      const squashAt = (p) => {
+        if (p < 0.327) return 1;
+        if (p < 0.353) return 1 - smooth((p - 0.327) / 0.026);
         return 0;
       };
       const textFrame = (p) => {
         if (!big) return;
         big.style.opacity = clamp01((p - 0.040) / 0.045 * 1.6).toFixed(3);   // fade in only
         const inE = back(clamp01((p - 0.040) / 0.045));
-        bigInner.style.transform = `translate3d(0,${((1 - inE) * 200).toFixed(1)}px,0)`;
+        bigInner.style.transform = `translate3d(0,${((1 - inE) * 200).toFixed(1)}px,0) scaleX(${squashAt(p).toFixed(3)})`;
         const dx = splitAt(p);
         btA1.style.transform = btB1.style.transform = `translate3d(${(-dx).toFixed(1)}px,0,0)`;
         btA2.style.transform = btB2.style.transform = `translate3d(${dx.toFixed(1)}px,0,0)`;
-        const rl = smooth(clamp01((p - 0.328) / 0.026));                // outro: whoosh off while the phone still holds centre
-        big.style.transform = `translate3d(${(-rl * bt.W * 1.4).toFixed(1)}px,0,0)`;
       };
 
       /* ---- scene 2: arriving — one big line per beat ---- */
