@@ -55,7 +55,9 @@ PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers node scripts/screenshot.mjs \
   (Sketchfab-оригинал 26МБ ужат gltf-transform'ом: weld→simplify 0.4→quantize→draco,
   686КБ). Bare-импорт `'three'` резолвит importmap в `<head>` index.html. Логика —
   `assets/phone3d.js`, лениво импортируется из `setupHowScrub()`; рендер по требованию
-  (без rAF-цикла). Модель из Sketchfab лежит криво — выпрямляет захардкоженный
+  (по скроллу) + **scoped rAF-idle**, пока телефон виден — лёгкое «дыхание»; 3D-курсор
+  руки (`assets/models/cursor.glb`, 23КБ) парентится к pivot телефона: тапает по UI,
+  наклоняется к цели по dirX/dirY и вжимается по Z на poke. Модель из Sketchfab лежит криво — выпрямляет захардкоженный
   `BASE_QUAT` (решён офлайн по нормали меша экрана). UI экрана НЕ в модели: у её меша
   «Pantalla» рваные UV и сверху непрозрачное чёрное стекло, поэтому UI рисуется на
   2D-канвасе (CanvasTexture) на отдельном plane чуть выше стекла (`SCREEN_*`-константы).

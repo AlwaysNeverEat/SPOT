@@ -460,35 +460,14 @@ export async function createPhoneScene(host) {
   cursorPivot.visible = false;
   pivot.add(cursorPivot);
   let cursorLoaded = false;
-  const cstate = { visible: false, tx: 0.5, ty: 0.5, poke: 0 };
+  const cstate = { visible: false, tx: 0.5, ty: 0.5, poke: 0, dirX: 0, dirY: 0 };
   let cursorKey = '';
-  /* the cursor gets a continuous idle wobble so it feels alive even when the
-     scroll is still — a small scoped rAF runs only while it's visible. The
-     scroll sets the BASE pose; the wobble adds a gentle sway on top. */
-  const cursorBase = { px: 0, py: 0, pz: 0, rx: 0, ry: 0, rz: 0 };
-  let cursorRAF = 0;
-  const composeCursor = () => {
-    const t = performance.now() / 1000;
-    cursorPivot.position.set(
-      cursorBase.px + Math.sin(t * 1.7) * 0.010,
-      cursorBase.py + Math.sin(t * 2.3 + 1.1) * 0.010,
-      cursorBase.pz
-    );
-    cursorPivot.rotation.set(
-      cursorBase.rx + Math.sin(t * 1.9 + 0.5) * 0.05,
-      cursorBase.ry + Math.sin(t * 1.4) * 0.06,
-      cursorBase.rz + Math.sin(t * 2.1 + 2.0) * 0.04
-    );
-  };
-  const cursorLoop = () => {
-    cursorRAF = 0;
-    if (!cursorPivot.visible) return;
-    composeCursor();
-    renderer.render(scene, camera);
-    cursorRAF = requestAnimationFrame(cursorLoop);
-  };
+  /* The cursor doesn't idle on its own — it's parented to the phone, so the
+     phone's idle float carries it. It DOES tilt: the finger leans toward the
+     point it's travelling to (dirX/dirY) and bows down into the screen when it
+     presses (poke), which sells the 3D-ness. */
   const applyCursor = () => {
-    const k = `${cstate.visible}|${cursorLoaded}|${cstate.tx.toFixed(3)}|${cstate.ty.toFixed(3)}|${cstate.poke.toFixed(3)}`;
+    const k = `${cstate.visible}|${cursorLoaded}|${cstate.tx.toFixed(3)}|${cstate.ty.toFixed(3)}|${cstate.poke.toFixed(3)}|${cstate.dirX.toFixed(2)}|${cstate.dirY.toFixed(2)}`;
     if (k === cursorKey) return false;
     cursorKey = k;
     const vis = cstate.visible && cursorLoaded;
@@ -499,16 +478,16 @@ export async function createPhoneScene(host) {
       // from centre — pull its in-plane target back toward centre to land the
       // fingertip on the right pixel (parallax compensation; s = phone scale)
       const s = view.s || 1, par = (CAM_Z - s * localZ) / (CAM_Z - s * SCREEN_Z);
-      cursorBase.px = (cstate.tx - 0.5) * SCREEN_W * par;
-      cursorBase.py = (0.5 - cstate.ty) * SCREEN_H * par;
-      cursorBase.pz = localZ;
-      cursorBase.rx = -0.20 - cstate.poke * 0.14;       // slight 3D tilt; bows in on press
-      cursorBase.ry = 0.16;
-      cursorBase.rz = 0;
-      composeCursor();                                  // apply now for this scroll frame
-      if (!cursorRAF) cursorRAF = requestAnimationFrame(cursorLoop);   // keep it alive
-    } else if (cursorRAF) {
-      cancelAnimationFrame(cursorRAF); cursorRAF = 0;
+      cursorPivot.position.set(
+        (cstate.tx - 0.5) * SCREEN_W * par,
+        (0.5 - cstate.ty) * SCREEN_H * par,
+        localZ
+      );
+      cursorPivot.rotation.set(
+        -0.14 + cstate.dirY * 0.52 + cstate.poke * 0.28,   // pitch: lean toward vertical heading / bow in on press
+        0.14 + cstate.dirX * 0.38,                         // yaw: turn toward horizontal heading
+        -cstate.dirX * 0.48                                // roll: lean toward horizontal heading
+      );
     }
     return true;
   };
@@ -530,14 +509,36 @@ export async function createPhoneScene(host) {
 
   const view = { x: 0, y: 0, rx: 0, ry: 0, rz: 0, s: 1, visible: false };
   let viewKey = '';
+  /* phone idle: a gentle continuous float/sway so the phone feels alive even
+     when the scroll is still. The scroll sets the base pose; the idle adds a
+     small sine on top, and a scoped rAF re-renders while the phone is visible.
+     The cursor is a child of the pivot, so it floats along with the phone. */
+  const composeView = () => {
+    const t = performance.now() / 1000;
+    pivot.position.set(view.x, view.y + Math.sin(t * 1.05) * 0.030, 0);
+    pivot.rotation.set(
+      view.rx + Math.sin(t * 0.9 + 0.6) * 0.018,
+      view.ry + Math.sin(t * 0.75) * 0.022,
+      view.rz + Math.sin(t * 1.2 + 1.4) * 0.010
+    );
+    pivot.scale.setScalar(view.s);
+    pivot.visible = view.visible;
+  };
+  let idleRAF = 0;
+  const idleLoop = () => {
+    idleRAF = 0;
+    if (!view.visible) return;
+    composeView();
+    renderer.render(scene, camera);
+    idleRAF = requestAnimationFrame(idleLoop);
+  };
   const applyView = () => {
     const k = `${view.x.toFixed(3)}|${view.y.toFixed(3)}|${view.rx.toFixed(3)}|${view.ry.toFixed(3)}|${view.rz.toFixed(3)}|${view.s.toFixed(3)}|${view.visible}`;
     if (k === viewKey) return false;
     viewKey = k;
-    pivot.position.set(view.x, view.y, 0);
-    pivot.rotation.set(view.rx, view.ry, view.rz);
-    pivot.scale.setScalar(view.s);
-    pivot.visible = view.visible;
+    composeView();
+    if (view.visible && !idleRAF) idleRAF = requestAnimationFrame(idleLoop);
+    else if (!view.visible && idleRAF) { cancelAnimationFrame(idleRAF); idleRAF = 0; }
     return true;
   };
 

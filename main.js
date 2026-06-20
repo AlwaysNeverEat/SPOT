@@ -648,15 +648,15 @@
       });
 
       /* ---- hand cursor (3D, lives in the phone scene) ----
-         Returns a screen-fraction target (tx,ty ∈ 0..1 of the phone screen) and
-         a poke 0..1; phone3d parents the model to the phone and presses it in on
-         Z. Coords are slot/button positions in the booking texture. */
-      const SLOT_TX = 0.5, SLOT_TY = 0.322;     // 14:00 centre (tuned to land the fingertip)
+         Returns a screen-fraction target (tx,ty), a poke 0..1, and a heading
+         (dirX,dirY) so phone3d can tilt the finger toward where it travels and
+         bow it into the screen on press. PARK is well off-screen so the exit
+         flies fully out of view instead of vanishing mid-screen. */
+      const SLOT_TX = 0.5, SLOT_TY = 0.322;     // 14:00 centre
       const BTN_TX = 0.5, BTN_TY = 0.595;       // «Записаться»
-      const PARK_TX = 1.32, PARK_TY = 1.18;     // off the screen, lower-right
+      const PARK_TX = 1.55, PARK_TY = 1.95;     // far off-screen, lower-right
       const lerp2 = (a, b, t) => a + (b - a) * t;
-      const cursor3D = (p) => {
-        if (p < 0.206 || p > 0.372) return { visible: false };
+      const cursorPos = (p) => {
         let tx, ty, poke = 0;
         if (p < 0.250) {                                   // fly in to the slot
           const t = easeOut(clamp01((p - 0.206) / 0.044));
@@ -668,11 +668,19 @@
           tx = lerp2(SLOT_TX, BTN_TX, t); ty = lerp2(SLOT_TY, BTN_TY, t);
         } else if (p < 0.330) {                            // tap «Записаться»
           tx = BTN_TX; ty = BTN_TY; poke = tri(p, 0.300, 0.330);
-        } else {                                           // fly back out
-          const t = clamp01((p - 0.330) / 0.042), e = t * t;
+        } else {                                           // fly back out, all the way off-screen
+          const t = clamp01((p - 0.330) / 0.046), e = t * (2 - t);
           tx = lerp2(BTN_TX, PARK_TX, e); ty = lerp2(BTN_TY, PARK_TY, e);
         }
-        return { visible: true, tx, ty, poke };
+        return { tx, ty, poke };
+      };
+      const cursor3D = (p) => {
+        if (p < 0.206 || p > 0.380) return { visible: false };
+        const a = cursorPos(p), b = cursorPos(p + 0.004);  // finite-difference heading
+        let dirX = (b.tx - a.tx) * 9, dirY = (b.ty - a.ty) * 9;
+        const m = Math.hypot(dirX, dirY);
+        if (m > 1) { dirX /= m; dirY /= m; }               // 0 at rest, 1 at full speed
+        return { visible: true, tx: a.tx, ty: a.ty, poke: a.poke, dirX, dirY };
       };
 
       /* ---- chapter label (in/out pairs at chapter bounds) ---- */
