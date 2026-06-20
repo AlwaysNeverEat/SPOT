@@ -260,14 +260,16 @@
       </div>
     </div>
 
-    <!-- ---- Scene 1: booking (3D phone on the canvas, copy on the right) ---- -->
-    <div class="how-scene how-scene--phone" id="howSc1">
-      <div class="how-copy how-copy--swap">
-        <p id="sc1T1">Записаться можно онлайн — на любое удобное время</p>
-        <p id="sc1T2">…или по телефону</p>
-        <p id="sc1T3">И сразу узнать предварительную стоимость работ</p>
+    <!-- ---- Scene 1: booking — giant headline slides in, the 3D phone drops
+         onto it, the booking UI pops in and a 3D hand cursor (in the phone
+         scene) taps through the flow. The headline sits UNDER the phone canvas. -->
+    <div class="how-bigtext" id="howBig" aria-hidden="true">
+      <div class="how-bigtext__inner" id="howBigInner">
+        <div class="how-bigtext__row"><span class="bt-half" id="btA1">ОНЛ</span><span class="bt-half" id="btA2">АЙН</span></div>
+        <div class="how-bigtext__row"><span class="bt-half" id="btB1">ЗАП</span><span class="bt-half" id="btB2">ИСЬ</span></div>
       </div>
     </div>
+    <div class="how-scene how-scene--phone" id="howSc1"></div>
 
     <!-- ---- Scene 2: arriving (3D phone tilts into a hero pose, live nav map) ---- -->
     <div class="how-scene how-scene--phone how-scene--map" id="howSc2">

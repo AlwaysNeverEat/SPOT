@@ -632,6 +632,36 @@ body.menu-open { overflow: hidden; }
     pointer-events: none;
   }
 
+  /* scene 1: giant «ОНЛАЙН ЗАПИСЬ» headline — sits UNDER the phone canvas so
+     the phone drops on top of it; the engine drives transform/opacity per line */
+  .how-bigtext {
+    position: absolute; inset: 0; z-index: 0;
+    display: flex; align-items: center; justify-content: center;
+    pointer-events: none; opacity: 0;
+    will-change: opacity, transform;        /* transform = outro ride-left behind the phone */
+  }
+  .how-bigtext__inner {
+    display: flex; flex-direction: column; align-items: center; gap: 0.1vw;
+    will-change: transform;                 /* transform = slide-in */
+  }
+  /* each word is two halves (3+3 chars); the engine slides them apart so a
+     phone-wide channel opens dead-centre, then the phone drops into it */
+  .how-bigtext__row {
+    display: flex; justify-content: center; align-items: baseline;
+    white-space: nowrap; line-height: 0.82;
+  }
+  .bt-half {
+    font-family: 'Climate Crisis', 'Dela Gothic One', system-ui, sans-serif;
+    font-weight: 400; letter-spacing: 0.01em;
+    font-size: clamp(3.2rem, 8vw, 7.5rem);
+    color: var(--green); text-transform: uppercase;
+    will-change: transform;
+  }
+
+  /* scene 1: the hand cursor is a real 3D model rendered inside the phone
+     canvas (.how-3d) — see assets/phone3d.js — so it shares the lighting and
+     presses into the screen on Z. No DOM element needed. */
+
   /* scenes: stacked full-stage layers, engine toggles .is-on per range */
   .how-scene {
     position: absolute; inset: 0;

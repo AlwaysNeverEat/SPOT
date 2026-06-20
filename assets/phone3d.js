@@ -177,19 +177,59 @@ const HANDSET = new Path2D('M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.2
 
 /* ---- screen states (each draws a full 512x1096 UI, reads from `ui`) ---- */
 
-function drawBooking(ctx) {
-  ctx.fillStyle = C.muted; ctx.font = FONT(600, 30); ctx.textAlign = 'center';
+function drawBooking(ctx, ui) {
+  // staggered pop-in of the whole booking UI, driven by the scrub:
+  //   slotsT 0→1 reveals header + 9 time slots one after another,
+  //   btnT   0→1 pops the «Записаться» button, and the press progresses
+  //   (slotPressT on the centre slot, btnPressT on the button) read as taps.
+  const slotsT = clamp01(ui && ui.slotsT || 0);
+  const btnT = clamp01(ui && ui.btnT || 0);
+  const slotPress = clamp01(ui && ui.slotPressT || 0);
+  const btnPress = clamp01(ui && ui.btnPressT || 0);
+  const selectT = clamp01(ui && ui.selectT || 0);    // centre slot colours in only on tap
+
+  ctx.textAlign = 'center';
+  ctx.globalAlpha = clamp01(slotsT * 4);
+  ctx.fillStyle = C.muted; ctx.font = FONT(600, 30);
   ctx.fillText('Выберите время', TEX_W / 2, 200);
+  ctx.globalAlpha = 1;
+
   const slots = ['9:00', '10:30', '11:00', '12:30', '14:00', '15:30', '17:00', '18:30', '20:00'];
   const gw = 124, gh = 96, gap = 18, x0 = (TEX_W - gw * 3 - gap * 2) / 2, y0 = 260;
   ctx.font = FONT(700, 30);
+  const STAG = 0.07, DUR = 0.42, span = STAG * (slots.length - 1) + DUR;
   slots.forEach((s, i) => {
-    const x = x0 + (i % 3) * (gw + gap), y = y0 + ((i / 3) | 0) * (gh + gap), sel = i === 4;
-    ctx.fillStyle = sel ? C.green : C.soft; rr(ctx, x, y, gw, gh, 20); ctx.fill();
-    ctx.fillStyle = sel ? '#fff' : C.ink; ctx.fillText(s, x + gw / 2, y + gh / 2 + 11);
+    const local = clamp01((slotsT * span - i * STAG) / DUR);
+    if (local <= 0.001) return;
+    const pop = easeOutBack(local), sel = i === 4;
+    const cx = x0 + (i % 3) * (gw + gap) + gw / 2;
+    const cy = y0 + ((i / 3) | 0) * (gh + gap) + gh / 2;
+    const press = sel ? 1 - 0.10 * slotPress : 1;
+    ctx.save();
+    ctx.globalAlpha = clamp01(local * 1.6);
+    ctx.translate(cx, cy); ctx.scale(pop * press, pop * press); ctx.translate(-cx, -cy);
+    // base chip: every slot (incl. 14:00) starts neutral
+    ctx.fillStyle = C.soft; rr(ctx, cx - gw / 2, cy - gh / 2, gw, gh, 20); ctx.fill();
+    ctx.fillStyle = C.ink; ctx.fillText(s, cx, cy + 11);
+    // 14:00 crossfades to green once tapped
+    if (sel && selectT > 0.001) {
+      ctx.globalAlpha = clamp01(local * 1.6) * selectT;
+      ctx.fillStyle = C.green; rr(ctx, cx - gw / 2, cy - gh / 2, gw, gh, 20); ctx.fill();
+      ctx.fillStyle = '#fff'; ctx.fillText(s, cx, cy + 11);
+    }
+    ctx.restore();
   });
-  ctx.fillStyle = C.green; rr(ctx, 76, 700, TEX_W - 152, 104, 52); ctx.fill();
-  ctx.fillStyle = '#fff'; ctx.font = FONT(700, 36); ctx.fillText('Записаться', TEX_W / 2, 765);
+
+  if (btnT > 0.001) {
+    const pop = easeOutBack(btnT), bx = 76, by = 700, bw = TEX_W - 152, bh = 104;
+    const press = 1 - 0.05 * btnPress;
+    ctx.save();
+    ctx.globalAlpha = clamp01(btnT * 1.6);
+    ctx.translate(TEX_W / 2, by + bh / 2); ctx.scale(pop * press, pop * press); ctx.translate(-TEX_W / 2, -(by + bh / 2));
+    ctx.fillStyle = btnPress > 0.45 ? C.greenDark : C.green; rr(ctx, bx, by, bw, bh, 52); ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.font = FONT(700, 36); ctx.fillText('Записаться', TEX_W / 2, 765);
+    ctx.restore();
+  }
 }
 function drawCall(ctx, ui) {
   ctx.fillStyle = C.green; ctx.beginPath(); ctx.arc(TEX_W / 2, 300, 106, 0, 7); ctx.fill();
@@ -224,6 +264,7 @@ function drawPrice(ctx) {
   rr(ctx, 76, 640, TEX_W - 184, 30, 15); ctx.fill();
 }
 function drawConfirmed(ctx) {
+  ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, TEX_W, TEX_H);   // occludes the booking UI as it crossfades in
   ctx.fillStyle = C.green; ctx.beginPath(); ctx.arc(TEX_W / 2, 420, 120, 0, 7); ctx.fill();
   ctx.strokeStyle = '#fff'; ctx.lineWidth = 18; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
   ctx.beginPath(); ctx.moveTo(TEX_W / 2 - 50, 424); ctx.lineTo(TEX_W / 2 - 12, 466); ctx.lineTo(TEX_W / 2 + 56, 376); ctx.stroke();
@@ -370,10 +411,11 @@ export async function createPhoneScene(host) {
   const screen = new THREE.Mesh(new THREE.PlaneGeometry(SCREEN_W, SCREEN_H), screenMat);
   screen.position.z = SCREEN_Z;
 
-  const ui = { a: 0, b: 0, mix: 0, balance: 0, navT: 0, pressT: 0, notifT: 0, answerT: 0, promoT: 0 };
+  const ui = { a: 0, b: 0, mix: 0, balance: 0, navT: 0, pressT: 0, notifT: 0, answerT: 0, promoT: 0,
+    slotsT: 0, btnT: 0, slotPressT: 0, btnPressT: 0, selectT: 0 };
   let uiKey = '';
   const drawUI = () => {
-    const k = `${ui.a}|${ui.b}|${ui.mix.toFixed(3)}|${ui.balance}|${ui.navT.toFixed(3)}|${ui.pressT.toFixed(3)}|${ui.notifT.toFixed(3)}|${ui.answerT.toFixed(3)}|${ui.promoT.toFixed(3)}`;
+    const k = `${ui.a}|${ui.b}|${ui.mix.toFixed(3)}|${ui.balance}|${ui.navT.toFixed(3)}|${ui.pressT.toFixed(3)}|${ui.notifT.toFixed(3)}|${ui.answerT.toFixed(3)}|${ui.promoT.toFixed(3)}|${ui.slotsT.toFixed(3)}|${ui.btnT.toFixed(3)}|${ui.slotPressT.toFixed(3)}|${ui.btnPressT.toFixed(3)}|${ui.selectT.toFixed(3)}`;
     if (k === uiKey) return false;
     uiKey = k;
     ctx.clearRect(0, 0, TEX_W, TEX_H);
@@ -409,16 +451,112 @@ export async function createPhoneScene(host) {
   root.position.add(center.negate().applyQuaternion(BASE_QUAT.clone().invert()));
   pivot.add(screen);                       // UI plane lives in the UPRIGHT frame
 
+  /* ---- hand cursor (scene 1) ----
+     A real model in the SAME scene, parented to the phone frame so it shares
+     the lighting/perspective. It rotates around the WRIST (not the fingertip),
+     so the FINGER leads the lean while the wrist stays put — and the fingertip
+     never dips below the glass (Z is compensated), so it can't clip the UI. */
+  const HOVER = 0.46, POKE = 0.12, CAM_Z = camera.position.z;   // floats well clear of the glass; the tap is a small dip
+  const cursorPivot = new THREE.Group();
+  cursorPivot.visible = false;
+  pivot.add(cursorPivot);
+  let cursorLoaded = false;
+  const fingerOffset = new THREE.Vector3(0, 1, 0);     // wrist→fingertip, set on load
+  const _euler = new THREE.Euler();
+  const _fo = new THREE.Vector3();
+  const cstate = { visible: false, tx: 0.5, ty: 0.5, poke: 0, dirX: 0, dirY: 0 };
+  let cursorKey = '';
+  const applyCursor = () => {
+    const k = `${cstate.visible}|${cursorLoaded}|${cstate.tx.toFixed(3)}|${cstate.ty.toFixed(3)}|${cstate.poke.toFixed(3)}|${cstate.dirX.toFixed(2)}|${cstate.dirY.toFixed(2)}`;
+    if (k === cursorKey) return false;
+    cursorKey = k;
+    const vis = cstate.visible && cursorLoaded;
+    cursorPivot.visible = vis;
+    if (vis) {
+      const localZ = SCREEN_Z + HOVER - cstate.poke * POKE;     // fingertip depth (always above glass)
+      // the hand floats in front of the screen — pull its in-plane target back
+      // toward centre so the fingertip projects onto the right pixel (parallax)
+      const s = view.s || 1, par = (CAM_Z - s * localZ) / (CAM_Z - s * SCREEN_Z);
+      const tgX = (cstate.tx - 0.5) * SCREEN_W * par;
+      const tgY = (0.5 - cstate.ty) * SCREEN_H * par;
+      // lean: finger leads toward the heading; bows a touch on press
+      _euler.set(
+        -0.08 + cstate.dirY * 0.30 - cstate.poke * 0.16,   // pitch
+        0.12 + cstate.dirX * 0.16,                         // yaw (3D flavour)
+        -cstate.dirX * 0.42                                // roll — the finger leans into horizontal travel
+      );
+      cursorPivot.rotation.copy(_euler);
+      _fo.copy(fingerOffset).applyEuler(_euler);           // rotated wrist→fingertip
+      // wrist sits below the target; the rotation swings the fingertip toward
+      // the heading. Z is compensated so the fingertip stays exactly at localZ.
+      cursorPivot.position.set(tgX, tgY - fingerOffset.y, localZ - _fo.z);
+    }
+    return true;
+  };
+  new GLTFLoader().load(new URL('./models/cursor.glb', import.meta.url).href, (cg) => {
+    const m = cg.scene;
+    cursorPivot.add(m);
+    cursorPivot.updateWorldMatrix(true, false);
+    // scan all vertices in cursorPivot-local space → bounds + fingertip (top vertex)
+    const lo = new THREE.Vector3(), hi = new THREE.Vector3(), ft = new THREE.Vector3(), v = new THREE.Vector3();
+    const scan = () => {
+      lo.set(Infinity, Infinity, Infinity); hi.set(-Infinity, -Infinity, -Infinity);
+      let my = -Infinity;
+      m.updateWorldMatrix(true, true);
+      m.traverse((o) => {
+        if (!o.isMesh || !o.geometry || !o.geometry.attributes.position) return;
+        const pos = o.geometry.attributes.position;
+        for (let i = 0; i < pos.count; i++) {
+          v.fromBufferAttribute(pos, i).applyMatrix4(o.matrixWorld);
+          cursorPivot.worldToLocal(v);
+          lo.min(v); hi.max(v);
+          if (v.y > my) { my = v.y; ft.copy(v); }
+        }
+      });
+    };
+    scan();
+    m.scale.setScalar((SCREEN_H * 0.19) / (Math.max(hi.x - lo.x, hi.y - lo.y, hi.z - lo.z) || 1));
+    scan();                                             // re-measure after scaling
+    // put the WRIST (directly below the fingertip, at the bottom of the hand) at
+    // the pivot origin, so rotations swing the FINGER while the wrist stays put
+    m.position.x -= ft.x; m.position.y -= lo.y; m.position.z -= ft.z;
+    fingerOffset.set(0, ft.y - lo.y, 0);
+    cursorLoaded = true;
+    cursorKey = '';                                    // force re-apply now that it exists
+  }, undefined, (e) => console.warn('cursor model failed:', e));
+
   const view = { x: 0, y: 0, rx: 0, ry: 0, rz: 0, s: 1, visible: false };
   let viewKey = '';
+  /* phone idle: a gentle continuous float/sway so the phone feels alive even
+     when the scroll is still. The scroll sets the base pose; the idle adds a
+     small sine on top, and a scoped rAF re-renders while the phone is visible.
+     The cursor is a child of the pivot, so it floats along with the phone. */
+  const composeView = () => {
+    const t = performance.now() / 1000;
+    pivot.position.set(view.x, view.y + Math.sin(t * 1.05) * 0.030, 0);
+    pivot.rotation.set(
+      view.rx + Math.sin(t * 0.9 + 0.6) * 0.018,
+      view.ry + Math.sin(t * 0.75) * 0.022,
+      view.rz + Math.sin(t * 1.2 + 1.4) * 0.010
+    );
+    pivot.scale.setScalar(view.s);
+    pivot.visible = view.visible;
+  };
+  let idleRAF = 0;
+  const idleLoop = () => {
+    idleRAF = 0;
+    if (!view.visible) return;
+    composeView();
+    renderer.render(scene, camera);
+    idleRAF = requestAnimationFrame(idleLoop);
+  };
   const applyView = () => {
     const k = `${view.x.toFixed(3)}|${view.y.toFixed(3)}|${view.rx.toFixed(3)}|${view.ry.toFixed(3)}|${view.rz.toFixed(3)}|${view.s.toFixed(3)}|${view.visible}`;
     if (k === viewKey) return false;
     viewKey = k;
-    pivot.position.set(view.x, view.y, 0);
-    pivot.rotation.set(view.rx, view.ry, view.rz);
-    pivot.scale.setScalar(view.s);
-    pivot.visible = view.visible;
+    composeView();
+    if (view.visible && !idleRAF) idleRAF = requestAnimationFrame(idleLoop);
+    else if (!view.visible && idleRAF) { cancelAnimationFrame(idleRAF); idleRAF = 0; }
     return true;
   };
 
@@ -431,12 +569,13 @@ export async function createPhoneScene(host) {
   return {
     canvas,
     setSize,
-    update(viewPatch, uiPatch) {
+    update(viewPatch, uiPatch, cursorPatch) {
       if (viewPatch) Object.assign(view, viewPatch);
       if (uiPatch) Object.assign(ui, uiPatch);
-      const changed = drawUI() | applyView();
+      if (cursorPatch) Object.assign(cstate, cursorPatch);
+      const changed = drawUI() | applyView() | applyCursor();
       if (changed || !this._first) { this._first = true; renderer.render(scene, camera); }
     },
-    redraw() { uiKey = ''; viewKey = ''; this.update(); }
+    redraw() { uiKey = ''; viewKey = ''; cursorKey = ''; this.update(); }
   };
 }
