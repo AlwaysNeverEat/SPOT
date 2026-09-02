@@ -329,13 +329,17 @@ body.menu-open { overflow: hidden; }
   align-items: center;
   background: transparent;
 }
+/* Тонировка героя. Лежит внутри .hero-video-wrap и потому наследует его
+   позиционирование: на десктопе подложка fixed — тонировка приклеена к
+   вьюпорту вместе с видео; на мобиле подложка absolute — едут обе вместе.
+   Держать её отдельно в .hero (да ещё с параллаксом) нельзя: секция
+   скроллится, видео стоит, и сверху появляется неприкрытая светлая полоса. */
 .hero-bg {
   position: absolute; inset: 0;
   background:
     radial-gradient(circle at 20% 30%, rgba(31,157,63,0.16), transparent 45%),
     linear-gradient(180deg, rgba(13,13,13,0.2), rgba(13,13,13,0.42));
-  z-index: 2;
-  will-change: transform;
+  z-index: 1;
 }
 .hero-content {
   position: relative;

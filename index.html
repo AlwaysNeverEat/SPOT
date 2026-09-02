@@ -104,8 +104,6 @@
 
 <!-- =========== HERO =========== -->
 <section class="hero" id="hero">
-  <div class="hero-bg" data-parallax="0.3"></div>
-
   <div class="hero-content">
     <div class="badge" data-parallax="0.15">
       <span class="dot"></span> с 9:00 до 21:00 · без выходных
@@ -130,6 +128,10 @@
     <video class="hero-video" id="heroVideo" autoplay muted loop playsinline preload="metadata">
       <source src="video/head.webm" type="video/webm" />
     </video>
+    <!-- Тонировка живёт ВНУТРИ фиксированной подложки: иначе она уезжает
+         вместе с секцией, а видео стоит на месте — и сверху вылезает
+         неприкрытая светлая полоса. -->
+    <div class="hero-bg"></div>
   </div>
 
   <div class="scroll-hint">
